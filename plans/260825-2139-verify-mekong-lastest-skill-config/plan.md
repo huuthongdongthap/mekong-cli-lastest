@@ -48,10 +48,10 @@ Note: G3 symlinks must NOT be blindly redirected — targets don't exist in NEW 
 ## Phases
 
 - [x] **phase-01-pull-and-revalidate.md** — RESOLVED: verified in-sync with official fork (bf9a6bb34); hooks validate OK. No pull needed.
-- [ ] **phase-02-mekong-bin-cutover.md** — Point `/Users/mac/bin/mekong` → NEW wrapper; keep OLD reachable via fallback flag/env
-- [ ] **phase-03-shared-content-decision.md** — Decide CLAUDE.md/output-styles/rules: copy to NEW union layer vs keep OLD source-of-truth (needs user input)
+- [x] **phase-02-mekong-bin-cutover.md** — DONE 260825: bin → NEW wrapper (mekong --help rc=0); backup at migration-260821-2350/mekong.bin.bak
+- [ ] **phase-03-shared-content-decision.md** — DEFERRED by user
 - [x] **phase-04-opencode-integration.md** — SKIPPED by user decision
-- [ ] **phase-05-commit-and-final-audit.md** — Commit artifacts, fix G6 hardcoded hook paths, full smoke test, write final report
+- [x] **phase-05-commit-and-final-audit.md** — DONE 260825: G6 fixed, 5 commits made (e403c7edb..5d706f324), final report at plans/reports/mekong-lastest-config-audit-report-260825.md
 
 ## Rollback
 
