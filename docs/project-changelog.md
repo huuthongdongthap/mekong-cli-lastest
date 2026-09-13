@@ -1,5 +1,33 @@
 # Project Changelog
 
+## v6.9.0 — 2026-09-13
+
+**Core Protocol Conformance Expansion & Architecture Documentation Alignment (100% Complete):**
+
+- **Core Protocol Conformance Suite Expansion (`tests/test_protocol_compliance.py`):**
+  - Expanded test suite from 12 to 20 unit tests covering all 10 core `@runtime_checkable` protocols in `src/core/protocols.py` (`MekongCoreRuntime`, `LLMRouter`, `ToolRegistry`, `BillingMeter`, `MemoryStore`, `MemorySeparation`, `ObservabilitySink`, `VerificationEngine`, `GoalEngine`, `PaymentProvider`) and `CapabilityBus`.
+  - Added method presence assertions for `BillingMeter.settle_payment()`, `ToolRegistry.list_mcp_tools()`, `GoalEngine.adapt()`, `PaymentProvider.quote()`, `PaymentProvider.verify()`, `PaymentProvider.request_payment()`, and `MemorySeparation.flush_session()` / `prune_expired()`.
+  - Added structural runtime conformance assertions (`isinstance(..., Protocol)`) for 8 concrete adapters:
+    - `BillingAdapter` (`BillingMeter` + `PaymentProvider`)
+    - `NowPaymentsProvider` (`PaymentProvider`)
+    - `ToolRegistry` (`ToolRegistry`)
+    - `MemorySeparation` (`MemorySeparation`)
+    - `MemoryStore` (`MemoryStore` canonical with `restore_real_memory_store` fixture)
+    - `JsonlMemoryAdapter` (`MemoryStore`)
+    - `MekongCoreRuntimeImpl` (`MekongCoreRuntime`)
+    - `InMemoryCapabilityBus` (`CapabilityBus`)
+    - `RecipeVerifier` (`VerificationEngine`)
+    - `MemoryStoreAdapter` (`MemoryStore`)
+    - `TelemetrySinkAdapter` (`ObservabilitySink`)
+    - `LLMRouterAdapter` (`LLMRouter`)
+    - `GoalEngineAdapter` (`GoalEngine`)
+  - 20/20 tests passing in `tests/test_protocol_compliance.py`.
+
+- **Documentation & Invariants Synchronization:**
+  - Synchronized `docs/architecture/CURRENT_ARCHITECTURE.md`, `docs/architecture/AUTONOMY_GAPS.md`, and `docs/architecture/ARCHITECTURE_ASSESSMENT.md` to HEAD `0f620840f`.
+  - Re-verified all 11 Autonomy Gaps remain 100% closed with live test evidence.
+  - Confirmed repository invariants: 39 Typer CLI command groups, 0 ruff lint errors, and 100% passing test suites across all core and Vietnam modules.
+
 ## v6.8.0 — 2026-09-12
 
 **Phase 5 AI Video Factory (Sophia) Full Integration & Conformance (100% Complete):**
