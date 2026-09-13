@@ -60,3 +60,26 @@ class TestAdapterCompliance:
             store=SQLiteGoalStore(tmp_path / "goals.sqlite3"), cwd=tmp_path
         )
         assert isinstance(adapter, protocols.GoalEngine)
+
+    def test_mekong_core_runtime_impl_compliant(self):
+        from unittest.mock import MagicMock
+        from src.core.runtime_adapter import MekongCoreRuntimeImpl
+
+        runtime = MekongCoreRuntimeImpl(dispatcher=MagicMock(), tool_registry=MagicMock())
+        assert isinstance(runtime, protocols.MekongCoreRuntime)
+        ctx = runtime.context()
+        assert isinstance(ctx, dict)
+        assert "principal" in ctx
+        assert "session_id" in ctx
+
+    def test_capability_bus_compliant(self):
+        from src.core.capability import InMemoryCapabilityBus
+
+        bus = InMemoryCapabilityBus()
+        assert isinstance(bus, protocols.CapabilityBus)
+
+    def test_recipe_verifier_compliant(self):
+        from src.core.verifier import RecipeVerifier
+
+        verifier = RecipeVerifier()
+        assert isinstance(verifier, protocols.VerificationEngine)

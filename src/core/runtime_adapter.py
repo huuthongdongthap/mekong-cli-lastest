@@ -52,6 +52,26 @@ class Context:
     session_id: str
     metadata: dict[str, Any] = field(default_factory=dict)
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "principal": self.principal,
+            "session_id": self.session_id,
+            "metadata": dict(self.metadata),
+        }
+
+    def __getitem__(self, key: str) -> Any:
+        if hasattr(self, key):
+            return getattr(self, key)
+        return self.metadata[key]
+
+    def get(self, key: str, default: Any = None) -> Any:
+        if hasattr(self, key):
+            return getattr(self, key)
+        return self.metadata.get(key, default)
+
+    def __contains__(self, key: object) -> bool:
+        return hasattr(self, str(key)) or str(key) in self.metadata
+
 @dataclass
 class Criteria:
     checks: list[CheckSpec] = field(default_factory=list)
@@ -508,8 +528,59 @@ class MekongCoreRuntimeImpl:
         logger.info("Done in %.1fms commit=%s mem=%s", (time.monotonic() - start) * 1000, commit_rec.id, entry.key)
         return merged
 
-    def goal(self, intent: str, context: Context) -> Goal:
+    def goal(self, intent: str, context: Context | None = None) -> Goal:
+        if context is None:
+            context = Context(
+                principal=self._agent_id,
+                session_id=uuid.uuid4().hex[:16],
+                metadata={"mission_id": self._mission_id},
+            )
         return Goal(id=f"goal-{uuid.uuid4().hex[:12]}", intent=intent, context=context, criteria=_DEFAULT_CRITERIA, priority=0)
+
+    def context(self, goal: Any = None) -> dict[str, Any]:
+        """Extract or construct context metadata for the given goal.
+
+        Conforms to :class:`src.core.protocols.MekongCoreRuntime`.
+        """
+        if goal is None:
+            return {
+                "principal": self._agent_id,
+                "session_id": uuid.uuid4().hex[:16],
+                "mission_id": self._mission_id,
+                "metadata": {},
+            }
+        if hasattr(goal, "context"):
+            ctx = getattr(goal, "context")
+            if isinstance(ctx, dict):
+                return dict(ctx)
+            if hasattr(ctx, "to_dict") and callable(ctx.to_dict):
+                data = ctx.to_dict()
+                if "mission_id" not in data:
+                    data["mission_id"] = self._mission_id
+                return data
+            if hasattr(ctx, "principal") and hasattr(ctx, "session_id"):
+                return {
+                    "principal": ctx.principal,
+                    "session_id": ctx.session_id,
+                    "metadata": getattr(ctx, "metadata", {}),
+                    "mission_id": self._mission_id,
+                }
+        if isinstance(goal, dict):
+            ctx_val = goal.get("context")
+            if isinstance(ctx_val, dict):
+                return dict(ctx_val)
+            return {
+                "principal": self._agent_id,
+                "session_id": uuid.uuid4().hex[:16],
+                "mission_id": goal.get("mission_id", self._mission_id),
+                "metadata": goal.get("metadata", {}),
+            }
+        return {
+            "principal": self._agent_id,
+            "session_id": uuid.uuid4().hex[:16],
+            "mission_id": self._mission_id,
+            "metadata": {},
+        }
 
     def _resolve_agent_name(self, intent: str) -> str:
         """Pick the agent name for this goal's intent.
@@ -544,7 +615,12 @@ class MekongCoreRuntimeImpl:
         except Exception:
             pass
 
-    def plan(self, goal: Goal) -> Plan:
+    def plan(self, goal: Any, context: Any = None) -> Plan:
+        if isinstance(goal, str):
+            goal = self.goal(goal, context=context)
+        elif isinstance(goal, dict):
+            intent = goal.get("intent") or goal.get("goal") or goal.get("text", "")
+            goal = self.goal(intent, context=context)
         agent_name = self._resolve_agent_name(goal.intent)
         # Multi-step only for registered built-in agents
         if agent_name in ("cto", "cmo", "coo", "cfo", "cso", "planner"):
