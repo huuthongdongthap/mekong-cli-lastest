@@ -1,8 +1,8 @@
 # Autonomy Gaps
 
-> Re-verified: 2026-09-13 · HEAD: 0f620840f
+> Re-verified: 2026-09-13 · HEAD: 63af38300
 
-All 11 gaps below were re-assessed against the tree at HEAD `0f620840f`.
+All 11 gaps below were re-assessed against the tree at HEAD `63af38300`.
 **All 11 remain CLOSED.** Production wiring defects previously weakening Gaps #4, #5, #6, #10, and #11 in `src/commands/run.py` have been resolved via real telemetry sinks, active governance gates, cost ceiling enforcement, and mission tracing (PR #4, 20/20 tests in `tests/test_run_command_wiring.py`).
 
 **Test evidence:** 60/60 targeted gap-closure and wiring tests pass at HEAD

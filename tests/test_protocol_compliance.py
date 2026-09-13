@@ -142,3 +142,53 @@ class TestAdapterCompliance:
 
         adapter = JsonlMemoryAdapter()
         assert isinstance(adapter, protocols.MemoryStore)
+
+    def test_memory_store_conformant_adapter_compliant(self, restore_real_memory_store):
+        from src.core.adapters.memory_store_conformant import MemoryStoreConformant
+
+        adapter = MemoryStoreConformant()
+        assert isinstance(adapter, protocols.MemoryStore)
+
+    def test_nowpayments_adapter_alias_compliant(self):
+        from src.core.adapters.payment.nowpayments import NowPaymentsProvider
+
+        provider = NowPaymentsProvider()
+        assert isinstance(provider, protocols.PaymentProvider)
+
+    def test_mock_payment_provider_compliant(self):
+        from src.core.adapters.payment_mock import MockPaymentProvider
+
+        provider = MockPaymentProvider()
+        assert isinstance(provider, protocols.PaymentProvider)
+
+    def test_x402_settlement_provider_compliant(self):
+        from unittest.mock import MagicMock
+        from src.core.adapters.payment.x402 import X402SettlementProvider
+
+        gov = MagicMock()
+        gov.request_approval.return_value = True
+        provider = X402SettlementProvider(
+            endpoint="https://pay.example.invalid/settle",
+            asset="USDC",
+            network="base",
+            recipient="0xrecipient",
+            governance=gov,
+            transport=lambda ep, h, b: {"success": True},
+        )
+        assert isinstance(provider, protocols.PaymentProvider)
+
+    def test_mpp_settlement_provider_compliant(self):
+        from unittest.mock import MagicMock
+        from src.core.adapters.payment.mpp import MPPSettlementProvider
+
+        gov = MagicMock()
+        gov.request_approval.return_value = True
+        provider = MPPSettlementProvider(
+            endpoint="https://pay.example.invalid/settle",
+            asset="USDC",
+            network="base",
+            recipient="0xrecipient",
+            governance=gov,
+            transport=lambda ep, h, b: {"success": True},
+        )
+        assert isinstance(provider, protocols.PaymentProvider)

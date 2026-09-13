@@ -1,8 +1,8 @@
 # Architecture Assessment
 
-Refreshed: 2026-09-13 · HEAD: 0f620840f
+Refreshed: 2026-09-13 · HEAD: 63af38300
 Wave 3 dead-code deletions (items 10–18) marked DONE: 2026-08-25 · commits `a7d364209`, `3408f8905`, `1446242e6`, `e8dc78908`
-Super Command #8, DUPLICATION_MAP Items 1–9, and PRs #14, #16, #17, #18, #19, #20, #21, #22, #24, #26, #27, #28, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39 merged into `origin/main`.
+Super Command #8, DUPLICATION_MAP Items 1–9, and PRs #14, #16, #17, #18, #19, #20, #21, #22, #24, #26, #27, #28, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40 merged into `origin/main`.
 All 7 Roadmap Phases (100%) and all 10 Architecture Gaps CLOSED.
 Autonomy Gap #2 (native token streaming across transport, client, and router adapter) closed in PR #30 (`a681afce6`).
 Autonomy Gap #3 (MemorySeparation protocol, TTL pruning, and ScopedMemoryStore session flushing) closed in PR #33 (`e3859ec78`).
@@ -12,9 +12,10 @@ PR #36 (`c2cfb1c41`): Implement `context()` method on `MekongCoreRuntimeImpl` an
 PR #37 (`d588722ca`): Synchronize architecture documentation and scorecard to HEAD c2cfb1c41 with PR #36 closure.
 PR #38 (`c3cabfd68`): Expand protocol compliance suite to 20/20 tests covering all 10 core protocols and 8 adapters, sync arch docs to d588722ca.
 PR #39 (`0f620840f`): Synchronize architecture documentation and scorecard to HEAD c3cabfd68 with PR #38 closure.
+PR #40 (`63af38300`): Synchronize v6.9.0 release changelog and architecture documentation to HEAD 0f620840f with all 23 CI gates green.
 Phase 5 (AI Video - Sophia) and Phase 6 (Cloud Deploy) fully closed at 100% completion in PR #26 and PR #28 (`3781a63b4`).
 Billing consolidation conformance suite created: `tests/test_billing_consolidation.py` (11/11 passing), DRIFT_REPORT gap closed.
-Core protocol compliance suite expanded: `tests/test_protocol_compliance.py` (20/20 passing) covering all 10 protocols and compliant adapters.
+Core protocol compliance suite expanded: `tests/test_protocol_compliance.py` (25/25 passing) covering all 10 protocols and compliant adapters (canonical memory, JSONL adapter, conformant adapter, payment providers, mock payment, X402 and MPP settlement).
 
 ## Scores
 
