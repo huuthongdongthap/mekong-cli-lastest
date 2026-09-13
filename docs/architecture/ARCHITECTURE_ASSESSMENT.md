@@ -1,12 +1,14 @@
 # Architecture Assessment
 
-Refreshed: 2026-09-12 · HEAD: 5afbaa49c
+Refreshed: 2026-09-13 · HEAD: c2cfb1c41
 Wave 3 dead-code deletions (items 10–18) marked DONE: 2026-08-25 · commits `a7d364209`, `3408f8905`, `1446242e6`, `e8dc78908`
-Super Command #8, DUPLICATION_MAP Items 1–9, and PRs #14, #16, #17, #18, #19, #20, #21, #22, #24, #26, #27, #28, #30, #31, #32, #33, #34 merged into `origin/main`.
+Super Command #8, DUPLICATION_MAP Items 1–9, and PRs #14, #16, #17, #18, #19, #20, #21, #22, #24, #26, #27, #28, #30, #31, #32, #33, #34, #35, #36 merged into `origin/main`.
 All 7 Roadmap Phases (100%) and all 10 Architecture Gaps CLOSED.
 Autonomy Gap #2 (native token streaming across transport, client, and router adapter) closed in PR #30 (`a681afce6`).
 Autonomy Gap #3 (MemorySeparation protocol, TTL pruning, and ScopedMemoryStore session flushing) closed in PR #33 (`e3859ec78`).
 PR #34 (`5afbaa49c`): Company init CLI wizard non-zero exit on abort, 12-file bundle verification, and core DNA manifest sync.
+PR #35 (`ad74bbcb9`): Architecture documentation and scorecard synchronization to HEAD 5afbaa49c.
+PR #36 (`c2cfb1c41`): Implement `context()` method on `MekongCoreRuntimeImpl` and dictionary protocol interoperability on `Context` dataclass satisfying `protocols.MekongCoreRuntime`.
 Phase 5 (AI Video - Sophia) and Phase 6 (Cloud Deploy) fully closed at 100% completion in PR #26 and PR #28 (`3781a63b4`).
 Billing consolidation conformance suite created: `tests/test_billing_consolidation.py` (11/11 passing), DRIFT_REPORT gap closed.
 
