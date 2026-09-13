@@ -5,15 +5,20 @@
 **Core Protocol Conformance Expansion & Architecture Documentation Alignment (100% Complete):**
 
 - **Core Protocol Conformance Suite Expansion (`tests/test_protocol_compliance.py`):**
-  - Expanded test suite from 12 to 20 unit tests covering all 10 core `@runtime_checkable` protocols in `src/core/protocols.py` (`MekongCoreRuntime`, `LLMRouter`, `ToolRegistry`, `BillingMeter`, `MemoryStore`, `MemorySeparation`, `ObservabilitySink`, `VerificationEngine`, `GoalEngine`, `PaymentProvider`) and `CapabilityBus`.
+  - Expanded test suite from 12 to 25 unit tests covering all 10 core `@runtime_checkable` protocols in `src/core/protocols.py` (`MekongCoreRuntime`, `LLMRouter`, `ToolRegistry`, `BillingMeter`, `MemoryStore`, `MemorySeparation`, `ObservabilitySink`, `VerificationEngine`, `GoalEngine`, `PaymentProvider`) and `CapabilityBus`.
   - Added method presence assertions for `BillingMeter.settle_payment()`, `ToolRegistry.list_mcp_tools()`, `GoalEngine.adapt()`, `PaymentProvider.quote()`, `PaymentProvider.verify()`, `PaymentProvider.request_payment()`, and `MemorySeparation.flush_session()` / `prune_expired()`.
-  - Added structural runtime conformance assertions (`isinstance(..., Protocol)`) for 8 concrete adapters:
+  - Added structural runtime conformance assertions (`isinstance(..., Protocol)`) for 13 concrete adapters:
     - `BillingAdapter` (`BillingMeter` + `PaymentProvider`)
-    - `NowPaymentsProvider` (`PaymentProvider`)
+    - `NowPaymentsProvider` (`PaymentProvider` in `src.raas.nowpayments_provider`)
+    - `NowPaymentsProvider` (`PaymentProvider` alias in `src.core.adapters.payment.nowpayments`)
+    - `MockPaymentProvider` (`PaymentProvider` in `src.core.adapters.payment_mock`)
+    - `X402SettlementProvider` (`PaymentProvider` in `src.core.adapters.payment.x402`) with mock governance and transport injection
+    - `MPPSettlementProvider` (`PaymentProvider` in `src.core.adapters.payment.mpp`) with mock governance and transport injection
     - `ToolRegistry` (`ToolRegistry`)
     - `MemorySeparation` (`MemorySeparation`)
     - `MemoryStore` (`MemoryStore` canonical with `restore_real_memory_store` fixture)
     - `JsonlMemoryAdapter` (`MemoryStore`)
+    - `MemoryStoreConformant` (`MemoryStore` in `src.core.adapters.memory_store_conformant`)
     - `MekongCoreRuntimeImpl` (`MekongCoreRuntime`)
     - `InMemoryCapabilityBus` (`CapabilityBus`)
     - `RecipeVerifier` (`VerificationEngine`)
@@ -21,10 +26,11 @@
     - `TelemetrySinkAdapter` (`ObservabilitySink`)
     - `LLMRouterAdapter` (`LLMRouter`)
     - `GoalEngineAdapter` (`GoalEngine`)
-  - 20/20 tests passing in `tests/test_protocol_compliance.py`.
+  - 25/25 tests passing in `tests/test_protocol_compliance.py`.
 
 - **Documentation & Invariants Synchronization:**
-  - Synchronized `docs/architecture/CURRENT_ARCHITECTURE.md`, `docs/architecture/AUTONOMY_GAPS.md`, and `docs/architecture/ARCHITECTURE_ASSESSMENT.md` to HEAD `0f620840f`.
+  - Synchronized `docs/architecture/CURRENT_ARCHITECTURE.md`, `docs/architecture/AUTONOMY_GAPS.md`, and `docs/architecture/ARCHITECTURE_ASSESSMENT.md` to HEAD `fb369617b`.
+  - Recorded PR #41 in the merged PR ledger in `docs/architecture/ARCHITECTURE_ASSESSMENT.md`.
   - Re-verified all 11 Autonomy Gaps remain 100% closed with live test evidence.
   - Confirmed repository invariants: 39 Typer CLI command groups, 0 ruff lint errors, and 100% passing test suites across all core and Vietnam modules.
 
