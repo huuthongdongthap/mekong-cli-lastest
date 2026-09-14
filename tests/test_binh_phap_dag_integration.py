@@ -272,7 +272,7 @@ class TestFullDagEndToEnd:
             human_only=frozenset(),
         )
 
-    def test_all_nodes_executed(self) -> None:
+    def test_all_nodes_executed(self, tmp_path: Path) -> None:
         dag = self._three_node_dag()
         calls: list[int] = []
 
@@ -280,13 +280,13 @@ class TestFullDagEndToEnd:
             calls.append(ch)
             return ExecutionResult(chapter=ch, status="success")
 
-        ex = Executor(dag=dag)
+        ex = Executor(dag=dag, state_path=tmp_path / "state.json")
         with patch.object(Executor, "_execute_chapter", fake):
             ex.run()
         assert set(calls) == {1, 2, 3}
         assert len(ex.state.completed) == 3
 
-    def test_execution_order_matches_dependencies(self) -> None:
+    def test_execution_order_matches_dependencies(self, tmp_path: Path) -> None:
         dag = self._three_node_dag()
         calls: list[int] = []
 
@@ -294,14 +294,14 @@ class TestFullDagEndToEnd:
             calls.append(ch)
             return ExecutionResult(chapter=ch, status="success")
 
-        ex = Executor(dag=dag)
+        ex = Executor(dag=dag, state_path=tmp_path / "state.json")
         with patch.object(Executor, "_execute_chapter", fake):
             ex.run()
         assert calls.index(1) < calls.index(2) < calls.index(3), (
             f"expected 1->2->3 got {calls}"
         )
 
-    def test_node_1_is_first(self) -> None:
+    def test_node_1_is_first(self, tmp_path: Path) -> None:
         dag = self._three_node_dag()
         calls: list[int] = []
 
@@ -309,7 +309,7 @@ class TestFullDagEndToEnd:
             calls.append(ch)
             return ExecutionResult(chapter=ch, status="success")
 
-        ex = Executor(dag=dag)
+        ex = Executor(dag=dag, state_path=tmp_path / "state.json")
         with patch.object(Executor, "_execute_chapter", fake):
             ex.run()
         assert calls[0] == 1
@@ -367,6 +367,7 @@ class TestRecoveryFlowAtNode2:
         calls: list[int] = []
 
         def fake(self2: Any, ch: int) -> ExecutionResult:
+            calls.append(ch)
             if ch == 1:
                 return ExecutionResult(chapter=ch, status="success")
             if ch != 2:
@@ -403,6 +404,7 @@ class TestRecoveryFlowAtNode2:
         calls: list[int] = []
 
         def fake(self2: Any, ch: int) -> ExecutionResult:
+            calls.append(ch)
             if ch == 8:
                 return ExecutionResult(chapter=8, status="failed", error="timeout")
             return ExecutionResult(chapter=ch, status="success")
@@ -424,6 +426,7 @@ class TestRecoveryFlowAtNode2:
         calls: list[int] = []
 
         def fake(self2: Any, ch: int) -> ExecutionResult:
+            calls.append(ch)
             if ch == 2:
                 return ExecutionResult(chapter=ch, status="failed", error="auth token expired")
             return ExecutionResult(chapter=ch, status="success")
@@ -439,10 +442,11 @@ class TestRecoveryFlowAtNode2:
     def test_abort_stops_pipeline(self, simple_dag: DagDefinition, tmp_path: Path) -> None:
         """abort -> node 3 never runs."""
         sp = tmp_path / "abort_flow.json"
-        _install_ch2_strategy("fail", "abort", max_attempts=1)
+        _install_ch2_strategy("fail|boom", "abort", max_attempts=1)
         calls: list[int] = []
 
         def fake(self2: Any, ch: int) -> ExecutionResult:
+            calls.append(ch)
             if ch == 2:
                 return ExecutionResult(chapter=ch, status="failed", error="boom")
             return ExecutionResult(chapter=ch, status="success")

@@ -14,7 +14,7 @@ import logging
 import threading
 import uuid
 from datetime import datetime, timezone
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Literal, cast
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -84,7 +84,7 @@ async def create_mission_endpoint(
             goal=request.goal.strip(),
             tenant_id=request.tenant_id.strip(),
             webhook_url=request.webhook_url.strip() if request.webhook_url else None,
-            priority=request.priority,
+            priority=cast(Literal["low", "normal", "high"], request.priority),
             metadata=request.metadata or {},
         )
 

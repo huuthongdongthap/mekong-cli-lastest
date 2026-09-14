@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A11y Failure — no focus-visible, unlabeled svg, autoplay video</title>
+<style>
+  html, body { margin: 0; }
+  body {
+    font-family: Inter, sans-serif;
+    background: #fff;
+    color: #000;
+  }
+  .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .hero h1 { font-size: clamp(3rem, 8vw, 7rem); line-height: 0.94; text-transform: uppercase; }
+  .cta { padding: 12px 24px; border-radius: 8px; background: #eee; color: #999; }
+  .icon { width: 32px; height: 32px; animation: spin 2s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <section class="hero">
+    <h1>Unleash Seamless Workflows</h1>
+    <button class="cta">Get started</button>
+    <svg class="icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#8b5cf6"/></svg>
+    <video autoplay muted></video>
+  </section>
+</body>
+</html>

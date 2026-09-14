@@ -24,7 +24,7 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from src.core.llm_client import get_client
+from src.providers.llm.client import get_client
 
 console = Console()
 app = typer.Typer(help="OCOP: AI-powered agricultural export tools")

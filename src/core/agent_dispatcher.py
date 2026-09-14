@@ -17,26 +17,21 @@ import os
 from pathlib import Path
 from typing import Any
 
+from .registry.loader import load_prompts
+
 logger = logging.getLogger(__name__)
 
 AGENTS_DIR = Path(__file__).parent.parent.parent / ".mekong" / "agents"
 HUBS_DIR = Path(__file__).parent.parent.parent / "packages" / "agents" / "hubs"
 
-# Default agent system prompts (used when no .md file exists)
-DEFAULT_PROMPTS: dict[str, str] = {
-    "cto": "You are a senior CTO. Write clean, production-ready code with best practices.",
-    "cmo": "You are a CMO. Create compelling marketing strategies and content.",
-    "coo": "You are a COO. Monitor systems, execute ops tasks, manage infrastructure.",
-    "cfo": "You are a CFO. Focus on financial analysis, revenue optimization, and cost control.",
-    "cs": "You are a support specialist. Resolve issues efficiently with empathy.",
-    "sales": "You are a sales specialist. Write persuasive copy and conversion flows.",
-    "editor": "You are a technical editor. Review and improve content for clarity and accuracy.",
-    "data": "You are a data analyst. Provide clear, actionable insights from data.",
-    "analyst": "You are a business analyst. Analyze requirements and provide structured recommendations.",
-    "devops": "You are a DevOps engineer. Manage infrastructure, CI/CD, and deployment pipelines.",
-    "pm": "You are a Product Manager. Define requirements and prioritize features based on user value.",
-    "support": "You are a customer support specialist. Help users resolve issues quickly and accurately.",
-}
+# Default agent system prompts (used when no .md file exists).
+#
+# Single source of truth is ``src/core/registry/agents.yaml``. The variable
+# name and shape (``dict[str, str]``) are preserved verbatim so every caller
+# — including ``load_agent_prompt``'s fallback chain — is unaffected. cso and
+# planner intentionally have no prompt here (they are description-only in the
+# YAML); the runtime falls back to ``f"You are the {name} agent."``.
+DEFAULT_PROMPTS: dict[str, str] = load_prompts()
 
 # Agent role → hub file mapping
 ROLE_HUB_MAP: dict[str, str] = {
@@ -178,10 +173,10 @@ def _memory_context_for(
         (context_block, found) — context_block is empty string if no match.
     """
     try:
-        from src.core.memory_store import MemoryStore, DEFAULT_MEMORY_PATH
+        from src.core.adapters.jsonl_memory_adapter import JsonlMemoryAdapter
 
-        store = MemoryStore(path=DEFAULT_MEMORY_PATH)
-        hits = store.search(query=goal, limit=limit)
+        adapter = JsonlMemoryAdapter()
+        hits = adapter.search(query=goal, limit=limit)
     except Exception as exc:  # pragma: no cover — defensive, memory is optional
         logger.debug("Memory search skipped: %s", exc)
         return "", False
@@ -193,9 +188,13 @@ def _memory_context_for(
         f"[memory: Step 8 Phase B — {len(hits)} similar past action(s) retrieved]"
     ]
     for h in hits:
+        meta = h.metadata if isinstance(h.metadata, dict) else {}
+        agent = meta.get("agent") or "-"
+        tags = meta.get("tags") or []
+        outcome = h.data.decode("utf-8", errors="replace") if h.data else "-"
         lines.append(
-            f"- [{h.agent} / {h.outcome}] {h.action}"
-            + (f" | tags={','.join(h.tags)}" if h.tags else "")
+            f"- [{agent} / {outcome}] {h.key}"
+            + (f" | tags={','.join(tags)}" if tags else "")
         )
     lines.append("[end memory]")
     return "\n".join(lines), True
@@ -255,13 +254,6 @@ def build_message_chain(
     """
     system_prompt = load_agent_prompt(agent_role)
     messages: list[dict] = [{"role": "user", "content": goal}]
-
-    # Determine available tools for this agent
-    available_tools: list[str] = []
-    if agent is not None and tool_registry is not None:
-        available_tools = [
-            t.name for t in tool_registry.list_for_agent(agent)
-        ]
 
     # Determine available tools for this agent
     available_tools: list[str] = []

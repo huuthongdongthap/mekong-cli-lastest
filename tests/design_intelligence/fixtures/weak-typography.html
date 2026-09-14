@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Weak Typography — four families, italic headings</title>
+<style>
+  :root {
+    --font-display: 'Poppins', sans-serif;
+    --font-body: 'Open Sans', sans-serif;
+  }
+  html, body { margin: 0; }
+  body {
+    font-family: 'Open Sans', 'Lato', 'Inter', sans-serif;
+    background: #fff;
+    color: #000;
+  }
+  .hero h1 {
+    font-family: 'Poppins', sans-serif;
+    font-style: italic;
+    font-size: clamp(3rem, 8vw, 7rem);
+    line-height: 0.94;
+    text-transform: uppercase;
+  }
+  .prose { max-width: 120ch; }
+  .lede { font-family: 'Roboto', sans-serif; }
+</style>
+</head>
+<body>
+  <section class="hero">
+    <h1>Unleash Seamless Workflows</h1>
+    <p class="lede">Jane Doe, Acme Nexus — the platform that transforms everything.</p>
+  </section>
+  <article class="prose">
+    <p>Prose wider than 75ch reads badly on desktop and worse on mobile.</p>
+  </article>
+</body>
+</html>

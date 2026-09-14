@@ -23,11 +23,18 @@ def start() -> None:
         console.print("[yellow]Daemon already running[/yellow]")
         return
     console.print("[dim]Starting Tom Hum daemon...[/dim]")
-    ok = bridge.start()
+    try:
+        ok = bridge.start()
+    except FileNotFoundError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1)
+    except RuntimeError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1)
     if ok:
         console.print("[green]Daemon started successfully[/green]")
     else:
-        console.print("[red]Failed to start daemon (task-watcher.js not found or node error)[/red]")
+        console.print("[red]AGI daemon exited immediately after startup[/red]")
         raise typer.Exit(code=1)
 
 

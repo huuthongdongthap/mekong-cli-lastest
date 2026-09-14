@@ -84,6 +84,13 @@ def resolve_llm_provider(escalation_level: str) -> dict[str, str]:
     return _resolve(slug, model)
 
 
+ESCALATION_PROVIDERS: dict[str, dict[str, str]] = {
+    "local_mlx": resolve_llm_provider("local_mlx"),
+    "cloud_sonnet": resolve_llm_provider("cloud_sonnet"),
+    "cloud_opus": resolve_llm_provider("cloud_opus"),
+}
+
+
 def create_provider_for_level(escalation_level: str) -> Any:
     """Create LLMProvider for the given level."""
     try:

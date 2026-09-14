@@ -385,6 +385,20 @@ class MekongMcpServer:
         def cc_ssj(action: str = "all") -> str:
             return self._handle_ssj(action)
 
+        # ── Command Fabric ────────────────────────────────────────────
+
+        @app.tool(
+            description="List universal command fabric manifests for IDEs, agents, and MCP"
+        )
+        def cc_command_fabric_list(scope: str = "project", adapter: str = "mcp") -> str:
+            return self._handle_command_fabric_list(scope=scope, adapter=adapter)
+
+        @app.tool(
+            description="Execute or inspect a command through universal command fabric"
+        )
+        def cc_command_fabric_run(command: str, args: str = "", scope: str = "project") -> str:
+            return self._handle_command_fabric_run(command=command, args=args, scope=scope)
+
     # ==============================================================
     # Handler implementations
     # ==============================================================
@@ -651,7 +665,7 @@ class MekongMcpServer:
     def _handle_brainstorm(self, topic: str) -> str:
         """Multi-persona brainstorm using the LLM client."""
         try:
-            from src.core.llm_client import get_client as get_llm_client
+            from src.providers.llm.client import get_client as get_llm_client
 
             client = get_llm_client()
             prompt = (
@@ -717,7 +731,7 @@ class MekongMcpServer:
     def _handle_trading_analyze(self, symbol: str) -> str:
         """Analyze a trading symbol using LLM."""
         try:
-            from src.core.llm_client import get_client as get_llm_client
+            from src.providers.llm.client import get_client as get_llm_client
             client = get_llm_client()
             prompt = (
                 f"Provide a multi-perspective analysis of {symbol} as a trading asset. "
@@ -746,7 +760,7 @@ class MekongMcpServer:
     def _handle_trading_price(self, symbol: str) -> str:
         """Get AI-informed analysis for a trading symbol's price context."""
         try:
-            from src.core.llm_client import get_client as get_llm_client
+            from src.providers.llm.client import get_client as get_llm_client
             client = get_llm_client()
             prompt = (
                 f"Provide recent price context and market conditions for {symbol}. "
@@ -897,10 +911,43 @@ class MekongMcpServer:
             )
         return handler()
 
+    # ── Command Fabric ────────────────────────────────────────────────
+
+    def _handle_command_fabric_list(self, scope: str = "project", adapter: str = "mcp") -> str:
+        """List command fabric adapter manifest."""
+        try:
+            from src.command_fabric.runtime import command_fabric_manifest
+            payload = command_fabric_manifest(adapter=adapter, scope=scope)  # type: ignore[arg-type]
+            return _ok(payload)
+        except Exception as exc:
+            logger.warning("Command fabric list failed: %s", exc)
+            return _err(f"Command fabric list error: {exc}")
+
+    def _handle_command_fabric_run(
+        self, command: str, args: str = "", scope: str = "project"
+    ) -> str:
+        """Run or inspect a command fabric definition."""
+        if scope not in ("project", "global"):
+            return _err(f"Invalid scope '{scope}'. Must be 'project' or 'global'.")
+        clean_cmd = command.strip()
+        if not clean_cmd:
+            return _err("Command cannot be empty.")
+        if any(ch in clean_cmd for ch in ("/", "\\", "\0", ";", "&", "|", "`", "$", "(", ")", "<", ">", "\n", "\r", " ")):
+            return _err(f"Invalid command name '{clean_cmd}'. Shell metacharacters and path separators are forbidden.")
+        if any(ch in args for ch in ("\0", "\n", "\r", ";", "&", "|", "`", "$(")):
+            return _err("Command arguments contain forbidden control or shell metacharacters.")
+        try:
+            from src.command_fabric.runtime import invoke_command_fabric
+            result = invoke_command_fabric(command=clean_cmd, args=args, scope=scope)  # type: ignore[arg-type]
+            return _ok(result.to_dict())
+        except Exception as exc:
+            logger.warning("Command fabric run failed: %s", exc)
+            return _err(f"Command fabric run error: {exc}")
+
     def _check_llm_available(self) -> bool:
         """Check if LLM client is available and connected."""
         try:
-            from src.core.llm_client import get_client
+            from src.providers.llm.client import get_client
             return get_client().is_available
         except Exception:
             return False
@@ -910,7 +957,7 @@ class MekongMcpServer:
         info: dict[str, Any] = {"python": __import__("sys").version}
 
         try:
-            from src.core.llm_client import get_client
+            from src.providers.llm.client import get_client
             client = get_client()
             info["llm_available"] = client.is_available
             info["llm_providers"] = [

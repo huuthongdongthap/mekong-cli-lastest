@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: ecommerce
+product_type: ecommerce
+label: E-commerce
+summary: A conversion funnel. Search, filter, cart, and checkout are the product.
+information_density: comfortable
+navigation_patterns:
+  - search box with autocomplete
+  - category rail, collapsible on mobile
+  - breadcrumb per category
+hierarchy:
+  - product image is the thumbnail, not an afterthought
+  - price and name on one line
+  - add-to-cart is the only button on the card
+interaction_expectations:
+  - cart updates without a page reload
+  - filters are a drawer on mobile, not a page
+  - no modal checkout — it is a page
+common_failure_modes:
+  - 20+ products with no filter
+  - cart hidden behind an icon with no count
+  - checkout with 8+ fields
+accessibility_concerns:
+  - price conveyed by text, not strikethrough alone
+  - out-of-stock announced to screen readers
+responsive_requirements:
+  - grid collapses to single column on <600px
+  - filter drawer becomes bottom sheet
+appropriate_macrostructures:
+  - card-grid
+  - split-detail
+  - sidebar-workbench

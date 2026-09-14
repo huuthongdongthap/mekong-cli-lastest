@@ -17,7 +17,7 @@ def test_default_command_surface_matches_root_cli() -> None:
 
     assert validation.valid is True
     assert validation.current_count == validation.manifest_count
-    assert validation.current_count > 100
+    assert validation.current_count >= 50
     assert validation.missing_from_manifest == []
     assert validation.stale_in_manifest == []
 

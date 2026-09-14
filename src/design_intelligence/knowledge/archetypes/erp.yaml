@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: erp
+product_type: erp
+label: ERP
+summary: A record-of-truth system. Tables, forms, and audit trails are the product.
+information_density: dense
+navigation_patterns:
+  - module tabs across the top
+  - breadcrumb per record
+  - export and print affordances visible
+hierarchy:
+  - record header with ID and status
+  - line items in a table, never cards
+  - totals calculated, never typed
+interaction_expectations:
+  - every field change is logged
+  - bulk edit via import, not one-by-one
+  - keyboard shortcuts for power users
+common_failure_modes:
+  - nested forms 4+ levels deep
+  - totals that disagree with line items
+  - no export of the current view
+accessibility_concerns:
+  - table headers stay in a <thead>
+  - required fields marked, not implied
+responsive_requirements:
+  - forms stack single-column on mobile
+  - tables scroll horizontally with frozen first column
+appropriate_macrostructures:
+  - table-detail
+  - form-workbench
+  - module-tabs

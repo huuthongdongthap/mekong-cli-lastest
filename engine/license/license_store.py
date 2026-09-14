@@ -32,6 +32,30 @@ def _default_path() -> Path:
     return Path.home() / ".mekong" / "licenses.json"
 
 
+class ActiveLicense:
+    """Represents an active license record with attribute and key-based access."""
+
+    def __init__(self, key: str, record: dict) -> None:
+        self.license_key = key
+        self.tier = record.get("tier", "free")
+        self.status = record.get("status", "active")
+        self.customer_id = record.get("customer_id")
+        self.customer_email = record.get("customer_email")
+        self.subscription_id = record.get("subscription_id")
+        self.product_name = record.get("product_name")
+        self.created_at = record.get("created_at")
+        self._raw = record
+
+    def __getitem__(self, item: str):
+        return self._raw[item]
+
+    def get(self, item: str, default=None):
+        return self._raw.get(item, default)
+
+    def __repr__(self) -> str:
+        return f"<ActiveLicense {self.license_key} tier={self.tier} customer_id={self.customer_id}>"
+
+
 class LicenseStore:
     """Read-only-ish accessor for the licenses.json store."""
 
@@ -66,6 +90,44 @@ class LicenseStore:
     def tier(self, license_key: str) -> Optional[str]:
         record = self.get(license_key)
         return record.get("tier") if record else None
+
+    def get_active_license(self, user_id: Optional[str] = None) -> Optional[ActiveLicense]:
+        """Look up an active license for a given user_id/license_key/email/subscription_id.
+
+        Matches against:
+          1. Direct match on license_key (dict key)
+          2. Match on customer_id
+          3. Match on customer_email
+          4. Match on subscription_id
+
+        Returns ActiveLicense only if status == 'active'. If user_id is None,
+        checks MEKONG_LICENSE_KEY or MEKONG_USER_ID environment variables, or returns None.
+        """
+        data = self._load()
+        if not data:
+            return None
+
+        lookup_id = user_id or os.environ.get("MEKONG_LICENSE_KEY") or os.environ.get("MEKONG_USER_ID")
+        if not lookup_id:
+            return None
+
+        # 1. Direct match on license_key
+        if lookup_id in data:
+            rec = data[lookup_id]
+            if rec.get("status") == "active":
+                return ActiveLicense(lookup_id, rec)
+
+        # 2. Match on customer_id, customer_email, or subscription_id
+        for key, rec in data.items():
+            if rec.get("status") == "active":
+                if lookup_id in (
+                    rec.get("customer_id"),
+                    rec.get("customer_email"),
+                    rec.get("subscription_id"),
+                ):
+                    return ActiveLicense(key, rec)
+
+        return None
 
 
 _default_store: Optional[LicenseStore] = None

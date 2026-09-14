@@ -148,7 +148,7 @@ class RecipeExecutor:
 
     def _execute_llm_step(self, step: RecipeStep) -> ExecutionResult:
         """Execute LLM generation step via Antigravity Proxy or OpenAI."""
-        from src.core.llm_client import get_client
+        from src.providers.llm.client import get_client
 
         self.console.print(
             f"[cyan][LLM] Generating:[/cyan] {step.description}"
@@ -557,7 +557,13 @@ class RecipeExecutor:
                 if len(parts) > 1:
                     command = parts[-1].strip()
 
-        command = command.strip("`\'\" ").strip()
+        command = command.strip()
+        if command.startswith("`") and command.endswith("`") and len(command) >= 2:
+            command = command[1:-1].strip()
+        elif (command.startswith('"') and command.endswith('"')) or (
+            command.startswith("'") and command.endswith("'")
+        ):
+            command = command[1:-1].strip()
 
         if not command:
             self.console.print("[yellow]Skipping empty step[/yellow]")

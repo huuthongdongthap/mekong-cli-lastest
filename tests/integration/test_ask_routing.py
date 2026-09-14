@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import pytest
 from typer.testing import CliRunner
-from src.commands.core_commands import app
+from src.cli.app_setup import build_app
+
+app = build_app()
 
 
 runner = CliRunner()

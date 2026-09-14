@@ -23,6 +23,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional, Union
 
 
 # =================================================================--
@@ -82,6 +83,26 @@ class TierKey(Enum):
             # enterprise (true enterprise)
             "enterprise_plus": "enterprise",
         }
+
+    @classmethod
+    def _missing_(cls, value: object):
+        """Resolve case-insensitive names and legacy aliases on instantiation."""
+        if isinstance(value, str):
+            val_lower = value.lower()
+            for member in cls:
+                if member.value == val_lower:
+                    return member
+            canonical = cls.aliases().get(value) or cls.aliases().get(val_lower)
+            if canonical:
+                for member in cls:
+                    if member.value == canonical:
+                        return member
+        return None
+
+
+# Tier is the canonical alias for TierKey, providing seamless backward-compatibility
+# for consumers expecting Tier enum (such as engine.license.license_enforcer).
+Tier = TierKey
 
 
 # ===================================================================
@@ -387,14 +408,153 @@ def trial_config(key_or_alias: str) -> tuple[int, int] | None:
 
 
 # ===================================================================
+# Rate Limiting Configuration (migrated from engine.billing.tier_config)
+# ===================================================================
+
+@dataclass
+class RateLimitConfig:
+    """Rate limit configuration for a single endpoint."""
+    requests_per_minute: int
+    burst_size: Optional[int] = None  # Token bucket burst size (default = rpm)
+    window_seconds: Optional[int] = None  # Time window in seconds (default: 60)
+
+    def __post_init__(self) -> None:
+        if self.burst_size is None:
+            self.burst_size = self.requests_per_minute
+        if self.window_seconds is None:
+            self.window_seconds = 60
+
+
+@dataclass
+class TierRateLimitConfig:
+    """Complete rate limit configuration for a tier."""
+    tier: TierKey
+    auth_login: RateLimitConfig
+    auth_callback: RateLimitConfig
+    auth_refresh: RateLimitConfig
+    api_default: RateLimitConfig
+
+
+# Default tier configurations supporting all canonical tiers
+DEFAULT_TIER_CONFIGS: dict[TierKey, TierRateLimitConfig] = {
+    TierKey.FREE: TierRateLimitConfig(
+        tier=TierKey.FREE,
+        auth_login=RateLimitConfig(requests_per_minute=5, burst_size=5),
+        auth_callback=RateLimitConfig(requests_per_minute=10, burst_size=10),
+        auth_refresh=RateLimitConfig(requests_per_minute=10, burst_size=10),
+        api_default=RateLimitConfig(requests_per_minute=20, burst_size=30),
+    ),
+    TierKey.TRIAL: TierRateLimitConfig(
+        tier=TierKey.TRIAL,
+        auth_login=RateLimitConfig(requests_per_minute=10, burst_size=10),
+        auth_callback=RateLimitConfig(requests_per_minute=20, burst_size=20),
+        auth_refresh=RateLimitConfig(requests_per_minute=20, burst_size=20),
+        api_default=RateLimitConfig(requests_per_minute=40, burst_size=60),
+    ),
+    TierKey.STARTER: TierRateLimitConfig(
+        tier=TierKey.STARTER,
+        auth_login=RateLimitConfig(requests_per_minute=15, burst_size=15),
+        auth_callback=RateLimitConfig(requests_per_minute=30, burst_size=30),
+        auth_refresh=RateLimitConfig(requests_per_minute=30, burst_size=30),
+        api_default=RateLimitConfig(requests_per_minute=50, burst_size=75),
+    ),
+    TierKey.GROWTH: TierRateLimitConfig(
+        tier=TierKey.GROWTH,
+        auth_login=RateLimitConfig(requests_per_minute=20, burst_size=20),
+        auth_callback=RateLimitConfig(requests_per_minute=45, burst_size=45),
+        auth_refresh=RateLimitConfig(requests_per_minute=45, burst_size=45),
+        api_default=RateLimitConfig(requests_per_minute=80, burst_size=120),
+    ),
+    TierKey.PRO: TierRateLimitConfig(
+        tier=TierKey.PRO,
+        auth_login=RateLimitConfig(requests_per_minute=30, burst_size=30),
+        auth_callback=RateLimitConfig(requests_per_minute=60, burst_size=60),
+        auth_refresh=RateLimitConfig(requests_per_minute=60, burst_size=60),
+        api_default=RateLimitConfig(requests_per_minute=100, burst_size=150),
+    ),
+    TierKey.ENTERPRISE: TierRateLimitConfig(
+        tier=TierKey.ENTERPRISE,
+        auth_login=RateLimitConfig(requests_per_minute=100, burst_size=100),
+        auth_callback=RateLimitConfig(requests_per_minute=200, burst_size=200),
+        auth_refresh=RateLimitConfig(requests_per_minute=200, burst_size=200),
+        api_default=RateLimitConfig(requests_per_minute=500, burst_size=750),
+    ),
+}
+
+
+def get_tier_config(tier: Union[str, TierKey]) -> TierRateLimitConfig:
+    """
+    Get rate limit configuration for a tier.
+
+    Args:
+        tier: Tier name or Tier/TierKey enum value
+
+    Returns:
+        TierRateLimitConfig for the specified tier
+
+    Raises:
+        ValueError: If tier is not recognized
+    """
+    if isinstance(tier, str):
+        try:
+            tier_enum = TierKey(tier)
+        except ValueError:
+            raise ValueError(f"Invalid tier: {tier}. Must be one of: {[t.value for t in TierKey]}")
+    elif isinstance(tier, TierKey):
+        tier_enum = tier
+    else:
+        raise ValueError(f"Invalid tier: {tier}. Must be one of: {[t.value for t in TierKey]}")
+
+    if tier_enum not in DEFAULT_TIER_CONFIGS:
+        raise ValueError(f"Invalid tier: {tier}. Must be one of: {[t.value for t in TierKey]}")
+
+    return DEFAULT_TIER_CONFIGS[tier_enum]
+
+
+def get_preset_config(tier: Union[str, TierKey], preset: str) -> RateLimitConfig:
+    """
+    Get rate limit config for a specific preset endpoint.
+
+    Args:
+        tier: Tier name or Tier/TierKey enum
+        preset: Preset name (auth_login, auth_callback, auth_refresh, api_default)
+
+    Returns:
+        RateLimitConfig for the preset
+
+    Raises:
+        ValueError: If tier or preset is invalid
+    """
+    tier_config = get_tier_config(tier)
+
+    preset_map = {
+        "auth_login": tier_config.auth_login,
+        "auth_callback": tier_config.auth_callback,
+        "auth_refresh": tier_config.auth_refresh,
+        "api_default": tier_config.api_default,
+    }
+
+    if preset not in preset_map:
+        raise ValueError(
+            f"Invalid preset: {preset}. Must be one of: {list(preset_map.keys())}"
+        )
+
+    return preset_map[preset]
+
+
+# ===================================================================
 # Public API
 # ===================================================================
 
 __all__ = [
     # Core types
+    "Tier",
     "TierKey",
     "TierConfig",
     "TierQuotas",
+    "RateLimitConfig",
+    "TierRateLimitConfig",
+    "DEFAULT_TIER_CONFIGS",
     # All tier configs keyed by canonical key
     "_TIERS",
     # Lookup functions
@@ -404,6 +564,8 @@ __all__ = [
     "mcu_cost",
     "tier_quotas",
     "trial_config",
+    "get_tier_config",
+    "get_preset_config",
     # Backward-compat dicts
     "tier_credits_dict",
     "mcu_costs_dict",

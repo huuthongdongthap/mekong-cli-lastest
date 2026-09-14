@@ -16,7 +16,7 @@ def test_core_dna_workflow_runs_harness_eval() -> None:
     commands = "\n".join(str(step.get("run", "")) for step in steps)
 
     assert "python3 -m pip install -e ." in commands
-    assert "python3 -m src.main harness-eval --json" in commands
+    assert "run_solo_ceo_harness_evals" in commands
 
 
 def test_core_dna_workflow_watches_doctrine_manifest() -> None:

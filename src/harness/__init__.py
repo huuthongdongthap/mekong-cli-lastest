@@ -12,10 +12,6 @@ from src.harness.agents.registry import AgentRegistry
 from src.harness.agents.classifier import classify_task
 from src.harness.agents.queue import PriorityTaskQueue
 from src.harness.agents.base import AgentBase, Task, Result
-from src.harness.observability.tracing import (
-    start_trace, end_trace, get_current_trace_id, TraceContext,
-)
-from src.harness.observability.metrics import record, increment, get_summary, timed
 
 __all__ = [
     'Config',
@@ -25,6 +21,4 @@ __all__ = [
     'classify_task',
     'PriorityTaskQueue',
     'AgentBase', 'Task', 'Result',
-    'start_trace', 'end_trace', 'get_current_trace_id', 'TraceContext',
-    'record', 'increment', 'get_summary', 'timed',
 ]

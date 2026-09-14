@@ -20,7 +20,7 @@ console = Console()
 def system() -> None:
     """Show system health status"""
     from src.core.config import get_config
-    from src.core.llm_client import get_client
+    from src.providers.llm.client import get_client
     from src.core.memory_canonical import MemoryStore
     from src.core.governance import Governance
 
@@ -67,7 +67,7 @@ def system() -> None:
 @app.command()
 def api() -> None:
     """Check API provider status and quota"""
-    from src.core.llm_client import get_client
+    from src.providers.llm.client import get_client
     from src.core.provider_registry import ProviderRegistry
 
     console.print(
@@ -159,7 +159,7 @@ def quota() -> None:
 def health() -> None:
     """Full health check with recommendations"""
     from src.core.config import get_config
-    from src.core.llm_client import get_client
+    from src.providers.llm.client import get_client
     from src.core.memory_canonical import MemoryStore
     from src.core.governance import Governance
     from src.core.cost_tracker import CostTracker

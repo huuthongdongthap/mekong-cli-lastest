@@ -4,8 +4,8 @@
 """Auth routes: license key → JWT + VN magic-link auth.
 
 Legacy license-key routes (for IDE):
-  POST /auth/login   {license_key} → {access_token, expires_in, tenant_id, tier}
-  POST /auth/refresh {refresh_token} → new access_token (TODO: refresh impl)
+  POST /auth/login   {license_key} → {access_token, refresh_token, expires_in, tenant_id, tier}
+  POST /auth/refresh {refresh_token} → {access_token, refresh_token, token_type, expires_in, tenant_id, tier}
 
 VN Hub magic-link routes (public, enumeration-safe):
   POST /v1/auth/magic-link  {email, purpose?} → 200 always (rate-limited)
@@ -19,6 +19,7 @@ import os
 import re
 import sys
 import time
+from typing import Optional
 
 import jwt
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
@@ -33,6 +34,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 ACCESS_TOKEN_TTL_SECONDS = 60 * 60  # 1 hour
+REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60  # 30 days
 JWT_ALGORITHM = "HS256"
 
 
@@ -42,6 +44,20 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     access_token: str
+    refresh_token: Optional[str] = None
+    token_type: str = "Bearer"
+    expires_in: int
+    tenant_id: str
+    tier: str
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str = Field(..., min_length=10, max_length=1024)
+
+
+class RefreshResponse(BaseModel):
+    access_token: str
+    refresh_token: str
     token_type: str = "Bearer"
     expires_in: int
     tenant_id: str
@@ -64,11 +80,27 @@ def _issue_token(tenant_id: str, license_key: str, tier: str) -> tuple[str, int]
         "tenant_id": tenant_id,
         "license_key": license_key,
         "tier": tier,
+        "token_type": "access",
         "iat": now,
         "exp": exp,
     }
     token = jwt.encode(payload, _jwt_secret(), algorithm=JWT_ALGORITHM)
     return token, ACCESS_TOKEN_TTL_SECONDS
+
+
+def _issue_refresh_token(tenant_id: str, license_key: str, tier: str) -> tuple[str, int]:
+    now = int(time.time())
+    exp = now + REFRESH_TOKEN_TTL_SECONDS
+    payload = {
+        "tenant_id": tenant_id,
+        "license_key": license_key,
+        "tier": tier,
+        "token_type": "refresh",
+        "iat": now,
+        "exp": exp,
+    }
+    token = jwt.encode(payload, _jwt_secret(), algorithm=JWT_ALGORITHM)
+    return token, REFRESH_TOKEN_TTL_SECONDS
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -87,9 +119,62 @@ async def login(req: LoginRequest) -> LoginResponse:
         raise HTTPException(status_code=500, detail={"error": "license_missing_tenant"})
 
     token, ttl = _issue_token(tenant_id, req.license_key, tier)
+    refresh_token, _ = _issue_refresh_token(tenant_id, req.license_key, tier)
     logger.info("auth.login_success", extra={"tenant_id": tenant_id, "tier": tier})
     return LoginResponse(
-        access_token=token, expires_in=ttl, tenant_id=tenant_id, tier=tier
+        access_token=token,
+        refresh_token=refresh_token,
+        expires_in=ttl,
+        tenant_id=tenant_id,
+        tier=tier,
+    )
+
+
+@router.post("/refresh", response_model=RefreshResponse)
+async def refresh(req: RefreshRequest) -> RefreshResponse:
+    try:
+        claims = jwt.decode(req.refresh_token, _jwt_secret(), algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail={"error": "token_expired"})
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail={"error": "invalid_token"})
+
+    token_type = claims.get("token_type")
+    if token_type != "refresh":
+        raise HTTPException(status_code=401, detail={"error": "invalid_token_type"})
+
+    license_key = claims.get("license_key")
+    tenant_id = claims.get("tenant_id")
+    if not license_key or not tenant_id:
+        raise HTTPException(status_code=401, detail={"error": "malformed_claims"})
+
+    store = get_license_store()
+    record = store.get(license_key)
+    if not record:
+        raise HTTPException(status_code=401, detail={"error": "invalid_license"})
+
+    if record.get("status") != "active":
+        raise HTTPException(status_code=402, detail={"error": "license_inactive"})
+
+    # Dynamic tier resolution from license record (reflecting any upgrades)
+    current_tier = record.get("tier", claims.get("tier", "starter"))
+    record_tenant = record.get("customer_id")
+    if record_tenant:
+        tenant_id = record_tenant
+
+    new_access_token, ttl = _issue_token(tenant_id, license_key, current_tier)
+    new_refresh_token, _ = _issue_refresh_token(tenant_id, license_key, current_tier)
+    logger.info(
+        "auth.refresh_success",
+        extra={"tenant_id": tenant_id, "tier": current_tier},
+    )
+    return RefreshResponse(
+        access_token=new_access_token,
+        refresh_token=new_refresh_token,
+        token_type="Bearer",
+        expires_in=ttl,
+        tenant_id=tenant_id,
+        tier=current_tier,
     )
 
 

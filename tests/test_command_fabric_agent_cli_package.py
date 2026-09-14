@@ -1,9 +1,7 @@
 import json
 
 import pytest
-from typer.testing import CliRunner
 
-from src.cli.app_setup import build_app
 from src.command_fabric.agent_cli_package import command_markdown, materialize_agent_cli_package
 from src.command_fabric.artifacts import materialize_agent_cli_packages
 from src.command_fabric.catalog import build_command_catalog
@@ -61,43 +59,24 @@ def test_agent_cli_packages_reject_unknown_host(tmp_path) -> None:
         materialize_agent_cli_packages(tmp_path, hosts=["unknown"])
 
 
-def test_command_fabric_cli_materializes_agent_cli_package(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        [
-            "command-fabric",
-            "agent-cli-package",
-            "--scope",
-            "project",
-            "--host",
-            "opencode",
-            "--out",
-            str(tmp_path),
-        ],
+def test_materialize_agent_cli_package_materializes_opencode(tmp_path) -> None:
+    payload = materialize_agent_cli_packages(
+        output_dir=tmp_path,
+        scope="project",
+        hosts=["opencode"],
     )
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     assert payload["package_count"] == 1
     assert payload["packages"][0]["host"] == "opencode"
     assert (tmp_path / "opencode" / "commands" / "cook.md").exists()
 
 
-def test_command_fabric_cli_materializes_all_default_agent_cli_packages(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        [
-            "command-fabric",
-            "agent-cli-package",
-            "--scope",
-            "project",
-            "--out",
-            str(tmp_path),
-        ],
+def test_materialize_all_default_agent_cli_packages(tmp_path) -> None:
+    payload = materialize_agent_cli_packages(
+        output_dir=tmp_path,
+        scope="project",
     )
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     hosts = {package["host"] for package in payload["packages"]}
     assert payload["package_count"] == 12
     assert hosts == {

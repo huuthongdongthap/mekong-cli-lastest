@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mobile Failure — horizontal scroll, no focus-visible, sticky bleed</title>
+<style>
+  html, body { margin: 0; }
+  body {
+    font-family: Inter, sans-serif;
+    background: #fff;
+    color: #000;
+  }
+  .nav {
+    position: sticky;
+    top: 0;
+    background: #fff;
+  }
+  .toolbar {
+    position: sticky;
+    top: 0;
+    background: #fafafa;
+  }
+  .nav ul {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+    padding: 8px;
+    overflow-x: auto;
+  }
+  .nav a { display: block; padding: 8px; border: 1px solid #eee; }
+  .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .hero h1 { font-size: clamp(3rem, 8vw, 7rem); line-height: 0.94; text-transform: uppercase; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 16px;
+  }
+  .grid img { width: 100%; }
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <ul>
+      <li><a href="#">Home</a></li>
+      <li><a href="#">Features</a></li>
+      <li><a href="#">Pricing</a></li>
+      <li><a href="#">Docs</a></li>
+      <li><a href="#">Blog</a></li>
+      <li><a href="#">Contact</a></li>
+      <li><a href="#">About</a></li>
+      <li><a href="#">Login</a></li>
+    </ul>
+  </nav>
+  <section class="hero">
+    <h1>Unleash Seamless Workflows</h1>
+  </section>
+  <section class="grid">
+    <img src="a.png" alt="">
+    <img src="b.png" alt="">
+    <img src="c.png" alt="">
+    <img src="d.png" alt="">
+  </section>
+</body>
+</html>

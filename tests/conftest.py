@@ -290,14 +290,12 @@ for _submod in (
     "src.core.event_bus",
     "src.core.gateway_config",
     "src.core.gateway_dashboard",
-    "src.core.llm_client",
-    "src.core.memory",
+    "src.providers.llm.client",
+    "src.core.memory_canonical",
     "src.core.orchestrator",
     "src.core.scheduler",
     "src.core.swarm",
     "src.api.raas_router",
-    "src.api.tier_config_routes",
-    "src.api.quota_status_endpoints",
 ):
     import importlib
     importlib.import_module(_submod)
@@ -308,15 +306,13 @@ _pre_gateway_patches = [
     ("src.core.gateway_config.load_config", MagicMock(return_value=MagicMock(
         presets=[], project_paths=[]))),
     ("src.core.gateway_dashboard.DASHBOARD_HTML", ""),
-    ("src.core.llm_client.get_client", MagicMock(return_value=MagicMock(is_available=False))),
-    ("src.core.memory.MemoryStore", MagicMock()),
+    ("src.providers.llm.client.get_client", MagicMock(return_value=MagicMock(is_available=False))),
+    ("src.core.memory_canonical.MemoryStore", MagicMock()),
     ("src.core.orchestrator.OrchestrationResult", MagicMock()),
     ("src.core.orchestrator.RecipeOrchestrator", MagicMock()),
     ("src.core.scheduler.Scheduler", MagicMock()),
     ("src.core.swarm.SwarmRegistry", MagicMock()),
     ("src.api.raas_router.router", MagicMock(routes=[])),
-    ("src.api.tier_config_routes.router", MagicMock(routes=[])),
-    ("src.api.quota_status_endpoints.quota_router", MagicMock(routes=[])),
 ]
 # Save the real attribute values before patching so unit tests that need the
 # genuine classes (not the gateway mocks) can restore them temporarily.
@@ -357,6 +353,26 @@ def restore_real_swarm():
     with patch.object(_swarm, "SwarmRegistry", _real):
         yield
 
+
+@pytest.fixture
+def restore_real_memory_store():
+    """Temporarily un-mock memory_canonical.MemoryStore for round-trip tests.
+
+    Same rationale as ``restore_real_orchestrator``: the session-scoped mock
+    replaces ``src.core.memory_canonical.MemoryStore`` with a MagicMock so
+    gateway tests can import the app without touching disk.  Tests that
+    exercise the real store (e.g. the conformant adapter) need the genuine
+    class back for their scope.  The adapter module binds ``MemoryStore`` at
+    import time, so both attributes must be restored.
+    """
+    import src.core.memory_canonical as _mc
+    import src.core.adapters.memory_store_conformant as _msc
+    _real = _pre_gateway_originals.get("src.core.memory_canonical.MemoryStore")
+    with patch.object(_mc, "MemoryStore", _real), patch.object(
+        _msc, "MemoryStore", _real
+    ):
+        yield
+
 # ---------------------------------------------------------------------------
 # Bypass gateway auth + license middleware
 # ---------------------------------------------------------------------------
@@ -370,7 +386,9 @@ def _bypass_gateway_auth():
 
     async def _fake_require_tenant() -> TenantContext:  # type: ignore[no-untyped-def]
         return TenantContext(
-            tenant_id="test-tenant", tenant_name="test", api_key="mk_test"
+            tenant_id=os.environ.get("MEKONG_TEST_TENANT_ID", "test-tenant"),
+            tenant_name="test",
+            api_key="mk_test",
         )
 
     _orig_call = _lgm.EngineLicenseGateMiddleware.__call__

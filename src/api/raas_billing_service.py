@@ -100,9 +100,24 @@ class BillingService:
             self._ledgers[tenant_id] = TenantLedger(tenant_id=tenant_id)
         return self._ledgers[tenant_id]
 
+    def _get_or_create_ledger(self, tenant_id: str) -> TenantLedger:
+        """Alias for _get_or_create."""
+        return self._get_or_create(tenant_id)
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    def charge_mcu(
+        self,
+        tenant_id: str,
+        task_id: str,
+        complexity: str = "simple",
+        cost: Optional[int] = None,
+    ) -> int:
+        """Record MCU consumption using named complexity tier or explicit cost."""
+        mcu_cost = cost if cost is not None else MCU_COSTS.get(complexity, DEFAULT_MCU_COST)
+        return self.record_usage(tenant_id=tenant_id, mcu_cost=mcu_cost, task_id=task_id)
 
     def check_quota(self, tenant_id: str) -> bool:
         """Return True if tenant has remaining MCU quota.

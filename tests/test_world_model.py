@@ -126,31 +126,60 @@ class TestWorldModel(unittest.TestCase):
             self.assertIn("temp.txt", diff.files_removed)
 
     def test_predict_destructive_operation(self):
-        model = WorldModel()
-        pred = model.predict_side_effects("rm -rf build/")
-        self.assertEqual(pred.risk_level, "high")
-        self.assertTrue(any("delete" in w.lower() for w in pred.warnings))
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model = WorldModel(working_dir=tmpdir)
+            pred = model.predict_side_effects("rm -rf build/")
+            self.assertEqual(pred.risk_level, "high")
+            self.assertTrue(any("delete" in w.lower() for w in pred.warnings))
 
     def test_predict_deployment(self):
-        model = WorldModel()
-        pred = model.predict_side_effects("deploy to production")
-        self.assertEqual(pred.risk_level, "high")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model = WorldModel(working_dir=tmpdir)
+            pred = model.predict_side_effects("deploy to production")
+            self.assertEqual(pred.risk_level, "high")
 
     def test_predict_package_install(self):
-        model = WorldModel()
-        pred = model.predict_side_effects("pip install requests")
-        self.assertEqual(pred.risk_level, "medium")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model = WorldModel(working_dir=tmpdir)
+            pred = model.predict_side_effects("pip install requests")
+            self.assertEqual(pred.risk_level, "medium")
 
     def test_predict_safe_operation(self):
-        model = WorldModel()
-        pred = model.predict_side_effects("list all files")
-        self.assertEqual(pred.risk_level, "low")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model = WorldModel(working_dir=tmpdir)
+            pred = model.predict_side_effects("list all files")
+            self.assertEqual(pred.risk_level, "low")
 
     def test_get_latest_snapshot(self):
-        model = WorldModel()
-        self.assertIsNone(model.get_latest_snapshot())
-        model.snapshot()
-        self.assertIsNotNone(model.get_latest_snapshot())
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model = WorldModel(working_dir=tmpdir)
+            self.assertIsNone(model.get_latest_snapshot())
+            model.snapshot()
+            self.assertIsNotNone(model.get_latest_snapshot())
+
+    def test_file_tree_bounded_walk(self):
+        """A large excluded directory must NOT be descended into.
+
+        Guard test: the walk is prune-before-descend, so a working_dir
+        containing a huge excluded subtree is bounded regardless of size.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Build a deep excluded directory with many files.
+            excluded = os.path.join(tmpdir, "node_modules", "pkg", "src")
+            os.makedirs(excluded)
+            for i in range(5000):
+                open(os.path.join(excluded, f"f{i}.py"), "w").close()
+            # A normal file at the top level should still be listed.
+            open(os.path.join(tmpdir, "real.py"), "w").close()
+
+            model = WorldModel(working_dir=tmpdir)
+            state = model.snapshot()
+            # The walk must finish quickly and never descend into node_modules.
+            self.assertLess(state.file_count, 100)
+            self.assertIn("real.py", state.file_tree)
+            self.assertNotIn(
+                "node_modules", " ".join(state.file_tree)
+            )
 
     def test_get_context_summary(self):
         with tempfile.TemporaryDirectory() as tmpdir:

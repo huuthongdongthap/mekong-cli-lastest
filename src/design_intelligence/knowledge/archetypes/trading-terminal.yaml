@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: trading-terminal
+product_type: trading-terminal
+label: Trading terminal
+summary: A data-dense decision surface. Every pixel earns its place; readability at a glance is the product.
+information_density: dense
+navigation_patterns:
+  - multi-panel grid, each panel draggable
+  - global hotkey bar across the top
+  - watchlist rail on the left
+hierarchy:
+  - price and PnL above everything
+  - chart is the largest single element
+  - alerts are a ribbon, not a modal
+interaction_expectations:
+  - keyboard-first, mouse-second
+  - order entry is a single line, not a form
+  - no confirm on cancel — it is reversible
+common_failure_modes:
+  - panel chrome wider than the data
+  - alerts that require a modal to dismiss
+  - chart with no crosshair value readout
+accessibility_concerns:
+  - color is never the only signal (up/down)
+  - every panel reachable by keyboard
+responsive_requirements:
+  - panels stack on mobile, never clipped
+  - density drops to comfortable on small viewports
+appropriate_macrostructures:
+  - sidebar-workbench
+  - kpi-grid
+  - split-detail

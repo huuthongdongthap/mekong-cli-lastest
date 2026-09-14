@@ -89,7 +89,7 @@ class AutonomousEngine:
 
     def _init_subsystems(self) -> None:
         """Lazy load subsystems with LLM injection."""
-        from .llm_client import LLMClient
+        from src.providers.llm.client import LLMClient
 
         import os
         gemini_key = os.getenv("GEMINI_API_KEY", "")
@@ -97,7 +97,7 @@ class AutonomousEngine:
 
         if self._memory is None:
             try:
-                from .memory import MemoryStore
+                from .memory_canonical import MemoryStore
                 self._memory = MemoryStore()
             except Exception:
                 pass
@@ -243,7 +243,7 @@ class AutonomousEngine:
 
         # Record memory
         if self._memory and result.executed:
-            from .memory import MemoryEntry
+            from .memory_canonical import MemoryEntry
             self._memory.record(
                 MemoryEntry(
                     goal=goal,
@@ -263,7 +263,7 @@ class AutonomousEngine:
         # Generate recipe on success
         if self._recipe_gen and self._memory and result.result_status == "success":
             try:
-                from .memory import MemoryEntry
+                from .memory_canonical import MemoryEntry
                 entry = MemoryEntry(goal=goal, status="success")
                 recipe = self._recipe_gen.from_successful_run(entry)
                 if recipe.valid:
@@ -355,11 +355,14 @@ class AutonomousEngine:
 
         # Executor health from recent success rate
         if self._memory:
-            entries = self._memory.recent(20)
-            if entries:
-                successes = sum(1 for e in entries if e.status == "success")
-                report.executor_health = successes / len(entries)
-            else:
+            try:
+                entries = self._memory.recent(20)
+                if entries and len(entries) > 0:
+                    successes = sum(1 for e in entries if getattr(e, "status", None) == "success")
+                    report.executor_health = successes / len(entries)
+                else:
+                    report.executor_health = 0.5
+            except Exception:
                 report.executor_health = 0.5
         else:
             report.executor_health = 0.0

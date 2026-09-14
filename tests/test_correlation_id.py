@@ -4,7 +4,8 @@ import os
 import unittest
 from unittest.mock import patch
 
-from src.core.memory_separation import MemoryTier
+import pytest
+
 from src.core.mission_tracer import MissionTracer
 from src.core.runtime_adapter import MekongCoreRuntimeImpl
 
@@ -90,29 +91,61 @@ class TestRuntimeMissionTracking(unittest.TestCase):
         assert runtime._mission_id == mid2
 
 
-class TestRuntimeMemoryTierSeparation(unittest.TestCase):
-    """Memory tier separation wired into the runtime lifecycle."""
+class TestRuntimeMemoryTierSeparation:
+    """Memory tier separation wired into the runtime lifecycle.
 
-    def _make_runtime(self, **kwargs):
+    The session-wide ``_pre_gateway_patches`` mock replaces
+    ``memory_canonical.MemoryStore`` with a MagicMock, so the default
+    ``MemoryStoreAdapter()`` would write to a mock. These tests restore the
+    real class (via ``_real_memory_store``) and inject a hermetic adapter
+    pinned to ``tmp_path`` so the conformant write path is exercised for real.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _restore_real_memory_store(self):
+        """Restore the genuine memory_canonical.MemoryStore for this test."""
+        import src.core.memory_canonical as _mc
+        import src.core.memory_store_adapter as _msa
+        import tests.conftest as _conftest
+
+        _real = _conftest._pre_gateway_originals.get(
+            "src.core.memory_canonical.MemoryStore",
+        )
+        with (
+            patch.object(_mc, "MemoryStore", _real),
+            patch.object(_msa, "MemoryStore", _real),
+        ):
+            yield
+
+    def _make_runtime(self, tmp_path, **kwargs):
+        from src.core.memory_canonical import MemoryStore
+        from src.core.memory_store_adapter import MemoryStoreAdapter
+
+        underlying = MemoryStore(store_path=str(tmp_path / "mem.yaml"))
+        adapter = MemoryStoreAdapter(store=underlying)
         defaults = dict(
             dispatcher=_FakeDispatcher(),
             tool_registry=_FakeToolRegistry(),
+            memory_store=adapter,
         )
         defaults.update(kwargs)
         return MekongCoreRuntimeImpl(**defaults)
 
     def test_runtime_uses_memory_separation_by_default(self):
-        """MekongCoreRuntimeImpl defaults to MemorySeparation backend."""
-        from src.core.memory_separation import MemorySeparation
+        """Post-collapse: _memory_separation is None by default; the conformant
+        MemoryStoreAdapter (_memory_store) is the sole write path."""
+        runtime = MekongCoreRuntimeImpl(
+            dispatcher=_FakeDispatcher(),
+            tool_registry=_FakeToolRegistry(),
+        )
+        assert runtime._memory_separation is None
 
-        runtime = self._make_runtime()
-        assert isinstance(runtime._memory_separation, MemorySeparation)
-
-    def test_remember_stores_in_session_tier(self):
-        """remember() writes to SESSION tier so the next mission can flush it."""
+    def test_remember_writes_through_memory_store(self, tmp_path):
+        """LOW-3 resolution: remember() writes through the conformant
+        MemoryStoreAdapter (_memory_store), not the tier layer alone."""
         from src.core.runtime_adapter import Task, AgentId, Step
 
-        runtime = self._make_runtime()
+        runtime = self._make_runtime(tmp_path)
         runtime.start_mission("task")
         task = Task(
             id="t1",
@@ -122,34 +155,48 @@ class TestRuntimeMemoryTierSeparation(unittest.TestCase):
         result = runtime.execute(task)
         obs = runtime.observe(result)
         runtime.remember(obs)
-        session_keys = runtime._memory_separation.list_by_tier(MemoryTier.SESSION)
-        assert len(session_keys) == 1
-        assert "obs-t1" in session_keys
+        # Primary write path: the conformant adapter (_memory_store).
+        retrieved = runtime._memory_store.retrieve("obs-t1")
+        assert retrieved is not None, "remember() must write through _memory_store"
+        assert b"t1" in retrieved
+        # Session key is tracked for flush.
+        assert "obs-t1" in runtime._session_keys
 
-    def test_start_mission_flushes_prior_session_memory(self):
-        """Each start_mission clears SESSION-tier entries from the prior run."""
-        runtime = self._make_runtime()
+    def test_start_mission_flushes_session_keys_via_adapter(self, tmp_path):
+        """start_mission() flushes SESSION-tier keys through the adapter."""
+        runtime = self._make_runtime(tmp_path)
         runtime.start_mission("first")
-        # Simulate a session entry left over from the prior mission.
-        runtime._memory_separation.store("leftover", b"data", tier=MemoryTier.SESSION)
-        assert len(runtime._memory_separation.list_by_tier(MemoryTier.SESSION)) == 1
+        # Simulate a prior mission's session entry written via remember().
+        runtime._memory_store.store("leftover", b"data", ttl=3600)
+        runtime._session_keys.add("leftover")
+        assert runtime._memory_store.retrieve("leftover") == b"data"
+        # start_mission() must flush all tracked session keys.
         runtime.start_mission("second")
-        assert runtime._memory_separation.list_by_tier(MemoryTier.SESSION) == []
+        assert runtime._session_keys == set()
+        assert runtime._memory_store.retrieve("leftover") is None
 
-    def test_flush_session_returns_count(self):
-        """flush_session() returns the number of SESSION entries deleted."""
-        runtime = self._make_runtime()
-        runtime._memory_separation.store("s1", b"a", tier=MemoryTier.SESSION)
-        runtime._memory_separation.store("s2", b"b", tier=MemoryTier.SESSION)
-        runtime._memory_separation.store("p1", b"c", tier=MemoryTier.PERSISTENT)
+    def test_flush_session_deletes_tracked_keys(self, tmp_path):
+        """flush_session() removes every tracked key through the adapter."""
+        runtime = self._make_runtime(tmp_path)
+        runtime._memory_store.store("s1", b"a", ttl=3600)
+        runtime._session_keys.add("s1")
+        runtime._memory_store.store("s2", b"b", ttl=3600)
+        runtime._session_keys.add("s2")
         deleted = runtime.flush_session()
         assert deleted == 2
-        assert runtime._memory_separation.list_by_tier(MemoryTier.SESSION) == []
-        assert runtime._memory_separation.list_by_tier(MemoryTier.PERSISTENT) == ["p1"]
+        assert runtime._session_keys == set()
+        assert runtime._memory_store.retrieve("s1") is None
+        assert runtime._memory_store.retrieve("s2") is None
 
     def test_destroy_clears_memory_separation(self):
-        """destroy() releases the memory separation layer."""
-        runtime = self._make_runtime()
+        """destroy() releases the memory separation layer when explicitly set."""
+        from src.core.memory_separation import MemorySeparation
+
+        runtime = MekongCoreRuntimeImpl(
+            dispatcher=_FakeDispatcher(),
+            tool_registry=_FakeToolRegistry(),
+            memory_separation=MemorySeparation(),
+        )
         runtime.start_mission("task")
         assert runtime._memory_separation is not None
         runtime.destroy()
@@ -375,25 +422,38 @@ class TestRuntimeMemoryOwnership(unittest.TestCase):
         return MekongCoreRuntimeImpl(**defaults)
 
     def test_remember_writes_through_canonical_owner(self):
-        """remember() writes to MemorySeparation, never to a second backend."""
-        from src.core.memory_separation import MemorySeparation
+        """Post-collapse: remember() writes through the conformant
+        MemoryStoreAdapter (_memory_store), the sole write path."""
+        import tempfile
+        import src.core.memory_canonical as _mc
+        import src.core.adapters.memory_store_conformant as _msc
+        from src.core.memory_store_adapter import MemoryStoreAdapter
+        from tests.conftest import _pre_gateway_originals
 
-        runtime = self._make_runtime()
-        assert isinstance(runtime._memory_separation, MemorySeparation)
-        runtime.start_mission("task")
-        runtime.remember(
-            type(
-                "O",
-                (),
-                {
-                    "result": type("R", (), {"task_id": "t1", "error": None, "metadata": {}})(),
-                    "metrics": {},
-                    "side_effects": [],
-                },
-            )()
-        )
-        # The canonical owner (ScopedMemoryStore) is the only writer.
-        assert runtime._memory_separation is not None
+        _real = _pre_gateway_originals.get("src.core.memory_canonical.MemoryStore")
+        with tempfile.TemporaryDirectory() as td, \
+                patch.object(_mc, "MemoryStore", _real), \
+                patch.object(_msc, "MemoryStore", _real):
+            from src.core.memory_canonical import MemoryStore
+            underlying = MemoryStore(store_path=f"{td}/mem.yaml")
+            adapter = MemoryStoreAdapter(store=underlying)
+            runtime = self._make_runtime(memory_store=adapter)
+            runtime.start_mission("task")
+            runtime.remember(
+                type(
+                    "O",
+                    (),
+                    {
+                        "result": type("R", (), {"task_id": "t1", "error": None, "metadata": {}})(),
+                        "metrics": {},
+                        "side_effects": [],
+                    },
+                )()
+            )
+            # The conformant adapter (_memory_store) is the only writer.
+            assert runtime._memory_store is not None
+            retrieved = runtime._memory_store.retrieve("obs-t1")
+            assert retrieved is not None, "remember() must write through _memory_store"
 
     def test_store_raw_writes_without_tier_tag(self):
         """store_raw lands on the canonical backend under the raw key."""
@@ -408,8 +468,10 @@ class TestRuntimeMemoryOwnership(unittest.TestCase):
         assert any(e.key == "raw-key" and e.value == b"payload" for e in entries)
 
     def test_destroy_releases_memory_owner(self):
-        """destroy() clears the memory separation layer."""
-        runtime = self._make_runtime()
+        """destroy() clears the memory separation layer when explicitly set."""
+        from src.core.memory_separation import MemorySeparation
+
+        runtime = self._make_runtime(memory_separation=MemorySeparation())
         runtime.start_mission("task")
         assert runtime._memory_separation is not None
         runtime.destroy()

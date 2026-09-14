@@ -1,8 +1,3 @@
-import json
-
-from typer.testing import CliRunner
-
-from src.cli.app_setup import build_app
 from src.command_fabric.catalog import build_command_catalog
 from src.command_fabric.shell_package import (
     bash_completion,
@@ -52,21 +47,10 @@ def test_shell_completion_materializes_all_shells(tmp_path) -> None:
     assert "mekong.elv" in installer
 
 
-def test_command_fabric_cli_materializes_shell_completion(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        [
-            "command-fabric",
-            "shell-completion",
-            "--scope",
-            "project",
-            "--out",
-            str(tmp_path),
-        ],
-    )
+def test_shell_completion_materializes_all_shells_default(tmp_path) -> None:
+    payload = materialize_shell_completion(tmp_path)
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
+    assert payload["schema"] == "mekong.command_fabric.shell_completion.v1"
     assert payload["host"] == "shell"
-    assert payload["command_count"] == 91
+    assert payload["command_count"] == len(build_command_catalog())
     assert (tmp_path / "shell" / "bash" / "mekong.bash").exists()

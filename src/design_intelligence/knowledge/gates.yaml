@@ -1,0 +1,752 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+#
+# Design-quality gates adapted from Hallmark's slop test
+# (github.com/nutlope/hallmark, MIT). Each gate carries the fields required by
+# the Design Intelligence spec: id, category, severity, description,
+# detection_method, automatic, heuristic, visual, failure_example, pass_condition.
+#
+# detection_method is the primary discriminator:
+#   automatic  -> deterministic regex/static check on HTML+CSS text (OBJECTIVE)
+#   heuristic  -> pattern inference / LLM judge, carries confidence (HEURISTIC)
+#   visual     -> requires a rendered screenshot (OPINION until rendered)
+#
+# Categories (12): STRUCTURE, TYPOGRAPHY, COLOR, SPACING, COMPONENTS, CONTENT,
+#                  INTERACTION, MOTION, ACCESSIBILITY, RESPONSIVENESS,
+#                  DISTINCTIVENESS, AI-SLOP
+
+gates:
+  # ---------------------------------------------------------------- TYPOGRAPHY
+  - id: "1"
+    category: TYPOGRAPHY
+    severity: high
+    description: >-
+      Display font is Inter, Roboto, Open Sans, Poppins, Lato, or a bare system
+      default — the default AI font stack.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "font-family: Inter, sans-serif on the hero display"
+    pass_condition: "Display face is a deliberate, non-default family"
+
+  - id: "25"
+    category: TYPOGRAPHY
+    severity: medium
+    description: >-
+      A prose container's max-width sits outside the 45-75ch readable measure.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: ".prose { max-width: 120ch } or max-width: 30ch"
+    pass_condition: "Prose max-width is within 45-75ch"
+
+  - id: "37"
+    category: TYPOGRAPHY
+    severity: medium
+    description: >-
+      More than three distinct font-family families on the page (2+1 rule).
+    detection_method: automatic
+    automatic: true
+    heuristic: true
+    visual: false
+    failure_example: "body + display + mono + a second display = 4 families"
+    pass_condition: "At most display + body + one outlier family"
+
+  - id: "38"
+    category: TYPOGRAPHY
+    severity: low
+    description: >-
+      The outlier face is used in more than two slots on the page.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "outlier mono used for wordmark + stats + captions + labels"
+    pass_condition: "Outlier face appears in at most two slots"
+
+  - id: "38a"
+    category: TYPOGRAPHY
+    severity: high
+    description: >-
+      A heading or display type is italic — a top AI tell. Headers stay roman.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "h1 { font-style: italic } or an italic emphasis word in a headline"
+    pass_condition: "All headings and display type are roman"
+
+  - id: "55"
+    category: TYPOGRAPHY
+    severity: medium
+    description: >-
+      All-caps display head with line-height below 1.0 causes cap-collision on wrap.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "text-transform: uppercase with line-height: 0.94"
+    pass_condition: "All-caps display heads use line-height >= 1.0"
+
+  - id: "35"
+    category: TYPOGRAPHY
+    severity: low
+    description: >-
+      Decorative text effects (highlighter band, underline) mis-positioned relative
+      to the baseline / x-height.
+    detection_method: visual
+    automatic: false
+    heuristic: false
+    visual: true
+    failure_example: "highlighter band sitting at the baseline reading as a fat underline"
+    pass_condition: "Bands sit behind the x-height; underlines 1-2px offset from baseline"
+
+  # --------------------------------------------------------------------- COLOR
+  - id: "2"
+    category: COLOR
+    severity: high
+    description: >-
+      A purple-to-blue or cyan-to-magenta gradient anywhere, including a
+      background-clip:text gradient headline. No genre allows gradient text.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "linear-gradient(90deg,#8b5cf6,#3b82f6) with background-clip:text"
+    pass_condition: "No gradient text; gradients only where a genre explicitly allows"
+
+  - id: "7"
+    category: COLOR
+    severity: medium
+    description: >-
+      Pure #000 or pure #fff used as a base colour (modern-minimal allows #fff paper).
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "background: #fff on the page base"
+    pass_condition: "Base colours are tinted off-black/off-white, or genre allows it"
+
+  - id: "22"
+    category: COLOR
+    severity: low
+    description: >-
+      A neutral/surface colour uses oklch zero chroma — pure greys read as flat.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "oklch(0.97 0 0) surface (zero chroma)"
+    pass_condition: "Neutrals tinted toward the anchor hue, >= 0.005 chroma"
+
+  - id: "23"
+    category: COLOR
+    severity: medium
+    description: >-
+      Accent colour covers more than ~5% of a single viewport. Accent is for emphasis.
+    detection_method: visual
+    automatic: false
+    heuristic: true
+    visual: true
+    failure_example: "full-bleed accent background + large accent headings"
+    pass_condition: "Accent footprint stays around 5% of any viewport"
+
+  - id: "29"
+    category: COLOR
+    severity: medium
+    description: >-
+      Abstract background uses more than one accent colour, exceeds ~5% footprint, or
+      animates a mesh gradient across the whole page (aurora blobs fail).
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: true
+    failure_example: "animated mesh-gradient aurora blobs covering the hero"
+    pass_condition: "Background is restrained; atmospheric allows fixed warm blooms"
+
+  - id: "48"
+    category: COLOR
+    severity: high
+    description: >-
+      Mid-render token improvisation — a colour or font-family value appears outside
+      the design tokens defined in :root / [data-theme].
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "color: #7c3aed inline when tokens define --color-accent"
+    pass_condition: "Every colour and font references a named token"
+
+  # ------------------------------------------------------------------ SPACING
+  - id: "24"
+    category: SPACING
+    severity: medium
+    description: >-
+      A padding/gap/margin value is not on the named spacing scale (multiples of 4px).
+      Arbitrary padding:17px is a tell.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "padding: 17px 23px"
+    pass_condition: "All spacing values are multiples of 4px / named scale tokens"
+
+  # ----------------------------------------------------------------- STRUCTURE
+  - id: "3"
+    category: STRUCTURE
+    severity: high
+    description: >-
+      A 3-equal-column card grid with icon-above-heading tiles — the default AI layout.
+    detection_method: heuristic
+    automatic: true
+    heuristic: true
+    visual: false
+    failure_example: "grid-template-columns: repeat(3,1fr) of icon-over-text tiles"
+    pass_condition: "Feature layout is not the default 3-up icon card grid"
+
+  - id: "4"
+    category: STRUCTURE
+    severity: low
+    description: "A card is nested inside another card."
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: ".card > .card"
+    pass_condition: "No card nesting"
+
+  - id: "6"
+    category: STRUCTURE
+    severity: critical
+    description: >-
+      Centred-everything hero — min-height:100vh with eyebrow, title, lede and CTA all
+      stacked on one centred axis. Auto-fail.
+    detection_method: heuristic
+    automatic: true
+    heuristic: true
+    visual: false
+    failure_example: "hero with text-align:center on every child, 100vh"
+    pass_condition: "At most two centred elements; eyebrow or CTA sits off-axis"
+
+  - id: "8"
+    category: STRUCTURE
+    severity: high
+    description: >-
+      The page reuses the generic AI template (Hero -> 3 features -> CTA -> footer) or
+      repeats a previous macrostructure fingerprint.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "Hero, three feature cards, one CTA, footer"
+    pass_condition: "Macrostructure differs from the generic template and prior builds"
+
+  - id: "9"
+    category: STRUCTURE
+    severity: low
+    description: >-
+      Sections separated only by equal whitespace with no rule, ornament, or colour shift.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "identical padding-block on every section, no dividers"
+    pass_condition: "Section rhythm varies via rules, colour shifts, or spacing"
+
+  - id: "36"
+    category: STRUCTURE
+    severity: medium
+    description: >-
+      Interactive bars mixing height-different elements are not explicitly vertically
+      centred (missing align-items:center), breaking the visual baseline.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "flex nav row with button + text inheriting align-items:stretch"
+    pass_condition: "Mixed-height flex rows declare align-items:center"
+
+  - id: "42"
+    category: STRUCTURE
+    severity: high
+    description: >-
+      Nav is the AI default fingerprint — wordmark-left + inline links + button-right +
+      hairline border-bottom + white background.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "default full-width nav with 4 links and a right CTA"
+    pass_condition: "Nav rotates among the cookbook N-variants or is justified"
+
+  - id: "43"
+    category: STRUCTURE
+    severity: medium
+    description: >-
+      Footer is the AI default — 4 link columns + social row + tiny copyright + hairline.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "Product/Company/Resources/Legal columns + social icons"
+    pass_condition: "Footer uses a cookbook Ft-variant or is a genuine hub"
+
+  - id: "44"
+    category: STRUCTURE
+    severity: medium
+    description: >-
+      Hero does not sit into the page or fit the fold — symmetric padding or essential
+      content overflowing the first screen at 1280x800.
+    detection_method: visual
+    automatic: false
+    heuristic: true
+    visual: true
+    failure_example: "hero CTA pushed below the fold by an oversized clamp"
+    pass_condition: "padding-block-end >= 1.3x start; essentials fit the fold"
+
+  - id: "54"
+    category: STRUCTURE
+    severity: critical
+    description: >-
+      Section eyebrow/tag rendered beside the heading on the same row (tag-left,
+      header-right) — a templated editorial-SaaS tell. Auto-fail.
+    detection_method: automatic
+    automatic: true
+    heuristic: true
+    visual: false
+    failure_example: ".section__head { grid-template-columns: auto 1fr } with eyebrow + h2"
+    pass_condition: "Eyebrow + heading wrappers resolve to a single column stack"
+
+  - id: "56"
+    category: STRUCTURE
+    severity: critical
+    description: >-
+      A sticky element at top:0 below a sticky page-level nav causes bleed/overlap.
+    detection_method: heuristic
+    automatic: true
+    heuristic: true
+    visual: false
+    failure_example: "two position:sticky;top:0 elements (nav + section head)"
+    pass_condition: "Secondary stickies offset by --banner-height beneath the nav"
+
+  # ---------------------------------------------------------------- COMPONENTS
+  - id: "5"
+    category: COMPONENTS
+    severity: low
+    description: "A card uses a thick coloured left/right side-stripe border."
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "border-left: 4px solid accent on every card"
+    pass_condition: "Cards do not rely on side-stripe borders"
+
+  - id: "26"
+    category: COMPONENTS
+    severity: high
+    description: >-
+      An interactive element lacks :focus-visible, :active, or :disabled styling —
+      eight states is the rule.
+    detection_method: heuristic
+    automatic: true
+    heuristic: true
+    visual: false
+    failure_example: "button with only default + hover states"
+    pass_condition: "default + hover + focus-visible + active + disabled all present"
+
+  - id: "31"
+    category: COMPONENTS
+    severity: low
+    description: >-
+      Defaulted to a Lottie library where a hand-built SVG or CSS shape would work.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "lottie-player for a simple decorative shape"
+    pass_condition: "Lottie is last resort; prefer SVG/CSS"
+
+  - id: "39"
+    category: COMPONENTS
+    severity: high
+    description: >-
+      Input/textarea/select fields mishandle states — border-width shifts, focus ring
+      built from border, input/button height mismatch, collapsing helper slot, or
+      disabled signalled by opacity alone.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "input focus changes border-width, shifting layout"
+    pass_condition: "All five input-state rules hold"
+
+  # ------------------------------------------------------------------- CONTENT
+  - id: "16"
+    category: CONTENT
+    severity: low
+    description: >-
+      A celebratory success toast for an action whose effect the user can already see.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "toast 'Saved!' after an inline save the UI already shows"
+    pass_condition: "Toasts reserved for failures and invisible effects"
+
+  - id: "19"
+    category: CONTENT
+    severity: high
+    description: >-
+      Placeholder names (Jane Doe / John Smith) or startup cliches (Acme, Nexus,
+      Seamless, Unleash) in the copy.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "'Acme helps teams unleash seamless workflows'"
+    pass_condition: "Copy uses real, specific names and language"
+
+  - id: "28"
+    category: CONTENT
+    severity: medium
+    description: >-
+      A demo video autoplays with sound, lacks a poster, lacks fetchpriority=high, or
+      lazy-loads the LCP element.
+    detection_method: heuristic
+    automatic: true
+    heuristic: true
+    visual: false
+    failure_example: "<video autoplay> with no poster on the LCP hero"
+    pass_condition: "Hero media is poster-backed, muted, and LCP-prioritised"
+
+  - id: "45"
+    category: CONTENT
+    severity: medium
+    description: >-
+      A decorative hero element with no semantic anchor in the content (unmotivated
+      cursor, blob, ornament, or number).
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "a floating '42' in the corner with no edition meaning"
+    pass_condition: "Every decoration is motivated by the content"
+
+  - id: "46"
+    category: CONTENT
+    severity: high
+    description: >-
+      An invented quantitative metric the user never supplied ('10x faster', '99.9%
+      uptime', 'trusted by 50,000+ teams').
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "'Trusted by 50,000+ teams' with no source"
+    pass_condition: "Stats are user-supplied, or replaced with a labelled placeholder"
+
+  # --------------------------------------------------------------- INTERACTION
+  - id: "10"
+    category: INTERACTION
+    severity: medium
+    description: "transition-all (or transition: all) used anywhere — specify properties."
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "transition: all 0.3s ease"
+    pass_condition: "Transitions name explicit properties"
+
+  - id: "11"
+    category: INTERACTION
+    severity: medium
+    description: >-
+      hover:scale-105 or a uniform hover-scale applied across multiple unrelated elements.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "every card and button uses hover:scale-105"
+    pass_condition: "No blanket uniform hover-scale"
+
+  - id: "13"
+    category: INTERACTION
+    severity: low
+    description: >-
+      An element stacks more than one hover effect at once (translate + scale + shadow
+      + colour + rotate).
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "hover: translate + scale + shadow + colour together"
+    pass_condition: "At most one hover effect per element"
+
+  - id: "17"
+    category: INTERACTION
+    severity: low
+    description: "Tooltip hover-delay and focus-delay are equal (hover 800-1000ms, focus 0)."
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "tooltip delay 300ms for both hover and focus"
+    pass_condition: "Hover delays, focus is instant"
+
+  - id: "53"
+    category: INTERACTION
+    severity: medium
+    description: >-
+      CSS-only radio tab pattern scroll-jumps — radios at position:absolute;top:0 with
+      no JS preventScroll guard.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "hidden radios at top:0 causing a jump on tab click"
+    pass_condition: "Radios stay in flow at zero size, or JS guards scroll"
+
+  # -------------------------------------------------------------------- MOTION
+  - id: "12"
+    category: MOTION
+    severity: low
+    description: >-
+      Bouncy/overshoot easings used on UI state changes — reserve overshoots for
+      physical interactions.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "cubic-bezier(0.34,1.56,0.64,1) on a button hover"
+    pass_condition: "Overshoot easings only on physical interactions"
+
+  - id: "14"
+    category: MOTION
+    severity: medium
+    description: >-
+      Animating width, height, top, left, margin, or padding — animate transform/opacity.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "transition: width 0.3s on an expanding panel"
+    pass_condition: "Layout-affecting motion uses transform/opacity"
+
+  # ------------------------------------------------------------- ACCESSIBILITY
+  - id: "15"
+    category: ACCESSIBILITY
+    severity: medium
+    description: "The focus ring fades in instead of appearing instantly."
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "transition on outline making the focus ring fade"
+    pass_condition: "Focus rings appear instantly"
+
+  - id: "18"
+    category: ACCESSIBILITY
+    severity: medium
+    description: >-
+      Auto-rotating content (carousel, banner, stats) lacks pause-on-hover-and-focus
+      (WCAG 2.2.2).
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "autoplay carousel with no pause control"
+    pass_condition: "Auto-rotating content pauses on hover and focus"
+
+  - id: "27"
+    category: ACCESSIBILITY
+    severity: high
+    description: >-
+      A transform/animation keyframe is not covered by a prefers-reduced-motion fallback.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "@keyframes spin with no reduced-motion alternative"
+    pass_condition: "Every motion has a reduced-motion fallback"
+
+  - id: "33"
+    category: ACCESSIBILITY
+    severity: medium
+    description: >-
+      A visual-only svg, custom-art div, canvas, or decorative figure lacks aria-label
+      or aria-hidden=true.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "<svg> decorative art with no accessible name or hide"
+    pass_condition: "Decorative media has aria-label or aria-hidden=true"
+
+  - id: "40"
+    category: ACCESSIBILITY
+    severity: high
+    description: >-
+      Text, icon, or focus ring fails its contrast threshold against its computed
+      background (body 4.5:1 / APCA 60; large+icons+rings 3:1 / APCA 45).
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: true
+    failure_example: "muted text on paper-3 below 4.5:1"
+    pass_condition: "All pairs clear their WCAG/APCA thresholds"
+
+  - id: "41"
+    category: ACCESSIBILITY
+    severity: high
+    description: >-
+      The contrast failures that ship most often — button text ~ button fill, missing
+      accent-ink, or dark-section ink-on-ink.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: true
+    failure_example: "color: var(--color-ink) on background: var(--color-ink)"
+    pass_condition: "Accent-ink defined and applied; dark sections flip text colour"
+
+  # ------------------------------------------------------------ RESPONSIVENESS
+  - id: "34"
+    category: RESPONSIVENESS
+    severity: critical
+    description: >-
+      The page horizontally scrolls between 320px and 1920px. Requires overflow-x:clip
+      on both html and body.
+    detection_method: visual
+    automatic: true
+    heuristic: false
+    visual: true
+    failure_example: "horizontal scrollbar at 375px"
+    pass_condition: "overflow-x:clip on html and body; no horizontal scroll"
+
+  - id: "49"
+    category: RESPONSIVENESS
+    severity: medium
+    description: >-
+      A button label, nav link, or CTA wraps to two lines at any viewport 320-1920px.
+    detection_method: visual
+    automatic: false
+    heuristic: false
+    visual: true
+    failure_example: "'Get started free' wrapping to two lines on a button"
+    pass_condition: "Clickable affordances stay single-line"
+
+  - id: "50"
+    category: RESPONSIVENESS
+    severity: medium
+    description: >-
+      A grid track containing a 1fr column renders an image without minmax(0,1fr),
+      blowing out the layout on phones.
+    detection_method: automatic
+    automatic: true
+    heuristic: true
+    visual: false
+    failure_example: "grid-template-columns: 1fr 1fr holding a 1024px image"
+    pass_condition: "Image-bearing 1fr tracks use minmax(0,1fr)"
+
+  - id: "51"
+    category: RESPONSIVENESS
+    severity: medium
+    description: >-
+      A display header lacks overflow-wrap:anywhere; min-width:0, letting long words
+      overflow the viewport.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "h1 with a long hyphenated brand name and no overflow-wrap"
+    pass_condition: "Display heads declare overflow-wrap:anywhere; min-width:0"
+
+  - id: "52"
+    category: RESPONSIVENESS
+    severity: low
+    description: >-
+      A per-theme section-head grid override lacks the mobile-collapse rule back to 1fr.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "theme 2-column section head kept on mobile, title overlaps label"
+    pass_condition: "Section heads collapse to 1fr at max-width:48rem"
+
+  # ----------------------------------------------------------- DISTINCTIVENESS
+  - id: "20"
+    category: DISTINCTIVENESS
+    severity: medium
+    description: >-
+      The macrostructure stamp comment is missing from the top of the CSS.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "no '/* Mekong Design · macrostructure: ... */' stamp"
+    pass_condition: "A macrostructure stamp is present at the top of the CSS"
+
+  - id: "21"
+    category: DISTINCTIVENESS
+    severity: medium
+    description: >-
+      Defaulted to the Specimen macrostructure when the brief did not call for editorial
+      energy (Specimen fall-through is banned).
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "numbered left-margin labels + huge serif on a SaaS brief"
+    pass_condition: "Specimen used only when the brief signals editorial"
+
+  - id: "32"
+    category: DISTINCTIVENESS
+    severity: low
+    description: >-
+      Reused a previous archetype without picking at least one different variation knob.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "two identical Bento Grids with the same knobs"
+    pass_condition: "Within-archetype knobs differ from the prior build"
+
+  - id: "57"
+    category: DISTINCTIVENESS
+    severity: critical
+    description: >-
+      A studied DNA was discarded in favour of a catalog theme without an explicit user
+      pivot. Auto-fail.
+    detection_method: heuristic
+    automatic: false
+    heuristic: true
+    visual: false
+    failure_example: "study emitted, then build uses theme: Cobalt"
+    pass_condition: "Build uses the studied DNA tokens, or the user pivoted"
+
+  # ------------------------------------------------------------------- AI-SLOP
+  - id: "30"
+    category: AI-SLOP
+    severity: high
+    description: >-
+      Icon tells — mixing two or more icon libraries, or using an emoji glyph
+      (sparkle/rocket/lightning/fire/target/check) as a feature-card icon.
+    detection_method: automatic
+    automatic: true
+    heuristic: false
+    visual: false
+    failure_example: "emoji 🚀 and ✨ used as feature icons"
+    pass_condition: "One icon library, custom SVG, or typography-led"
+
+  - id: "47"
+    category: AI-SLOP
+    severity: high
+    description: >-
+      Re-drawn UI chrome — a hand-built fake browser bar, phone frame, code-block frame,
+      terminal, or IDE chrome.
+    detection_method: heuristic
+    automatic: true
+    heuristic: true
+    visual: false
+    failure_example: "fake browser URL pill + traffic-light dots around a screenshot"
+    pass_condition: "Use a real screenshot or let content stand alone"

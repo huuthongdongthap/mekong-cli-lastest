@@ -1,0 +1,125 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's theme catalog (github.com/nutlope/hallmark, MIT).
+# A theme is a visual identity: genre + anchor color + surface + type pairing.
+# Themes are suggestions, not mandates — the archetype's macrostructure wins.
+
+themes:
+  - name: atelier
+    genre: modern-minimal
+    anchor_color: oklch(0.65 0.15 250)
+    surface: oklch(0.97 0.01 80)
+    display_font: Inter
+    body_font: Inter
+    diversification_notes:
+      - use a single accent, never a gradient
+      - keep surfaces warm, not pure white
+
+  - name: cobalt
+    genre: modern-minimal
+    anchor_color: oklch(0.55 0.2 260)
+    surface: oklch(0.98 0.005 260)
+    display_font: Inter
+    body_font: Inter
+    diversification_notes:
+      - blue is the anchor, not the background
+      - avoid purple-blue gradients
+
+  - name: editorial
+    genre: editorial
+    anchor_color: oklch(0.3 0.05 60)
+    surface: oklch(0.99 0.005 80)
+    display_font: Georgia
+    body_font: Georgia
+    diversification_notes:
+      - serif display, sans body
+      - prose measure 45-75ch
+
+  - name: terminal
+    genre: atmospheric
+    anchor_color: oklch(0.7 0.2 140)
+    surface: oklch(0.15 0.02 140)
+    display_font: JetBrains Mono
+    body_font: JetBrains Mono
+    diversification_notes:
+      - monospace throughout
+      - dark surface, never pure black
+
+  - name: paper
+    genre: modern-minimal
+    anchor_color: oklch(0.4 0.08 60)
+    surface: oklch(0.98 0.01 80)
+    display_font: Inter
+    body_font: Inter
+    diversification_notes:
+      - warm paper surface
+      - ink-dark text, never pure black
+
+  - name: signal
+    genre: playful
+    anchor_color: oklch(0.65 0.25 30)
+    surface: oklch(0.99 0.01 30)
+    display_font: Inter
+    body_font: Inter
+    diversification_notes:
+      - one saturated accent
+      - playful, not childish
+
+  - name: slate
+    genre: modern-minimal
+    anchor_color: oklch(0.5 0.02 260)
+    surface: oklch(0.97 0.005 260)
+    display_font: Inter
+    body_font: Inter
+    diversification_notes:
+      - neutral surfaces
+      - accent only on interactive elements
+
+  - name: forest
+    genre: atmospheric
+    anchor_color: oklch(0.55 0.15 150)
+    surface: oklch(0.97 0.02 150)
+    display_font: Inter
+    body_font: Inter
+    diversification_notes:
+      - green anchor, warm surface
+      - avoid pure black text
+
+  - name: dusk
+    genre: atmospheric
+    anchor_color: oklch(0.6 0.18 300)
+    surface: oklch(0.2 0.03 300)
+    display_font: Inter
+    body_font: Inter
+    diversification_notes:
+      - dark surface, purple accent
+      - never pure black background
+
+  - name: brass
+    genre: editorial
+    anchor_color: oklch(0.6 0.15 80)
+    surface: oklch(0.98 0.01 80)
+    display_font: Georgia
+    body_font: Inter
+    diversification_notes:
+      - warm brass accent
+      - serif display, sans body
+
+  - name: mono
+    genre: modern-minimal
+    anchor_color: oklch(0.3 0 0)
+    surface: oklch(0.99 0 0)
+    display_font: Inter
+    body_font: Inter
+    diversification_notes:
+      - single ink color
+      - hierarchy via weight, not color
+
+  - name: coral
+    genre: playful
+    anchor_color: oklch(0.65 0.2 25)
+    surface: oklch(0.99 0.01 25)
+    display_font: Inter
+    body_font: Inter
+    diversification_notes:
+      - coral accent, warm surface
+      - playful, not loud

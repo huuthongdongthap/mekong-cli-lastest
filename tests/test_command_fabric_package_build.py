@@ -1,8 +1,3 @@
-import json
-
-from typer.testing import CliRunner
-
-from src.cli.app_setup import build_app
 from src.command_fabric.package_build import verify_package_builds
 from src.command_fabric.release_bundle import materialize_release_bundle
 from src.command_fabric.target_matrix import EXPECTED_PACKAGE_BUILD_CHECKS, PACKAGE_BUILD_TARGETS
@@ -18,13 +13,13 @@ def test_package_build_verifier_checks_generated_ide_scaffolds(tmp_path) -> None
     assert hosts == set(PACKAGE_BUILD_TARGETS)
 
 
-def test_package_build_cli_verifies_bundle(tmp_path) -> None:
+def test_package_build_verification_structure(tmp_path) -> None:
     materialize_release_bundle(tmp_path, scope="project")
-    result = CliRunner().invoke(
-        build_app(),
-        ["command-fabric", "package-build-check", "--bundle", str(tmp_path)],
-    )
+    payload = verify_package_builds(tmp_path)
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     assert payload["check_count"] == EXPECTED_PACKAGE_BUILD_CHECKS
+    assert len(payload["checks"]) == EXPECTED_PACKAGE_BUILD_CHECKS
+    for check in payload["checks"]:
+        assert "host" in check
+        assert "package_path" in check
+        assert len(check["checks"]) > 0

@@ -520,14 +520,14 @@ class TestValidatePlan(unittest.TestCase):
 class TestLLMDecompose(unittest.TestCase):
     """Test _llm_decompose() - LLM-powered decomposition.
 
-    Note: _llm_decompose calls get_client() from src.core.llm_client directly.
+    Note: _llm_decompose calls get_client() from src.providers.llm.client directly.
     To mock this, we patch at the import location in planner.py.
     """
 
     def setUp(self):
         self.planner = RecipePlanner()
 
-    @patch("src.core.llm_client.get_client")
+    @patch("src.providers.llm.client.get_client")
     def test_llm_success_returns_tasks(self, mock_get_client):
         """Successful LLM call should return tasks."""
         mock_client = MagicMock()
@@ -547,7 +547,7 @@ class TestLLMDecompose(unittest.TestCase):
         self.assertEqual(tasks[1]["title"], "Task 2")
         mock_client.generate_json.assert_called_once()
 
-    @patch("src.core.llm_client.get_client")
+    @patch("src.providers.llm.client.get_client")
     def test_llm_fallback_on_error(self, mock_get_client):
         """LLM failure should fallback to rule-based."""
         mock_client = MagicMock()
@@ -559,7 +559,7 @@ class TestLLMDecompose(unittest.TestCase):
         tasks = self.planner._llm_decompose("test goal", context)
         self.assertGreater(len(tasks), 0)
 
-    @patch("src.core.llm_client.get_client")
+    @patch("src.providers.llm.client.get_client")
     def test_llm_fallback_on_unavailable(self, mock_get_client):
         """Unavailable LLM should fallback to rule-based."""
         mock_client = MagicMock()
@@ -571,7 +571,7 @@ class TestLLMDecompose(unittest.TestCase):
         tasks = self.planner._llm_decompose("test goal", context)
         self.assertGreater(len(tasks), 0)
 
-    @patch("src.core.llm_client.get_client")
+    @patch("src.providers.llm.client.get_client")
     def test_llm_list_response(self, mock_get_client):
         """LLM returning list should be used directly."""
         mock_client = MagicMock()
@@ -585,7 +585,7 @@ class TestLLMDecompose(unittest.TestCase):
 
         self.assertEqual(tasks, [{"title": "A", "description": "X", "dependencies": []}])
 
-    @patch("src.core.llm_client.get_client")
+    @patch("src.providers.llm.client.get_client")
     def test_llm_dict_with_tasks_key(self, mock_get_client):
         """LLM returning dict with 'tasks' key should extract list."""
         mock_client = MagicMock()
@@ -602,7 +602,7 @@ class TestLLMDecompose(unittest.TestCase):
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0]["title"], "A")
 
-    @patch("src.core.llm_client.get_client")
+    @patch("src.providers.llm.client.get_client")
     def test_llm_dict_with_raw_content(self, mock_get_client):
         """LLM returning non-JSON should fallback."""
         mock_client = MagicMock()

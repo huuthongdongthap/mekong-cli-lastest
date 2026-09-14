@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import urllib.request  # noqa: F401
 from unittest.mock import MagicMock, patch
 
 import pytest

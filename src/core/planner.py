@@ -14,7 +14,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
-    from .llm_client import LLMClient
+    from src.providers.llm.client import LLMClient
 
 from .parser import Recipe, RecipeStep
 
@@ -375,7 +375,7 @@ class RecipePlanner:
         Returns:
             List of task dictionaries from LLM
         """
-        from src.core.llm_client import get_client
+        from src.providers.llm.client import get_client
 
         client = get_client()
         if not client.is_available:

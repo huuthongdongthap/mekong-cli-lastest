@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from src.core.llm_client import get_client
+from src.providers.llm.client import get_client
 from src.core.orchestrator import RecipeOrchestrator, OrchestrationStatus
 from src.core.planner import PlanningContext, TaskComplexity
 
@@ -106,7 +106,59 @@ def register_workflow_commands(app: typer.Typer) -> None:
     def ask_cmd(
         question: str = typer.Argument(..., help="Question about the codebase or task"),
     ) -> None:
-        """Ask a question - plan-only shortcut (alias for plan)"""
+        """Ask a question - plan-only shortcut with NL routing (VI/EN) fallback to plan."""
+        import os
+        import subprocess
+        import sys
+        from src.cli.ask_keyword_router import route_ask
+
+        # 1. Try VI/EN keyword routing first
+        routed = route_ask(question)
+        if routed:
+            groups = getattr(app, "registered_groups", [])
+            if not groups:
+                try:
+                    from src.cli.app_setup import build_app
+                    groups = getattr(build_app(), "registered_groups", [])
+                except Exception:
+                    groups = []
+            is_group = any(getattr(g, "name", None) == routed for g in groups)
+            if is_group:
+                console.print(
+                    Panel(
+                        f"[bold]🔍 Routed to: [cyan]{routed}[/cyan]\n"
+                        f"[dim]VI/EN keyword match - '{routed}' is a subcommand group "
+                        f"(needs a subcommand), so planning the question instead.[/dim]",
+                        title="🔍 NL Router",
+                        border_style="cyan",
+                    )
+                )
+            else:
+                console.print(
+                    Panel(
+                        f"[bold]🔍 Routed to: [cyan]{routed}[/cyan]\n"
+                        f"[dim]VI/EN keyword match - executing [bold]{routed}[/bold] via subcommand.[/dim]",
+                        title="🔍 NL Router",
+                        border_style="cyan",
+                    )
+                )
+                repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                cmd = [sys.executable, "-m", "src.main", routed, question]
+                try:
+                    result = subprocess.run(
+                        cmd,
+                        cwd=repo_root,
+                        env={**os.environ, "PYTHONPATH": repo_root},
+                        capture_output=False,
+                    )
+                    if result.returncode != 0:
+                        raise typer.Exit(code=result.returncode)
+                except FileNotFoundError as exc:
+                    console.print(f"[bold red]CLI entry not found - cannot route: {exc}[/bold red]")
+                    raise typer.Exit(code=1) from exc
+                return
+
+        # 2. Fallback: original plan-only shortcut (backward-compatible)
         from src.core.planner import RecipePlanner
 
         llm = get_client()

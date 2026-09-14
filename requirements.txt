@@ -1,4 +1,16 @@
 # Mekong CLI Core Dependencies
+# PyYAML: 17 src modules load YAML (core/memory_canonical, config, etc.).
+# Without it, test collection dies at conftest import time (exit code 2).
+PyYAML>=6.0
+# aiohttp: src/core/api_adapter.py + local_adapter + signals/posthog_sink.
+aiohttp>=3.9.0
+# bandit: AI-Native CI Gate 2 security scan (bandit -r src/seed/ integrations/).
+bandit>=1.7.0
+# ruff: AI-Native CI Gate 3 pyflakes-equivalent lint (ruff check --select F).
+ruff>=0.4.0
+# pytest: AI-Native CI Gate 5 unit tests (pytest tests/seed/).
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
 typer>=0.12.0
 rich>=13.0.0
 fastapi>=0.109.0

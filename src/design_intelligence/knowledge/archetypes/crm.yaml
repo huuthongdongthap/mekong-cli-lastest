@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: crm
+product_type: crm
+label: CRM
+summary: A relationship workspace. Time-boxed, contact-centric, action-dense.
+information_density: dense
+navigation_patterns:
+  - contact list + detail split
+  - activity timeline per object
+  - global search by name or company
+hierarchy:
+  - contact name is the header, not a label
+  - next action pinned above the timeline
+  - stage shown as a progress bar, not a dropdown
+interaction_expectations:
+  - drag stage changes with visual feedback
+  - inline log of activity, no modal-first
+  - bulk actions on selection
+common_failure_modes:
+  - timeline buried under collapsed sections
+  - next action is a button with no context
+  - duplicate contacts with no merge path
+accessibility_concerns:
+  - stage conveyed by text + bar, not color
+  - timeline announced in order
+responsive_requirements:
+  - detail panel becomes full-screen on mobile
+  - list collapses to cards
+appropriate_macrostructures:
+  - split-detail
+  - timeline-workbench
+  - contact-list

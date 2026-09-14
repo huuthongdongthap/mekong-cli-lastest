@@ -22,7 +22,8 @@ class TestSmartRouter(unittest.TestCase):
         self._tmpdir = tempfile.mkdtemp()
         self._path = str(Path(self._tmpdir) / "memory.yaml")
         _eb._default_bus = EventBus()
-        self.store = MemoryStore(store_path=self._path)
+        _real_ms = _pre_gateway_originals.get("src.core.memory_canonical.MemoryStore") or MemoryStore
+        self.store = _real_ms(store_path=self._path)
         self.router = SmartRouter(memory_store=self.store)
 
     def tearDown(self):

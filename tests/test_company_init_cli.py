@@ -42,6 +42,8 @@ def _invoke(
     input: str | None = None,
 ) -> pytest.ExceptionInfo | None:
     """Run company_app in tmp_path and return (result, cwd_preserved)."""
+    if input is None and argv and argv[0] == "init" and "--json" not in argv:
+        input = "CLITestCo\n1\n1\n1\n1\n"
     cwd = os.getcwd()
     os.chdir(tmp_path)
     try:
@@ -59,17 +61,20 @@ def clean(tmp_path: Path) -> Path:
 @pytest.fixture()
 def initialized(tmp_path: Path) -> Path:
     """Pre-init with deterministic config so status/reset can run."""
+    cwd = os.getcwd()
     os.chdir(tmp_path)
-    from src.core.company_init import CompanyConfig, init_company
-    cfg = CompanyConfig(
-        company_name="CLITestCo",
-        product_type="saas",
-        scenario="hybrid",
-        budget_tier="minimal",
-        primary_language="en",
-    )
-    init_company(cfg, base_dir=tmp_path)
-    os.chdir("/")
+    try:
+        from src.core.company_init import CompanyConfig, init_company
+        cfg = CompanyConfig(
+            company_name="CLITestCo",
+            product_type="saas",
+            scenario="hybrid",
+            budget_tier="minimal",
+            primary_language="en",
+        )
+        init_company(cfg, base_dir=tmp_path)
+    finally:
+        os.chdir(cwd)
     return tmp_path
 
 
@@ -88,10 +93,9 @@ class TestInitCommand:
         """Backend contract: init writes exactly 12 files."""
         result = _invoke(["init", "--no-confirm"], clean)
         assert result.exit_code == 0, result.stdout + (result.stderr or "")
-        mekong_dir = clean / ".mekong"
-        written = list(mekong_dir.rglob("*"))
-        written_files = [p for p in written if p.is_file()]
+        written_files = [p for p in clean.rglob("*") if p.is_file()]
         assert len(written_files) == 12
+        assert (clean / ".openclaw" / "config.json").exists()
 
     def test_success_panel_contains_company_name(self, clean: Path) -> None:
         """User-facing success output includes the company name."""
@@ -142,7 +146,8 @@ class TestInitAlreadySetup:
         """Second init on the same directory exits non-zero with friendly message."""
         result = _invoke(["init", "--no-confirm"], initialized)
         assert result.exit_code == 1
-        assert "already setup" in (result.stdout + (result.stderr or "")).lower()
+        out = (result.stdout + (result.stderr or "")).lower()
+        assert "already initialized" in out or "already setup" in out
 
 
 # ---------------------------------------------------------------------------

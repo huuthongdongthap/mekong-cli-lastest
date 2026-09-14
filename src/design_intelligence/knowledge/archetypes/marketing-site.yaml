@@ -1,0 +1,35 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+# One archetype per product type. 8 attributes each; no single aesthetic across types.
+
+id: marketing-site
+product_type: marketing-site
+label: Marketing site
+summary: A brand-owned persuasion surface. One message, one audience, one CTA.
+information_density: sparse
+navigation_patterns:
+  - top nav with 4-6 links
+  - sticky bottom CTA on scroll
+  - breadcrumb only for deep sections
+hierarchy:
+  - single H1 above the fold
+  - one primary button, one secondary
+  - visual weight on the headline, not the nav
+interaction_expectations:
+  - scroll-driven reveal, not hover theatre
+  - micro-interaction on the single CTA only
+  - no autoplays, no carousels
+common_failure_modes:
+  - 3+ competing CTAs
+  - hero taller than 60vh with no content below the fold
+  - stock-photo hero with gradient overlay
+accessibility_concerns:
+  - hero text must meet 4.5:1 on the photo
+  - keyboard-focusable nav toggle
+responsive_requirements:
+  - collapse nav to drawer on <768px
+  - CTA sticky on mobile, not floating
+appropriate_macrostructures:
+  - single-focus-hero
+  - split-visual-cta
+  - feature-strip

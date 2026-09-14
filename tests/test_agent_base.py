@@ -454,4 +454,4 @@ class TestPublicExports:
 
     def test_all_contains_expected_names(self):
         from src.core.agent_base import __all__  # noqa: PLC0415
-        assert set(__all__) == {"AgentBase", "Result", "Task", "TaskStatus"}
+        assert set(__all__) == {"AgentBase", "Result", "Task", "TaskStatus", "StepHooksDict"}

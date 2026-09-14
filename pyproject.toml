@@ -24,6 +24,11 @@ mekong = "src.main:app"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.15"
+# PyYAML + aiohttp are runtime deps of src/ (memory_canonical, api_adapter,
+# posthog_sink). CI installs via `pip install -e .`, which only resolves the
+# poetry table, so they must be declared here as well as requirements.txt.
+PyYAML = "^6.0"
+aiohttp = "^3.9.0"
 typer = ">=0.12.0"
 rich = "^13.7.0"
 fastapi = "^0.109.0"
@@ -42,6 +47,7 @@ python-multipart = "^0.0.6"
 anthropic = ">=0.40.0"
 psutil = "^5.9.0"
 prometheus-client = "^0.24.0"
+anyio = "^4.0.0"
 opentelemetry-api = ">=1.20.0"
 opentelemetry-sdk = ">=1.20.0"
 opentelemetry-instrumentation-fastapi = ">=0.45b0"

@@ -1,6 +1,6 @@
 {
   "schema": "mekong.command_packs.v1",
-  "version": "2026.06.03",
+  "version": "2026.08.26",
   "description": "Reviewed native command packs. Root commands must originate from command fabric catalog or one of these native packs.",
   "packs": [
     {
@@ -8,8 +8,9 @@
       "layer": "ops",
       "source": "src/cli",
       "commands": [
-        "command-fabric",
+        "ask",
         "dash",
+        "doctor",
         "eval-agent",
         "evolve",
         "evolve-code",
@@ -44,6 +45,7 @@
         "collab",
         "goal",
         "memory",
+        "pev",
         "schedule",
         "swarm",
         "telegram",
@@ -66,13 +68,69 @@
       "layer": "studio",
       "source": "src/cli/studio_commands.py",
       "commands": [
-        "bmad",
-        "dealflow",
-        "expert",
-        "match",
-        "portfolio",
-        "studio",
-        "venture"
+        "bmad"
+      ]
+    },
+    {
+      "id": "sdd",
+      "layer": "product-engineering",
+      "source": "src/cli/commands/",
+      "commands": [
+        "analyze",
+        "implement",
+        "specify",
+        "tasks"
+      ]
+    },
+    {
+      "id": "business-surface",
+      "layer": "product-engineering",
+      "source": "src/cli/commands/",
+      "commands": [
+        "agent",
+        "billing",
+        "binh-phap",
+        "build",
+        "company",
+        "cook",
+        "cook-auto",
+        "cook-auto-parallel",
+        "founder",
+        "idea",
+        "marketplace",
+        "particle",
+        "plan",
+        "plugin",
+        "usage",
+        "vendor"
+      ]
+    },
+    {
+      "id": "csuite",
+      "layer": "ops",
+      "source": "src/cli/csuite_commands.py",
+      "commands": [
+        "cfo",
+        "cmo",
+        "cso"
+      ]
+    },
+    {
+      "id": "governance",
+      "layer": "ops",
+      "source": "src/cli/governance_commands.py",
+      "commands": [
+        "governance"
+      ]
+    },
+    {
+      "id": "vietnam-funnel",
+      "layer": "product-engineering",
+      "source": "src/cli/funnel_commands.py",
+      "commands": [
+        "ke-toan",
+        "thue",
+        "zalo-oa"
       ]
     }
   ]

@@ -183,7 +183,7 @@ class MemorySeparation:
         return results
 
     def flush_session(self) -> int:
-        """Delete all SESSION-tier entries. Returns count deleted."""
+        """Delete all SESSION-tier entries and prune expired entries. Returns count deleted."""
         scope = self._mekong_scope()
         deleted = 0
         for entry in self._store.query(scope):
@@ -191,7 +191,17 @@ class MemorySeparation:
             if entry_tier == MemoryTier.SESSION:
                 self._store.delete(entry.key, scope)
                 deleted += 1
+        self.prune_expired()
         return deleted
+
+    def prune_expired(self) -> int:
+        """Remove all TTL-expired entries from the underlying store.
+
+        Returns count of removed entries.
+        """
+        if hasattr(self._store, "prune_expired"):
+            return int(self._store.prune_expired())
+        return 0
 
     def list_by_tier(self, tier: MemoryTier) -> list[str]:
         """List all user keys for a given tier."""
@@ -202,3 +212,9 @@ class MemorySeparation:
             if entry_tier == tier:
                 keys.append(user_key)
         return keys
+
+
+__all__ = [
+    "MemorySeparation",
+    "MemoryTier",
+]

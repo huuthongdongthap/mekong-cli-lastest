@@ -396,7 +396,7 @@ class TestPEVExecutorC3Wiring:
         mock_client.is_available = True
         mock_client.chat.return_value = mock_response
 
-        with patch("src.core.llm_client.get_client", return_value=mock_client):
+        with patch("src.providers.llm.client.get_client", return_value=mock_client):
             result = executor._execute_llm_step(step)
 
         assert result.exit_code == 0
@@ -425,7 +425,7 @@ class TestPEVExecutorC3Wiring:
         mock_client = MagicMock()
         mock_client.is_available = True
 
-        with patch("src.core.llm_client.get_client", return_value=mock_client):
+        with patch("src.providers.llm.client.get_client", return_value=mock_client):
             result = executor._execute_llm_step(step)
 
         assert result.metadata.get("circuit_open") is True

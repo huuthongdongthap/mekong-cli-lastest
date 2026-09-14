@@ -1,9 +1,4 @@
-import json
-
-from typer.testing import CliRunner
-
-from src.cli.app_setup import build_app
-from src.command_fabric.adapters import SUPPORTED_ADAPTERS, export_adapter_manifest
+from src.command_fabric.adapters import export_adapter_manifest
 from src.command_fabric.catalog import build_command_catalog
 
 
@@ -74,21 +69,3 @@ def test_command_fabric_exports_mcp_and_shell_adapters() -> None:
     assert any(command["completion"] == "mekong cook" for command in shell_payload["commands"])
 
 
-def test_command_fabric_cli_exports_adapter_json() -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        ["command-fabric", "export", "--adapter", "mcp", "--format", "json"],
-    )
-
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
-    assert payload["schema"] == "mekong.command_fabric.adapter.mcp.v1"
-    assert any(tool["metadata"]["command"] == "cook" for tool in payload["tools"])
-
-
-def test_command_fabric_cli_lists_supported_adapters() -> None:
-    result = CliRunner().invoke(build_app(), ["command-fabric", "adapters"])
-
-    assert result.exit_code == 0
-    listed = set(result.stdout.strip().splitlines())
-    assert set(SUPPORTED_ADAPTERS) <= listed

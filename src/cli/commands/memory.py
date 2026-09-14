@@ -41,6 +41,16 @@ def _jsonl_store() -> "src.core.memory_store.MemoryStore": # noqa: F821
  return MemoryStore(path=path)
 
 
+# ---------------------------------------------------------------------------
+# Conformant JSONL adapter (protocols.MemoryStore) — Super Command #7 Phase 4
+# ---------------------------------------------------------------------------
+def _jsonl_adapter() -> "src.core.adapters.jsonl_memory_adapter.JsonlMemoryAdapter": # noqa: F821
+ from src.core.adapters.jsonl_memory_adapter import JsonlMemoryAdapter
+
+ path = os.environ.get("MEKONG_MEMORY_PATH") or DEFAULT_JSONL_PATH
+ return JsonlMemoryAdapter(path=path)
+
+
 @memory_app.command(name="list")
 def memory_list(
  limit: int = typer.Option(20, "--limit", "-l", help="Max entries"),
@@ -82,29 +92,34 @@ def memory_search_cmd(
  query: str = typer.Argument(..., help="Search query (action/outcome/tags)"),
  limit: int = typer.Option(5, "--limit", "-l", help="Max results"),
 ) -> None:
- """Search past entries by keyword."""
- entries = _jsonl_store().search(query=query, limit=limit)
- if not entries:
+ """Search past entries by keyword (via the conformant JSONL adapter)."""
+ hits = _jsonl_adapter().search(query=query, limit=limit)
+ if not hits:
   console.print(f"[yellow]No results for '{query}'.[/yellow]")
   raise typer.Exit()
 
- table = Table(title=f"Matches ({len(entries)}) — '{query}'")
+ table = Table(title=f"Matches ({len(hits)}) — '{query}'")
  table.add_column("Time", style="dim", width=19)
  table.add_column("Agent", style="cyan", width=12)
  table.add_column("Action", max_width=60)
  table.add_column("Outcome", justify="center")
  table.add_column("Tags", style="dim", max_width=30)
 
- for e in entries:
-  style = "green" if e.outcome.lower() == "success" else (
-   "red" if e.outcome.lower() == "failed" else "yellow"
+ for h in hits:
+  meta = h.metadata if isinstance(h.metadata, dict) else {}
+  agent = meta.get("agent") or "-"
+  tags = meta.get("tags") or []
+  outcome = h.data.decode("utf-8", errors="replace") if h.data else "-"
+  style = "green" if outcome.lower() == "success" else (
+   "red" if outcome.lower() == "failed" else "yellow"
   )
+  ts = meta.get("timestamp") or "-"
   table.add_row(
-   e.timestamp[:19],
-   (e.agent or "-")[:12],
-   (e.action or "-")[:60],
-   f"[{style}]{e.outcome}[/{style}]",
-   ", ".join(e.tags or [])[:30],
+   str(ts)[:19],
+   str(agent)[:12],
+   (h.key or "-")[:60],
+   f"[{style}]{outcome}[/{style}]",
+   ", ".join(tags)[:30],
   )
  console.print(table)
 
@@ -129,7 +144,7 @@ def memory_clear_cmd(
 # ---------------------------------------------------------------------------
 
 
-def _yaml_store() -> "src.core.memory.MemoryStore": # noqa: F821
+def _yaml_store() -> "src.core.memory_canonical.MemoryStore": # noqa: F821
  from src.core.memory_canonical import MemoryStore
 
  path = os.environ.get("MEKONG_MEMORY_YAML_PATH") or str(DEFAULT_YAML_PATH)

@@ -130,4 +130,22 @@ by `dna/core-dna.json`.
 - The root CLI command surface is declared in `dna/command-surface.json`;
   new commands must update it through PR review.
 
-HARNESS.md v1.1.0 — CEO Solo Agentic Platform — Mekong CLI
+## 10. Runtime Core Contract (v0.1)
+
+The agent lifecycle executed by `src/core/runtime_adapter.py` is a pinned
+contract, documented in `docs/core-contract.md`:
+
+- 10 canonical stages (goal → context → plan → delegate → execute →
+  observe → verify → repair → remember → commit; context is folded
+  into the goal step — see `docs/core-contract.md`), repair capped at
+  3 attempts.
+- Provider-neutral core: no vendor SDK imports in `src/core/`
+  (enforced by `tests/test_core_boundary.py`).
+- One policy decision path: every capability execution passes
+  `Governance.classify_risk` — see `docs/autonomy-model.md`.
+
+Status quo: the harness PEV engine shares the core planner
+(`src.core.planner`) and verifier conventions; changing either side
+requires reading `docs/core-contract.md` first.
+
+HARNESS.md v1.2.0 — CEO Solo Agentic Platform — Mekong CLI

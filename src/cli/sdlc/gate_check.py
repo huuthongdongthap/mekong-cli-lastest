@@ -21,7 +21,30 @@ import subprocess
 from rich.console import Console
 from rich.table import Table
 
+from src.design_intelligence.change_detect import (
+    changed_files,
+    should_trigger_design_audit,
+)
+
 console = Console()
+
+
+def suggest_design_audit(base: str = "HEAD") -> bool:
+    """Opt-in hook: suggest `mekong ui audit` when the diff touches UI surface.
+
+    Returns True only when changed files include user-visible surface
+    (html/jsx/tsx/css/tailwind/pages/layouts/routes/tokens). Backend-only,
+    migration-only, CLI-only, and infra-only diffs return False so the hook
+    never adds noise to pure-backend deploys.
+    """
+    paths = changed_files(base)
+    if not should_trigger_design_audit(paths):
+        return False
+    console.print(
+        "[cyan]Design gate:[/cyan] diff touches user-visible surface — "
+        "run [bold cyan]mekong ui audit <file>[/bold cyan] before shipping."
+    )
+    return True
 
 
 def _detect_repo() -> str | None:

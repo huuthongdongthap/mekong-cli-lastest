@@ -1,10 +1,10 @@
 name: Nhịp Điệu Xanh CI/CD Pipeline
 
+# Legacy pipeline for the private nhipdieuxanh client project (apps/ is not in
+# this public repo), so it can never pass on push/PR here. Kept for reference
+# but only runs on manual dispatch.
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 env:
   REGISTRY: docker.io

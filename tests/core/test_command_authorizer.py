@@ -2,14 +2,36 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock, patch
 
+import pytest
 
 
 # ---------------------------------------------------------------------------
 # Fixtures / helpers
 # ---------------------------------------------------------------------------
+
+# Env vars that `has_contribution_evidence()` reads. GitHub Actions sets
+# GITHUB_EVENT_NAME=pull_request on PR runs, which would make the Core DNA
+# gate pass when it must block. Clear them for the whole test.
+_CONTRIBUTION_ENV_VARS = (
+    "GITHUB_EVENT_NAME",
+    "GITHUB_REF",
+    "MEKONG_CONTRIBUTION_PR",
+    "MEKONG_CONTRIBUTION_ISSUE",
+)
+
+
+@pytest.fixture(autouse=True)
+def _clear_contribution_env():
+    """Remove CI contribution-evidence env vars for deterministic gate tests."""
+    snapshot = {k: os.environ.pop(k, None) for k in _CONTRIBUTION_ENV_VARS}
+    yield
+    for k, v in snapshot.items():
+        if v is not None:
+            os.environ[k] = v
 
 
 def _make_authorizer(
@@ -52,12 +74,13 @@ def _make_authorizer(
     kv_client.get.return_value = kv_state
     kv_client.set.return_value = None
 
+    env_patch = {"RAAS_LICENSE_KEY": license_key_env} if license_key_env else {}
     with (
         patch("src.core.command_authorizer.get_gateway_client", return_value=gateway),
         patch("src.core.command_authorizer.get_auth_client", return_value=auth_client),
         patch("src.core.command_authorizer.get_license_manager", return_value=license_manager),
         patch("src.core.command_authorizer.get_kv_client", return_value=kv_client),
-        patch.dict("os.environ", {"RAAS_LICENSE_KEY": license_key_env} if license_key_env else {}, clear=False),
+        patch.dict("os.environ", env_patch, clear=False),
     ):
         authorizer = CommandAuthorizer(gateway_client=gateway)
         authorizer.auth_client = auth_client

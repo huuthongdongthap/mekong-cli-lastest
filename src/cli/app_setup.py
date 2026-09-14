@@ -25,7 +25,10 @@ def build_app() -> typer.Typer:
     """Create and return the fully wired Mekong CLI Typer app."""
     # Sub-app imports
     from src.cli.autonomous_commands import autonomous_app, telegram_app
+    from src.cli.billing_commands import app as billing_app
     from src.cli.binh_phap_commands import app as binh_phap_app
+    from src.cli.pev_commands import pev_app
+    from src.cli.usage_commands import app as usage_app
 
     # Phase-02: build CLI surface (mekong build from-plan)
     from src.cli.commands.build import app as build_app
@@ -34,6 +37,7 @@ def build_app() -> typer.Typer:
     from src.cli.commands.company_init import app as company_app
     from src.cli.commands.doctor_command import register as register_doctor
     from src.cli.commands.eval_agent import register as register_eval_agent
+    from src.cli.commands.harness_eval_command import register_harness_eval_command
 
     # Phase-02: founder genome assessment (mekong founder assess | review | list)
     from src.cli.commands.founder import founder_app
@@ -86,14 +90,20 @@ def build_app() -> typer.Typer:
     from src.cli.csuite_commands import register_csuite_commands  # noqa: E402
     from src.commands.agi import app as agi_app
 
-    # BMAD uses dash naming -- not importable as standard package
+    # BMAD uses dash naming -- not importable as standard package.
+    # bmad-commands imports the optional packages.* tree; when that tree is
+    # absent or its namespace package state is unusable, degrade to an empty
+    # group instead of crashing build_app().
     spec = importlib.util.spec_from_file_location(
         "bmad_commands",
         Path(__file__).parent / "bmad-commands.py",
     )
     bmad_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(bmad_module)
-    bmad_app = bmad_module.app
+    try:
+        spec.loader.exec_module(bmad_module)
+        bmad_app = bmad_module.app
+    except (ImportError, KeyError):
+        bmad_app = typer.Typer(name="bmad", help="BMAD workflow management")
 
     root = typer.Typer(
         name="mekong",
@@ -115,7 +125,11 @@ def build_app() -> typer.Typer:
     root.add_typer(tools_app, name="tools")
     root.add_typer(browse_app, name="browse")
     root.add_typer(collab_app, name="collab")
+    root.add_typer(billing_app, name="billing")
+    root.add_typer(pev_app, name="pev")
+    root.add_typer(usage_app, name="usage")
     register_doctor(root)
+    register_harness_eval_command(root)
 
     # Register C-suite commands directly on root (no mk- prefix)
     register_csuite_commands(root)
@@ -148,6 +162,13 @@ def build_app() -> typer.Typer:
     root.add_typer(code_app, name="code", help="Code phase: architecture -> task backlog")
     root.add_typer(deploy_app, name="deploy", help="Deploy phase: verify gates -> ship/hold")
 
+    # Phase-05: design intelligence sub-app (Hallmark verbs, MIT).
+    # `design` is taken by the SDLC design phase, so the design-intelligence
+    # verbs live under `ui` (audit/study/redesign/build/benchmark).
+    from src.cli.ui_commands import register_ui_commands  # noqa: E402
+
+    register_ui_commands(root)
+
     # Register flat command groups
     register_cook_command(root)
     register_workflow_commands(root)
@@ -157,10 +178,36 @@ def build_app() -> typer.Typer:
     from src.commands.run import register_run_command  # noqa: E402
     register_run_command(root)
 
+    # Vietnam funnel commands — reconnects Zalo OA, tax, and accounting to the
+    # binary (previously reachable only via `python -m`).
+    from src.cli.funnel_commands import (  # noqa: E402
+        ke_toan_app,
+        thue_app,
+        zalo_app,
+    )
+
     root.add_typer(
         company_app,
         name="company",
         help="Company / workspace configuration",
+    )
+
+    # Vietnam funnel commands (gap #10) — reconnects Zalo OA, tax, and
+    # accounting to the binary. Previously reachable only via `python -m`.
+    root.add_typer(
+        zalo_app,
+        name="zalo-oa",
+        help="Zalo OA — gửi tin nhắn, broadcast, followers, caption, đăng bài",
+    )
+    root.add_typer(
+        thue_app,
+        name="thue",
+        help="Thuế VN — TNCN lũy tiến, TNDN, GTGT (offline)",
+    )
+    root.add_typer(
+        ke_toan_app,
+        name="ke-toan",
+        help="Kế toán VN — hóa đơn TT78/2021, bút toán VAS, XML",
     )
 
     # Phase-02: plan and build sub-apps

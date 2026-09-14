@@ -131,7 +131,7 @@ class MekongBot(BotHandlers):
 
     def _execute_goal(self, goal: str) -> OrchestrationResult:
         """Execute goal via orchestrator (runs in thread)."""
-        from src.core.llm_client import get_client
+        from src.providers.llm.client import get_client
         from src.core.orchestrator import RecipeOrchestrator
 
         llm_client = get_client()

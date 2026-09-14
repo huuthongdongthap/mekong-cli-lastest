@@ -1,81 +1,44 @@
-# Super Command #2 — Phase 2: Architecture Expansion
+# MEKONG CLI — SUPER COMMAND #8
 
-## From Audit → Autonomous Runtime v0.2 (Phase 2)
+## Mission
 
-## Status: PHASE 2 + PHASE 7-9 COMPLETE (2026-08-18)
+Close architecture gap #4: **Harness Verifier Merge + DAG Scheduler Swap**.
 
-### Phase 2 — DONE (commit 3a4ea94c4)
-20 checklist items across 4 sub-phases. All Phase 2 tests pass (56/56).
+The runtime now has:
+- SC6: `plan()` produces 7 role-aware steps with dependency graph via GoalEngineAdapter
+- SC7: `remember()` writes through conformant MemoryStore adapter
 
-### Phase 7-9 — DONE (commit `641053e67`)
-- Memory canonical module + 16 importer migration
-- BillingAdapter wired into gateway.py + commands/run.py
-- DEPRECATED headers on 3 modules
-- Zero net deletions (all "dead code" candidates had live importers)
+But the harness verifier (`src/harness/`) is still a separate PEV engine that isn't wired into the core execution loop. The scheduler doesn't consume the DAG structure from GoalEngine. This gap closes by:
 
-See `.orchestrate/latest/plan.md` §8 for the full checklist with §8.1 name-mapping,
-and `.orchestrate/latest/execution.md` for the execution record.
+1. Merging the harness verifier into the core runtime's execution loop
+2. Swapping the scheduler to consume the DAG from GoalEngineAdapter
+3. Making `execute()` → `verify()` → `repair()` a real cycle
 
-### What v0.1-v0.3 Already Delivered
-- **9 Protocols defined** in `src/core/protocols.py` (MekongCoreRuntime, LLMRouter, ToolRegistry, AgentDispatcher, BillingMeter, MemoryStore, ObservabilitySink, VerificationEngine, GoalEngine)
-- **Canonical types** Plan/Step/PlanStatus unified in protocols.py
-- **Runtime adapter** MekongCoreRuntimeImpl — full 10-step loop (goal→context→plan→delegate→execute→observe→verify→repair→remember→commit), sync
-- **3 adapter classes** — MemoryStoreAdapter, TelemetrySinkAdapter, LLMRouterAdapter
-- **CLI command** `mekong run --goal "..."` wired
-- **Integration test** for full autonomous loop
-- **Protocol conformance tests** — 9/9 Protocols verified at runtime
-- **MCUBilling.check_quota()** added
-- **GoalEngine** with prompt injection defense
-- **Verifier.explain()** added
-- **Memory convergence** — 6 implementations audited, unified behind MemoryStore Protocol
+## Context
 
-### Phase 2 Scope (from Super Command #2) — ALL COMPLETE
+- `src/harness/` — PEV engine (plan-execute-verify), agents, observability
+- `src/core/runtime_adapter.py` — `MekongCoreRuntimeImpl` with `plan()`/`delegate()`/`execute()`/`remember()`
+- `src/core/ports/llm.py` — LLMProviderPort protocol
+- `src/core/adapters/` — LLM, MCP, payment, buzz, tool adapters
+- `src/mekongcli/core/goal_engine/` — GoalEngine service (multi-step planner)
 
-The super command asks for these areas (section references). All 21 areas are
-DONE as of 2026-08-18; the table below reflects actual state, not intent.
+## Absolute Rules
 
-| # | Area | Status | Where implemented |
-|---|------|--------|-------------------|
-| 3 | Core Contract | DONE | `plans/reports/MEKONG_CORE_CONTRACT.md` (605 lines) |
-| 4 | Core/Adapter Boundary | DONE | `src/core/protocols.py` — 9 Protocols; adapters are thin wrappers |
-| 5 | LLM Provider Abstraction | DONE | `LLMRouterAdapter.generate()` / `.health()` — `src/core/llm_router_adapter.py` |
-| 6 | Agent Registry | DONE | `src/core/agent_registry.py` — `AgentRegistry`, `get_registry()` |
-| 7 | Capability Bus | DONE | `src/core/capability.py` — `Capability`, `RiskLevel`, `CapabilitySource`, `CapabilityBus` |
-| 8 | MCP Adapter | DONE | Step 3.5 — wraps MCP as adapter to capability bus (plan.md §211-237) |
-| 9 | Runtime Adapter | DONE | `MekongCoreRuntimeImpl` — health/destroy/capability_bus/governance |
-| 10 | Sandbox/AI App Factory | DONE (interface only) | No marketplace, per YAGNI |
-| 11 | Buzz Runtime Adapter | DONE | `BuzzAdapter` + `MekongRuntimeAdapter` in `src/core/` |
-| 12 | Economic Bus | DONE | `PaymentProvider` Protocol (`protocols.py:216`) + `BillingAdapter` (`billing_adapter.py`) |
-| 13 | Policy/Autonomy Engine | DONE | `src/core/governance.py` — `Governance`, `ActionClass`, risk levels |
-| 14 | Memory | DONE | `MemoryStore` Protocol; `memory_canonical.py` as single source of truth |
-| 15 | Observability | DONE | `MissionTracer` + `TelemetrySinkAdapter` |
-| 16 | Open Source Architecture | DONE | MIT license; `plans/reports/CURRENT_ARCHITECTURE.md` |
-| 17 | CLI UX | DONE | 43 wired commands; `mekong run --goal` |
-| 18 | Test Strategy | DONE | 6876 passing; 6 Phase 2 test files (56 tests) |
-| 19 | Documentation | DONE | `plans/reports/` — 6 audit deliverables |
-| 20 | Deprecation | DONE (partial) | DEPRECATED headers on 3 modules; `memory_canonical.py` migration complete |
-| 21 | Quality Gate | DONE | Full suite run + ruff clean; regressions verified via `git stash` |
-| 22 | Final Architecture | DONE | `plans/reports/` — CURRENT_ARCHITECTURE, DEPENDENCY_MAP, DUPLICATION_MAP, DEPRECATION_MAP, AUTONOMY_GAPS, MEKONG_CORE_CONTRACT |
-| 23 | Stop Condition | DONE | This task.md + `.orchestrate/latest/` artifacts |
+1. Preserve working functionality — `mekong run`, `cook`, `goal`, `implement` must keep working
+2. Do not rewrite the entire repository
+3. Do not create a second orchestration framework
+4. Do not remove existing business workflows unless proven obsolete
+5. Prefer adapters/interfaces over provider-specific logic
+6. Keep the core small
+7. Every architectural change must have tests
+8. No speculative marketplace, tokenomics, custody, or autonomous financial transactions
+9. Must not break protected flows (NOWPayments IPN, license gate, payment)
+10. Must not touch `.github/workflows/*` (owned by concurrent PR #7)
 
-### Remaining (MEDIUM escrow, not blocking)
+## Success Criteria
 
-- **MED-1:** `billing_proration.py` + `billing_idempotency.py` — tightly coupled via
-  `billing_event_emitter.py`, `raas/__init__.py`, `test_billing.py`. Requires
-  RaaS sync pipeline migration first.
-- Pre-existing test failures unrelated to this work: 3 collection/setup errors
-  + 7 `test_memory_qdrant`/`test_smart_router` failures (confirmed on clean tree
-  via `git stash`).
-
-## Constraints
-- Preserve all 218+ passing tests
-- ruff clean
-- Preserve business funnels (Zalo OA, Tax/Accounting, AI Video Factory)
-- YAGNI — thin adapters, no rewrites
-- No new dependencies
-- No vendor lock-in
-- Provider-neutral core
-- MCP-native capabilities
-- Policy-controlled autonomy
-- Economic-ready (interface only)
-- Open source ready
+- Harness verifier merged into core runtime execution loop
+- Scheduler consumes DAG from GoalEngineAdapter
+- `execute()` → `verify()` → `repair()` is a real cycle
+- All existing tests pass (parity gate EMPTY for new failures)
+- Quality gates green: ruff clean, pyright 0 new errors

@@ -14,7 +14,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -322,7 +322,20 @@ class WorldModel:
     # --- Internal helpers ---
 
     def _get_file_tree(self, max_depth: int = 3) -> List[str]:
-        """Get file listing (excluding noise directories)."""
+        """Get file listing (excluding noise directories).
+
+        Bounded iterative walk. Exclusions and depth are checked BEFORE
+        descending (prune-before-descend), so a leaked working_dir can never
+        walk the whole filesystem. A hard visited-entry cap bounds the walk
+        even if an exclusion is missed. Output shape is unchanged: a list of
+        relative-path strings, capped at 500 entries.
+
+        Depth semantics match the previous rglob-based version: a file is
+        included when its relative path has at most ``max_depth`` parts. A
+        directory at relative depth ``d`` holds files at depth ``d + 1``, so
+        only directories with ``d < max_depth`` are scanned and only
+        subdirectories whose own depth is still ``< max_depth`` are pushed.
+        """
         exclusions = {
             ".git", "node_modules", "__pycache__", ".venv",
             "venv", ".tox", ".mypy_cache", ".pytest_cache",
@@ -330,19 +343,40 @@ class WorldModel:
         }
         files: List[str] = []
         root = Path(self.working_dir)
+        max_visited = 50000
+        visited = 0
+        # Stack entries: (directory, depth) where depth == number of path
+        # parts of the directory relative to root (root itself is depth 0).
+        stack: List[Tuple[Path, int]] = [(root, 0)]
         try:
-            for item in root.rglob("*"):
-                # Check depth
-                rel = item.relative_to(root)
-                if len(rel.parts) > max_depth:
+            while stack and visited < max_visited:
+                current, depth = stack.pop()
+                try:
+                    entries = list(os.scandir(current))
+                except (OSError, NotADirectoryError):
                     continue
-                # Skip excluded dirs
-                if any(part in exclusions for part in rel.parts):
-                    continue
-                if item.is_file():
-                    files.append(str(rel))
-                if len(files) >= 500:
-                    break
+                for entry in entries:
+                    visited += 1
+                    if visited > max_visited:
+                        break
+                    if entry.is_dir():
+                        # Prune-before-descend: never descend into an excluded
+                        # directory, so its contents are never visited.
+                        if entry.name in exclusions:
+                            continue
+                        child_depth = depth + 1
+                        if child_depth < max_depth:
+                            stack.append((Path(entry.path), child_depth))
+                    elif entry.is_file():
+                        # Skip files whose own name is a noise pattern, to
+                        # match the previous any-part-in-exclusions filter.
+                        if entry.name in exclusions:
+                            continue
+                        files.append(
+                            str(Path(entry.path).relative_to(root))
+                        )
+                        if len(files) >= 500:
+                            return files
         except Exception:
             pass
         return files

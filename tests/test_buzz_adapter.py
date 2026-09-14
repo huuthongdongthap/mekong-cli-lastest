@@ -5,7 +5,7 @@
 
 import pytest
 
-from src.core.buzz_adapter import BuzzAdapter, BuzzPayload
+from src.core.buzz_adapter import BuzzAdapter, BuzzConfigError, BuzzPayload
 
 
 class TestBuzzPayloadDataclass:
@@ -94,6 +94,25 @@ class TestSendUpdate:
         result = adapter.send_update("completed", {"output": "done"})
         assert result["status"] == "completed"
         assert result["data"]["output"] == "done"
+
+
+class TestNoTransportFailsLoud:
+    """Adapter with no transport must refuse delivery, not silently no-op."""
+
+    def test_send_update_raises_buzz_config_error(self):
+        adapter = BuzzAdapter.without_transport()
+        with pytest.raises(BuzzConfigError, match="no transport wired"):
+            adapter.send_update("running", {"x": 1}, callback_url="https://buzz.test/cb")
+
+    def test_send_update_no_callback_url_is_noop(self):
+        adapter = BuzzAdapter.without_transport()
+        result = adapter.send_update("running", {"x": 1})
+        assert result == {"status": "running", "data": {"x": 1}}
+
+    def test_default_adapter_delivers_via_urllib(self):
+        adapter = BuzzAdapter(transport=lambda url, payload: 200)
+        result = adapter.send_update("completed", {"ok": True}, callback_url="https://buzz.test/cb")
+        assert result["status"] == "completed"
 
 
 class TestReceiveFeedback:

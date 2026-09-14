@@ -1,9 +1,11 @@
 """Tests for memory tier separation layer."""
 
+import time
 import unittest
 
 from src.core.memory_separation import MemorySeparation, MemoryTier
 from src.core.memory_scope import ScopedMemoryStore
+from src.core.protocols import MemorySeparation as MemorySeparationProtocol
 
 
 class TestMemoryTierEnum(unittest.TestCase):
@@ -133,6 +135,54 @@ class TestMemorySeparation(unittest.TestCase):
 
         assert session_val == b"session-val"
         assert persistent_val == b"persistent-val"
+
+    def test_protocol_conformance(self):
+        """MemorySeparation satisfies protocols.MemorySeparation."""
+        assert isinstance(self.sep, MemorySeparationProtocol)
+
+    def test_prune_expired_removes_expired_entries(self):
+        """prune_expired() removes TTL-expired entries and returns count."""
+        self.sep.store("fresh", b"fresh-val", tier=MemoryTier.PERSISTENT)
+        self.sep.store("expired", b"old-val", tier=MemoryTier.SESSION, ttl=1)
+
+        # Force expiration by backdating created_at on the underlying scoped entry
+        for entry in self.store._store.values():
+            if "expired" in entry.key:
+                entry.created_at = time.time() - 10
+
+        pruned_count = self.sep.prune_expired()
+        assert pruned_count == 1
+        assert self.sep.retrieve("expired", tier=MemoryTier.SESSION) is None
+        assert self.sep.retrieve("fresh", tier=MemoryTier.PERSISTENT) == b"fresh-val"
+
+    def test_prune_expired_when_none_expired_returns_zero(self):
+        """prune_expired() returns 0 when no entries are expired."""
+        self.sep.store("p1", b"val", tier=MemoryTier.PERSISTENT)
+        assert self.sep.prune_expired() == 0
+
+    def test_flush_session_triggers_prune_expired(self):
+        """flush_session() clears active session keys AND triggers prune_expired()."""
+        self.sep.store("s_active", b"active", tier=MemoryTier.SESSION)
+        self.sep.store("p_expired", b"expired-p", tier=MemoryTier.PERSISTENT, ttl=1)
+
+        # Backdate p_expired
+        for entry in self.store._store.values():
+            if "p_expired" in entry.key:
+                entry.created_at = time.time() - 10
+
+        deleted_session = self.sep.flush_session()
+        assert deleted_session == 1
+        assert self.sep.retrieve("s_active", tier=MemoryTier.SESSION) is None
+        # p_expired was pruned during flush_session's call to prune_expired
+        assert self.sep.retrieve("p_expired", tier=MemoryTier.PERSISTENT) is None
+
+    def test_prune_expired_without_store_support_returns_zero(self):
+        """prune_expired() safely returns 0 if underlying store lacks method."""
+        class DummyStore:
+            pass
+
+        sep = MemorySeparation(store=DummyStore())
+        assert sep.prune_expired() == 0
 
 
 if __name__ == "__main__":

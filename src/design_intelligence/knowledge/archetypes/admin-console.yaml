@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: admin-console
+product_type: admin-console
+label: Admin console
+summary: A power-user control plane. Precision and reversibility over polish.
+information_density: dense
+navigation_patterns:
+  - left sidebar with collapsible groups
+  - command palette for cross-cutting actions
+  - recent-items rail
+hierarchy:
+  - table-first, detail drawer second
+  - destructive actions visually distinct and confirmed
+  - status badges over color alone
+interaction_expectations:
+  - bulk select with keyboard range
+  - undo for every destructive action
+  - confirm dialogs name the exact object
+common_failure_modes:
+  - destructive button styled like primary
+  - no confirmation on delete
+  - pagination without total count
+accessibility_concerns:
+  - status conveyed by text, not color
+  - table headers sortable via keyboard
+responsive_requirements:
+  - tables scroll horizontally, never clip
+  - drawer becomes full-screen on mobile
+appropriate_macrostructures:
+  - sidebar-workbench
+  - table-detail
+  - command-palette

@@ -42,6 +42,8 @@ from src.api.vn_payments_routes import router as vn_payments_router
 from src.api.org_routes import org_router
 from src.api.billing_routes import router as billing_router
 from src.api.metrics_routes import router as metrics_router
+from src.api.quota_status_endpoints import quota_router
+from src.api.tier_config_routes import router as tier_config_router
 from src.middleware.csrf_middleware import CSRFMiddleware
 from src.middleware.rate_limit_gateway_middleware import RateLimitGatewayMiddleware
 from src.middleware.pilot_credit_gate import PilotCreditGateMiddleware
@@ -117,6 +119,8 @@ app.include_router(billing_router)
 app.include_router(autopilot_router)
 app.include_router(marketplace_router)
 app.include_router(metrics_router)
+app.include_router(quota_router)
+app.include_router(tier_config_router)
 
 # CORS for AgencyOS frontend
 _ALLOWED_ORIGINS: list[str] = [

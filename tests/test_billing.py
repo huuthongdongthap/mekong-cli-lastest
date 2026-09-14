@@ -25,11 +25,11 @@ import pytest
 # Ensure src is importable
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-_WEBHOOK_HANDLER_PATH = Path(__file__).parent.parent / "src" / "raas" / "nowpayments-webhook-handler.py"
+_WEBHOOK_HANDLER_PATH = Path(__file__).parent.parent / "src" / "raas" / "nowpayments_webhook_handler.py"
 
 
 def _load_webhook_handler():
-    """Load nowpayments-webhook-handler.py (hyphenated filename — can't use normal import)."""
+    """Load nowpayments_webhook_handler.py via importlib."""
     spec = importlib.util.spec_from_file_location("nowpayments_webhook_handler", _WEBHOOK_HANDLER_PATH)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -295,14 +295,14 @@ class TestHandleIpn:
 # ---------------------------------------------------------------------------
 
 class TestCheckoutValidation:
-    """Tests for nowpayments-checkout tier validation (no HTTP calls)."""
+    """Tests for nowpayments_checkout tier validation (no HTTP calls)."""
 
     def setup_method(self):
         # Import module using hyphenated filename via importlib
         import importlib.util
         spec = importlib.util.spec_from_file_location(
             "nowpayments_checkout",
-            Path(__file__).parent.parent / "src" / "raas" / "nowpayments-checkout.py",
+            Path(__file__).parent.parent / "src" / "raas" / "nowpayments_checkout.py",
         )
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)

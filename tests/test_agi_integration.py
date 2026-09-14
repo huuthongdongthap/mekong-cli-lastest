@@ -206,7 +206,7 @@ class TestVersionHealthCheck:
 
     @pytest.mark.parametrize("module,cls", [
         ("src.core.nlu", "IntentClassifier"),
-        ("src.core.memory", "MemoryStore"),
+        ("src.core.memory_canonical", "MemoryStore"),
         ("src.core.world_model", "WorldModel"),
         ("src.core.tool_registry", "ToolRegistry"),
         ("src.core.browser_agent", "BrowserAgent"),

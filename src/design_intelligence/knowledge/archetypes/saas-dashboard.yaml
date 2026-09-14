@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: saas-dashboard
+product_type: saas-dashboard
+label: SaaS dashboard
+summary: A daily-driver workspace. Density and scannability beat decoration.
+information_density: comfortable
+navigation_patterns:
+  - left sidebar with grouped sections
+  - global search with keyboard shortcut
+  - breadcrumb for deep object pages
+hierarchy:
+  - KPI row above the fold, 3-5 metrics
+  - one primary chart, supporting tables below
+  - empty states teach the next action
+interaction_expectations:
+  - optimistic updates on toggles
+  - inline row actions, not modal-first
+  - loading skeletons, not spinners
+common_failure_modes:
+  - over-carded grid of 20+ identical tiles
+  - every metric the same size
+  - no empty state, just a blank grid
+accessibility_concerns:
+  - charts need text alternatives
+  - focus visible on every interactive row
+responsive_requirements:
+  - sidebar collapses to icon rail on <1024px
+  - KPI row wraps, never horizontal-scrolls
+appropriate_macrostructures:
+  - sidebar-workbench
+  - kpi-grid
+  - split-detail

@@ -1,0 +1,24 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's genre system (github.com/nutlope/hallmark, MIT).
+# A genre is a mood register. It constrains tone, not layout.
+
+genres:
+  - id: editorial
+    summary: Print-inspired. Serif display, generous measure, restrained color.
+    fits: [documentation, marketing-site, content-factory]
+    avoids: [trading-terminal, admin-console]
+
+  - id: modern-minimal
+    summary: Quiet surfaces, one accent, hierarchy via weight and space.
+    fits: [saas-dashboard, developer-tool, crm, analytics]
+    avoids: []
+
+  - id: atmospheric
+    summary: Dark or tinted surfaces, glow accents, depth via layering.
+    fits: [ai-workspace, agent-console, trading-terminal]
+    avoids: [documentation, erp]
+
+  - id: playful
+    summary: Saturated accents, rounded forms, friendly microcopy.
+    fits: [mobile-app, ecommerce, content-factory]
+    avoids: [erp, trading-terminal]

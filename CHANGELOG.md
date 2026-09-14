@@ -24,6 +24,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `GET /healthz` — lightweight liveness probe for load balancers
 
 ### Changed
+- Architecture audit refresh at HEAD 0878f966f: all seven docs/architecture/ audit documents re-verified against the working tree (298 cited paths, zero dangling references); new DRIFT_REPORT.md documents PR #2 drift findings; scores re-based with evidence ledgers (architecture 66/100, autonomy 55/100, production-readiness 72/100)
 - MCUBilling migrated from in-memory dict to SQLite WAL via CreditStore
 - License gate changed to fail-closed (default `LICENSE_GATE_ENFORCE=1`)
 - Coverage config: removed `*/raas/*` and `*/llm_client.py` from omit list

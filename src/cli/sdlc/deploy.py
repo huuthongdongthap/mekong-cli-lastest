@@ -25,13 +25,23 @@ from src.cli.sdlc.agent_dispatch import (
     resolve_context,
     scaffold_output,
 )
-from src.cli.sdlc.gate_check import check_ci_gates
+from src.cli.sdlc.gate_check import check_ci_gates, suggest_design_audit
+from src.commands.deploy import (
+    rollback as deploy_rollback_cmd,
+    run as deploy_run_cmd,
+    status as deploy_status_cmd,
+)
 
 deploy_app = typer.Typer(
     name="deploy",
     help="Deploy phase: verify CI gates and emit ship/hold report.",
     add_completion=False,
 )
+
+# Mount platform deployment commands from src/commands/deploy.py
+deploy_app.command("run")(deploy_run_cmd)
+deploy_app.command("status")(deploy_status_cmd)
+deploy_app.command("rollback")(deploy_rollback_cmd)
 
 console = Console()
 
@@ -60,6 +70,11 @@ def deploy_cmd(
         True,
         "--overwrite/--no-overwrite",
         help="Overwrite existing DEPLOY_REPORT.md (default: yes — idempotent)",
+    ),
+    design_audit: bool = typer.Option(
+        False,
+        "--design-audit",
+        help="Opt-in: suggest `mekong ui audit` when the diff touches UI surface",
     ),
 ) -> None:
     """
@@ -92,6 +107,10 @@ def deploy_cmd(
         console.print("[green]Gates:[/green] check passed\n")
     else:
         console.print("[yellow]Gate check skipped (--skip-gate-check)[/yellow]")
+
+    # Opt-in design gate — advisory only, never blocks the deploy.
+    if design_audit:
+        suggest_design_audit()
 
     prior_content = load_prior_output(
         filename=_PRIOR_OUTPUT,

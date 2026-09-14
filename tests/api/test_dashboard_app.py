@@ -37,8 +37,10 @@ patch("src.auth.middleware.get_rate_limiter", lambda: _rl).start()
 # FastAPI captures require_permission at route-registration time.
 # Patching here ensures the passthrough is baked in before @app.get(...) runs.
 _passthrough = MagicMock(side_effect=lambda *a, **kw: lambda f: f)
-patch("src.auth.rbac.require_permission", _passthrough).start()
-patch("src.auth.rbac.get_current_user", MagicMock(return_value=None)).start()
+_p_perm = patch("src.auth.rbac.require_permission", _passthrough)
+_p_perm.start()
+_p_user = patch("src.auth.rbac.get_current_user", MagicMock(return_value=None))
+_p_user.start()
 
 
 def _load_app_module():
@@ -60,6 +62,8 @@ def _load_app_module():
 
 
 _app_mod = _load_app_module()
+_p_perm.stop()
+_p_user.stop()
 
 
 # ---------------------------------------------------------------------------

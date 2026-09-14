@@ -18,8 +18,8 @@ from src.core.memory_bridge import MemoryBridge, MemoryKind, MemoryRecord, get_b
 from src.harness.pev.executor import RecipeExecutor
 from src.harness.pev.metrics_collector import get_pev_metrics
 from src.harness.pev.parser import Recipe, RecipeParser
-from src.harness.pev.planner import PlanningContext, RecipePlanner
-from src.harness.pev.verifier import RecipeVerifier, VerificationReport
+from src.core.planner import PlanningContext, RecipePlanner
+from src.core.verifier import RecipeVerifier, VerificationReport
 
 
 # B5: NLU integration — intent detection with B3 core
@@ -228,7 +228,7 @@ class PEVOrchestrator:
         self, recipe: Recipe, passed: int, failed: int
     ) -> VerificationReport:
         """Build a top-level VerificationReport summarising whole-pipeline status."""
-        from src.harness.pev.verifier import (
+        from src.core.verifier import (
             VerificationCheck,
             VerificationStatus,
         )

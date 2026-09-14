@@ -20,7 +20,7 @@ import pytest
 
 sys.path.insert(0, "/Users/macbook/mekong-cli")
 
-from cli.tui.streaming import (
+from src.cli.tui.streaming import (
     OutputLine,
     ProgressPanel,
     RendererState,

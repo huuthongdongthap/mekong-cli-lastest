@@ -96,29 +96,39 @@ class TestBinhPhapDispatcher:
 class TestEscalationRouting:
     """Test LLM escalation routing — local_mlx → cloud_sonnet → cloud_opus."""
 
-    def test_resolve_local_mlx(self) -> None:
+    def test_resolve_local_mlx(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from src.core.binh_phap_escalation import resolve_llm_provider
+        monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
+        monkeypatch.delenv("ZUNEF_FABLE_BASE_URL", raising=False)
         config = resolve_llm_provider("local_mlx")
-        assert "8001" in config["base_url"]
-        assert config["provider_name"] == "rapid-mlx"
-        assert "fallback_url" in config
+        assert config["base_url"].startswith("http")
+        assert "fable" in config["model"]
+        assert "fable" in config["provider_name"]
 
-    def test_resolve_cloud_sonnet(self) -> None:
+    def test_resolve_cloud_sonnet(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from src.core.binh_phap_escalation import resolve_llm_provider
+        monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
+        monkeypatch.delenv("ZUNEF_SONNET_BASE_URL", raising=False)
         config = resolve_llm_provider("cloud_sonnet")
         assert config["base_url"].startswith("https://")
         assert "sonnet" in config["model"]
+        assert "sonnet" in config["provider_name"]
 
-    def test_resolve_cloud_opus(self) -> None:
+    def test_resolve_cloud_opus(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from src.core.binh_phap_escalation import resolve_llm_provider
+        monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
+        monkeypatch.delenv("ZUNEF_OPUS_BASE_URL", raising=False)
         config = resolve_llm_provider("cloud_opus")
         assert config["base_url"].startswith("https://")
         assert "opus" in config["model"]
+        assert "opus" in config["provider_name"]
 
-    def test_resolve_unknown_defaults_to_local(self) -> None:
+    def test_resolve_unknown_defaults_to_local(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from src.core.binh_phap_escalation import resolve_llm_provider
+        monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
         config = resolve_llm_provider("unknown_level")
-        assert config["provider_name"] == "rapid-mlx"
+        assert "fable" in config["model"]
+        assert "fable" in config["provider_name"]
 
     def test_get_llm_for_command(self, tmp_company: str) -> None:
         from src.core.binh_phap_dispatcher import BinhPhapDispatcher

@@ -61,6 +61,54 @@ class PaymentResult(Protocol):
     transaction_id: str | None
     pending: bool = False
     note: str | None = None
+    error: str | None = None
+
+
+# ─── Economic Bus dataclasses (Phase 2C) ─────────────────────────────
+#
+# Pure data carriers for the extended PaymentProvider interface.
+# Security note (§18): these types MUST NOT carry secrets — no private
+# keys, seed phrases, or credentials. ``metadata`` is free-form but
+# providers must never place key material in it.
+
+@dataclass(frozen=True)
+class Quote:
+    """Price quote for a prospective payment."""
+
+    asset: str
+    network: str
+    amount: float
+    recipient: str
+    scheme: str
+    provider: str
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class PaymentRequest:
+    """Request to initiate a payment."""
+
+    asset: str
+    network: str
+    amount: float
+    recipient: str
+    scheme: str
+    provider: str
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class PaymentReceipt:
+    """Receipt for a processed payment request."""
+
+    asset: str
+    network: str
+    amount: float
+    recipient: str
+    scheme: str
+    provider: str
+    transaction_id: str
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 @runtime_checkable
 class MemoryHit(Protocol):
@@ -147,6 +195,7 @@ class LLMRouter(Protocol):
     def stream(self, prompt: str, model: str | None = None, **kwargs: Any) -> Any: ...
     def structured_output(self, prompt: str, schema: Dict[str, Any], model: str | None = None, **kwargs: Any) -> Dict[str, Any]: ...
     def health(self) -> Dict[str, Any]: ...
+    def tool_call(self, messages: list[dict[str, str]], tools: list[dict[str, Any]], model: str | None = None, **kwargs: Any) -> list[dict[str, Any]]: ...
 
 
 @runtime_checkable
@@ -157,15 +206,6 @@ class ToolRegistry(Protocol):
     def execute(self, tool_id: str, params: Dict[str, Any]) -> Dict[str, Any]: ...
     def list_tools(self) -> List[Any]: ...
     def list_mcp_tools(self) -> List[Any]: ...
-
-
-@runtime_checkable
-class AgentDispatcher(Protocol):
-    """Single canonical dispatch — no duplicate systems."""
-
-    def dispatch(self, agent_role: str, task: Dict[str, Any]) -> Result: ...
-    def build_message_chain(self, role: str, task: Dict[str, Any]) -> List[dict]: ...
-    def load_agent_prompt(self, role: str) -> str: ...
 
 
 @runtime_checkable
@@ -185,6 +225,22 @@ class MemoryStore(Protocol):
     def retrieve(self, key: str) -> bytes | None: ...
     def delete(self, key: str) -> bool: ...
     def search(self, query: str, limit: int = 10) -> List[MemoryHit]: ...
+
+
+@runtime_checkable
+class MemorySeparation(Protocol):
+    """Memory tier separation layer protocol (Gap #3)."""
+
+    def store(
+        self,
+        key: str,
+        value: bytes,
+        tier: Any = ...,
+        ttl: Optional[int] = None,
+    ) -> None: ...
+    def retrieve(self, key: str, tier: Any = ...) -> Optional[bytes]: ...
+    def flush_session(self) -> int: ...
+    def prune_expired(self) -> int: ...
 
 
 @runtime_checkable
@@ -214,11 +270,21 @@ class GoalEngine(Protocol):
 
 @runtime_checkable
 class PaymentProvider(Protocol):
-    """Payment abstraction — wraps billing, x402/MPP settlement."""
+    """Payment abstraction — wraps billing, x402/MPP settlement.
+
+    Legacy methods (record_usage/check_quota/settle_payment) stay unchanged.
+    Extended economic-bus methods operate on pure-data dataclasses
+    (Quote/PaymentRequest/PaymentReceipt) and never touch wallets, keys,
+    or the network at the protocol level — providers decide transport.
+    """
 
     def record_usage(self, agent: str, tokens: int, model: str) -> None: ...
     def check_quota(self, org_id: str) -> QuotaStatus: ...
     def settle_payment(self, amount: float, currency: str, recipient: str) -> PaymentResult: ...
+    def quote(self, amount: float, currency: str, recipient: str, scheme: str) -> Quote: ...
+    def request_payment(self, req: PaymentRequest) -> PaymentReceipt: ...
+    def verify(self, receipt: PaymentReceipt) -> bool: ...
+    def refund(self, receipt: PaymentReceipt) -> PaymentResult: ...
 
 
 @runtime_checkable
@@ -252,8 +318,8 @@ class SerializableBillingResult(Protocol):
 
 
 __all__ = [
-    "MekongCoreRuntime", "LLMRouter", "ToolRegistry", "AgentDispatcher",
-    "BillingMeter", "MemoryStore", "ObservabilitySink", "VerificationEngine", "GoalEngine",
+    "MekongCoreRuntime", "LLMRouter", "ToolRegistry",
+    "BillingMeter", "MemoryStore", "MemorySeparation", "ObservabilitySink", "VerificationEngine", "GoalEngine",
     "PaymentProvider",  # Phase 2C — Economic Bus
     "CapabilityBus",  # Phase 2A
     "TaskProfile", "CostEstimate", "ToolDef", "ToolResult", "QuotaStatus",

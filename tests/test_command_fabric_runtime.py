@@ -1,8 +1,5 @@
 import json
 
-from typer.testing import CliRunner
-
-from src.cli.app_setup import build_app
 from src.command_fabric.artifacts import materialize_command_fabric
 from src.command_fabric.adapters import SUPPORTED_ADAPTERS
 from src.command_fabric.runtime import (
@@ -30,7 +27,7 @@ def test_command_fabric_materializes_adapter_artifacts(tmp_path) -> None:
 
     mcp_payload = json.loads((tmp_path / "mcp.json").read_text(encoding="utf-8"))
     assert mcp_payload["schema"] == "mekong.command_fabric.adapter.mcp.v1"
-    assert mcp_payload["tool_count"] == 91
+    assert mcp_payload["tool_count"] == len(records_for_scope("project"))
 
     bundle = json.loads((tmp_path / "adapters.json").read_text(encoding="utf-8"))
     assert bundle["schema"] == "mekong.command_fabric.adapter_bundle.v1"
@@ -38,23 +35,13 @@ def test_command_fabric_materializes_adapter_artifacts(tmp_path) -> None:
     assert set(bundle["adapters"]) == {"mcp", "vscode"}
 
 
-def test_command_fabric_cli_materializes_artifacts(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        [
-            "command-fabric",
-            "materialize",
-            "--scope",
-            "project",
-            "--adapter",
-            "shell",
-            "--out",
-            str(tmp_path),
-        ],
+def test_command_fabric_materializes_shell_adapter_artifacts(tmp_path) -> None:
+    payload = materialize_command_fabric(
+        output_dir=tmp_path,
+        scope="project",
+        adapters=["shell"],
     )
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     assert payload["artifact_count"] == 4
     assert (tmp_path / "canonical.json").exists()
     assert (tmp_path / "shell.json").exists()
@@ -109,3 +96,15 @@ def test_mcp_server_exposes_command_fabric_handlers() -> None:
     invoked = json.loads(server._handle_command_fabric_run("4-project"))
     assert invoked["ok"] is True
     assert invoked["data"]["mode"] == "catalog-only"
+
+    invalid_scope = json.loads(server._handle_command_fabric_run("4-project", scope="invalid"))
+    assert invalid_scope["ok"] is False
+    assert "Invalid scope" in invalid_scope["error"]
+
+    malicious_cmd = json.loads(server._handle_command_fabric_run("4-project; rm -rf /"))
+    assert malicious_cmd["ok"] is False
+    assert "Invalid command name" in malicious_cmd["error"]
+
+    malicious_args = json.loads(server._handle_command_fabric_run("4-project", args="--opt; echo bad"))
+    assert malicious_args["ok"] is False
+    assert "forbidden control or shell metacharacters" in malicious_args["error"]

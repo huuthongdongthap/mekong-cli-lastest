@@ -1,0 +1,110 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's macrostructure catalog (github.com/nutlope/hallmark, MIT).
+# A macrostructure is a named layout fingerprint — the skeleton of a page.
+# Selection is driven by archetype + brief; never one aesthetic across all types.
+
+macros:
+  - id: single-focus-hero
+    summary: One message, one audience, one CTA. The hero is the page.
+    best_for: [marketing-site, landing-page, mobile-app]
+    avoid: [saas-dashboard, admin-console, erp]
+
+  - id: split-visual-cta
+    summary: Visual on one side, message + CTA on the other. Balanced persuasion.
+    best_for: [marketing-site, landing-page, ai-workspace]
+    avoid: [trading-terminal, erp]
+
+  - id: feature-strip
+    summary: A horizontal band of 3-5 features. Scannable, not exhaustive.
+    best_for: [marketing-site, landing-page]
+    avoid: [admin-console, trading-terminal]
+
+  - id: objection-stack
+    summary: Sections stacked to answer objections in order. Conversion-first.
+    best_for: [landing-page]
+    avoid: [saas-dashboard, analytics]
+
+  - id: social-proof-wall
+    summary: Logos, testimonials, and metrics as a wall of evidence.
+    best_for: [landing-page, marketing-site]
+    avoid: [admin-console, erp]
+
+  - id: sidebar-workbench
+    summary: Left sidebar + main canvas. The daily-driver workspace.
+    best_for: [saas-dashboard, admin-console, agent-console, developer-tool, documentation]
+    avoid: [marketing-site, landing-page]
+
+  - id: kpi-grid
+    summary: A grid of headline metrics above the fold. Decision-first.
+    best_for: [saas-dashboard, analytics, trading-terminal]
+    avoid: [landing-page, mobile-app]
+
+  - id: split-detail
+    summary: List on one side, detail on the other. Master-detail.
+    best_for: [crm, analytics, ecommerce, content-factory, developer-tool]
+    avoid: [marketing-site]
+
+  - id: table-detail
+    summary: Table-first with a detail drawer. Power-user record view.
+    best_for: [admin-console, erp, agent-console]
+    avoid: [marketing-site, landing-page]
+
+  - id: command-palette
+    summary: A keyboard-driven command bar as the primary entry.
+    best_for: [admin-console, agent-console, developer-tool]
+    avoid: [marketing-site, landing-page, mobile-app]
+
+  - id: timeline-workbench
+    summary: Activity timeline as the spine. Time is the axis.
+    best_for: [crm, content-factory]
+    avoid: [marketing-site, landing-page]
+
+  - id: contact-list
+    summary: Contact list + detail split. Relationship-centric.
+    best_for: [crm]
+    avoid: [marketing-site, analytics]
+
+  - id: form-workbench
+    summary: A form as the primary surface. Record entry.
+    best_for: [erp]
+    avoid: [marketing-site, landing-page]
+
+  - id: module-tabs
+    summary: Module tabs across the top. ERP-style navigation.
+    best_for: [erp]
+    avoid: [marketing-site, mobile-app]
+
+  - id: chart-hero
+    summary: One chart as the hero. Insight-first.
+    best_for: [analytics]
+    avoid: [marketing-site, landing-page]
+
+  - id: card-grid
+    summary: A grid of cards. Scannable, but never over-carded.
+    best_for: [ecommerce, content-factory, mobile-app]
+    avoid: [admin-console, trading-terminal]
+
+  - id: editorial-column
+    summary: A single prose column, 45-75ch. Reading-first.
+    best_for: [documentation]
+    avoid: [saas-dashboard, trading-terminal]
+
+  - id: asymmetric-split
+    summary: Unequal columns for visual tension. Distinctive, not symmetric.
+    best_for: [marketing-site, ai-workspace]
+    avoid: [erp, admin-console]
+
+  - id: dashboard-grid
+    summary: A dense grid of panels. Data-heavy, keyboard-first.
+    best_for: [trading-terminal, analytics]
+    avoid: [marketing-site, landing-page]
+
+  - id: bottom-sheet
+    summary: A bottom sheet as the primary surface. Mobile-first.
+    best_for: [mobile-app]
+    avoid: [saas-dashboard, admin-console]
+
+  - id: full-bleed-canvas
+    summary: Content fills the viewport, chrome recedes. Immersive.
+    best_for: [ai-workspace, mobile-app]
+    avoid: [erp, admin-console]

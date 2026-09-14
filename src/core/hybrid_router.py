@@ -6,7 +6,7 @@
 Entry point integrating all 8 ALGOs:
 1. TaskClassifier → 2. ModelSelector → 3. CostEstimator
 4. MCUGate → 5. LocalAdapter → 6. APIAdapter
-7. FallbackChain → 8. AgentDispatcher
+7. FallbackChain → 8. AgentRegistry
 
 9-stage pipeline: classify → MCU lock → model select → agent load →
 build messages → execute with fallback → verify → MCU confirm → emit.
@@ -28,7 +28,7 @@ from src.core.fallback_chain import execute_with_fallback
 from src.core.command_loader import find_best_command, build_system_prompt
 from src.core.context_flow import ContextFlow
 from src.core.subagent_reviewer import SubagentReviewer
-from src.core.llm_client import get_client
+from src.providers.llm.client import get_client
 
 logger = logging.getLogger(__name__)
 

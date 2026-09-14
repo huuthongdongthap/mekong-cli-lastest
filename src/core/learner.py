@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
 from .event_bus import Event, EventType, get_event_bus
-from .memory import MemoryStore
+from .memory_canonical import MemoryStore
 
 
 @dataclass

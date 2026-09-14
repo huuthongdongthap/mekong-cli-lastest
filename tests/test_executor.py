@@ -140,7 +140,7 @@ class TestExecuteLlmStep:
         mock_client = Mock()
         mock_client.is_available = True
         mock_client.chat.return_value = mock_response
-        with patch("src.core.llm_client.get_client", return_value=mock_client):
+        with patch("src.providers.llm.client.get_client", return_value=mock_client):
             result = executor._execute_llm_step(step)
             assert result.exit_code == 0
             assert result.metadata["mode"] == "llm"
@@ -153,7 +153,7 @@ class TestExecuteLlmStep:
         executor = RecipeExecutor(recipe)
         mock_client = Mock()
         mock_client.is_available = False
-        with patch("src.core.llm_client.get_client", return_value=mock_client):
+        with patch("src.providers.llm.client.get_client", return_value=mock_client):
             result = executor._execute_llm_step(step)
             assert result.exit_code == 0
             assert "[SKIPPED] LLM offline" in result.stdout

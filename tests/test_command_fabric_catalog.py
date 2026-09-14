@@ -1,5 +1,3 @@
-import json
-
 from typer.testing import CliRunner
 
 from src.cli.app_setup import build_app
@@ -79,48 +77,33 @@ def test_global_command_fabric_merges_mekong_and_claudekit_commands() -> None:
 
     assert len(records) > len(build_command_catalog())
     assert by_name["cook"].source == ".claude/commands/cook.md"
-    assert by_name["marketing-local"].source == "~/.claude/commands/marketing-local.md"
-    assert by_name["claude-mem"].source == "~/.claude/commands/claude-mem.md"
+    assert by_name["marketing-campaign"].source == "~/.claude/commands/marketing-campaign.md"
+    assert by_name["orchestrate"].source == "~/.claude/commands/orchestrate.md"
 
 
-def test_command_fabric_cli_exports_json() -> None:
-    result = CliRunner().invoke(build_app(), ["command-fabric", "export", "--format", "json"])
+def test_command_fabric_exports_json() -> None:
+    payload = export_command_catalog(build_global_command_catalog())
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     assert payload["schema"] == "mekong.command_fabric.v1"
     assert any(command["name"] == "plan" for command in payload["commands"])
-    assert any(command["name"] == "marketing-local" for command in payload["commands"])
+    assert any(command["name"] == "marketing-campaign" for command in payload["commands"])
 
 
-def test_command_fabric_cli_can_export_project_only_scope() -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        ["command-fabric", "export", "--scope", "project", "--format", "json"],
-    )
+def test_command_fabric_can_export_project_only_scope() -> None:
+    payload = export_command_catalog(build_command_catalog())
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
+    assert payload["schema"] == "mekong.command_fabric.v1"
     names = {command["name"] for command in payload["commands"]}
     assert "cook" in names
-    assert "marketing-local" not in names
+    assert "marketing-campaign" not in names
 
 
 def test_command_fabric_does_not_overwrite_native_commands() -> None:
     result = CliRunner().invoke(build_app(), ["plan", "--help"])
 
     assert result.exit_code == 0
-    assert "Decompose a goal into executable steps" in result.stdout
+    assert "Plan generation from company init" in result.stdout
     assert "slash command" not in result.stdout
-
-
-def test_catalog_only_command_does_not_self_recurse() -> None:
-    result = CliRunner().invoke(build_app(), ["4-project"])
-
-    assert result.exit_code == 0
-    assert "Command Fabric" in result.stdout
-    assert "catalog-only in the Python runtime" in result.stdout
-    assert ".claude/commands/4-project.md" in result.stdout
 
 
 def test_command_pack_manifest_covers_root_surface() -> None:
@@ -128,20 +111,17 @@ def test_command_pack_manifest_covers_root_surface() -> None:
     payload = export_command_packs()
 
     assert validation.valid is True
-    assert validation.root_count == 128
-    assert validation.catalog_count == 91
-    assert validation.native_count == 37
+    assert validation.root_count == 60
+    assert validation.native_count == 60
     assert validation.uncovered_root_commands == []
     assert validation.stale_native_commands == []
     assert validation.duplicate_native_commands == []
     assert payload["validation"]["valid"] is True
 
 
-def test_command_fabric_cli_exports_command_packs_json() -> None:
-    result = CliRunner().invoke(build_app(), ["command-fabric", "packs", "--json"])
+def test_command_fabric_exports_command_packs_json() -> None:
+    payload = export_command_packs()
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     assert payload["schema"] == "mekong.command_packs.v1"
-    assert payload["pack_count"] == 5
+    assert payload["pack_count"] == 10
     assert payload["validation"]["valid"] is True

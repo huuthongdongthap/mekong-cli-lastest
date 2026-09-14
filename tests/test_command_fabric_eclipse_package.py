@@ -1,8 +1,5 @@
 import json
 
-from typer.testing import CliRunner
-
-from src.cli.app_setup import build_app
 from src.command_fabric.catalog import build_command_catalog
 from src.command_fabric.eclipse_package import handler_java, materialize_eclipse_package, plugin_xml
 
@@ -27,23 +24,20 @@ def test_eclipse_handler_runs_local_command() -> None:
 
 
 def test_eclipse_package_materializes_plugin_scaffold(tmp_path) -> None:
-    payload = materialize_eclipse_package(tmp_path, build_command_catalog())
+    records = build_command_catalog()
+    payload = materialize_eclipse_package(tmp_path, records)
 
     assert payload["schema"] == "mekong.command_fabric.eclipse_package.v1"
-    assert payload["command_count"] == 91
+    assert payload["command_count"] == len(records)
     assert (tmp_path / "plugin.xml").exists()
     assert (tmp_path / "pom.xml").exists()
     manifest = json.loads((tmp_path / "data" / "eclipse.json").read_text(encoding="utf-8"))
     assert manifest["schema"] == "mekong.command_fabric.adapter.eclipse.v1"
 
 
-def test_command_fabric_cli_materializes_eclipse_package(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        ["command-fabric", "eclipse-package", "--scope", "project", "--out", str(tmp_path)],
-    )
+def test_materialize_eclipse_package_default(tmp_path) -> None:
+    payload = materialize_eclipse_package(tmp_path)
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     assert payload["artifact_count"] == 7
     assert (tmp_path / "README.md").exists()
+

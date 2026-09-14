@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: analytics
+product_type: analytics
+label: Analytics
+summary: A decision-support surface. Charts are the interface; time is the axis.
+information_density: comfortable
+navigation_patterns:
+  - date-range picker in the header
+  - drill-down via click, not a new page
+  - comparison toggle (vs last period / vs target)
+hierarchy:
+  - headline metric first, then the chart
+  - one chart per insight
+  - annotations on the chart, not in a tooltip
+interaction_expectations:
+  - hover reveals exact values, no click required
+  - export per chart, not per report
+  - no autoplay on dashboard refresh
+common_failure_modes:
+  - 12 charts on one page with no hierarchy
+  - default range is "all time" for daily data
+  - comparison shown as a second color with no legend
+accessibility_concerns:
+  - charts have a data-table alternative
+  - color is never the only differentiator
+responsive_requirements:
+  - charts reflow, never horizontal-scroll
+  - date picker becomes a modal on mobile
+appropriate_macrostructures:
+  - kpi-grid
+  - chart-hero
+  - split-detail

@@ -14,7 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
-from src.core.protocols import PaymentResult, QuotaStatus
+from src.core.protocols import PaymentResult, QuotaStatus, PaymentRequest, PaymentReceipt, Quote
 
 
 @dataclass(frozen=True)
@@ -85,11 +85,85 @@ class BillingAdapter:
         result: PaymentResult = self._billing.settle_payment(
             amount, currency, recipient
         )
+        # MCUBilling PaymentResult stub has no `success` field — infer from
+        # `pending`: the stub returns pending=True meaning "not yet settled".
+        success = not result.pending
         return {
-            "success": result.success,
+            "success": success,
             "transaction_id": result.transaction_id,
             "pending": result.pending,
             "note": result.note,
+        }
+
+    # ─── Extended PaymentProvider interface (economic bus) ─────────────
+    #
+    # MCUBilling is an internal credit ledger, not a payment network.
+    # The extended methods below are explicit not-implemented seams:
+    # they return PaymentResult(error=...) instead of raising, so callers
+    # get a clear, typed failure. Real settlement (x402/MPP) is deferred
+    # to a dedicated PaymentProvider adapter.
+
+    _NOT_IMPLEMENTED = (
+        "not implemented: MCUBilling is an internal credit ledger; "
+        "use a dedicated PaymentProvider adapter for settlement"
+    )
+
+    def quote(
+        self, amount: float, currency: str, recipient: str, scheme: str
+    ) -> Quote:
+        """Return a quote for a prospective payment.
+
+        MCUBilling has no external settlement, so quoting is not supported.
+        Returns a zero-value Quote carrying an explicit error marker in
+        metadata instead of raising.
+        """
+        return Quote(
+            asset=currency,
+            network="mcu-internal",
+            amount=amount,
+            recipient=recipient,
+            scheme=scheme,
+            provider="mcu-billing",
+            metadata={"error": self._NOT_IMPLEMENTED},
+        )
+
+    def request_payment(self, req: PaymentRequest) -> PaymentReceipt:
+        """Initiate a payment request.
+
+        Not supported by MCUBilling — returns a receipt carrying an
+        explicit error marker in metadata instead of raising.
+        """
+        return PaymentReceipt(
+            asset=req.asset,
+            network=req.network,
+            amount=req.amount,
+            recipient=req.recipient,
+            scheme=req.scheme,
+            provider="mcu-billing",
+            transaction_id="",
+            metadata={"error": self._NOT_IMPLEMENTED},
+        )
+
+    def verify(self, receipt: PaymentReceipt) -> bool:
+        """Verify a payment receipt.
+
+        Not supported by MCUBilling — always returns False for receipts
+        it did not issue.
+        """
+        return False
+
+    def refund(self, receipt: PaymentReceipt) -> Dict[str, Any]:
+        """Refund a settled payment.
+
+        Not supported by MCUBilling — returns a PaymentResult-shaped dict
+        with an explicit error instead of raising.
+        """
+        return {
+            "success": False,
+            "transaction_id": None,
+            "pending": False,
+            "note": None,
+            "error": self._NOT_IMPLEMENTED,
         }
 
     def estimate_cost(self, model: str, tokens: int) -> Dict[str, Any]:

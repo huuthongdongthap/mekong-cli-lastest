@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: content-factory
+product_type: content-factory
+label: Content factory
+summary: A production line for media. Drafts, assets, and publish states.
+information_density: comfortable
+navigation_patterns:
+  - project list with status filter
+  - asset library as a grid
+  - publish queue as a timeline
+hierarchy:
+  - draft is the hero, metadata recedes
+  - publish state is a badge, not a dropdown
+  - asset preview is larger than its name
+interaction_expectations:
+  - drag assets into a draft
+  - inline rename, no modal
+  - autosave with a visible indicator
+common_failure_modes:
+  - publish button hidden behind a menu
+  - asset grid with no preview
+  - no way to see what changed since last publish
+accessibility_concerns:
+  - status conveyed by text + badge
+  - asset grid navigable by keyboard
+responsive_requirements:
+  - asset grid reflows, never clips
+  - editor becomes full-screen on mobile
+appropriate_macrostructures:
+  - split-detail
+  - timeline-workbench
+  - card-grid

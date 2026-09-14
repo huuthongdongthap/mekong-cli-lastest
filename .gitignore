@@ -57,6 +57,11 @@ Desktop.ini
 # Build outputs
 dist/
 build/
+# Exception: src/cli/commands/build/ is a tracked SOURCE directory (the
+# `mekong build` CLI command), not a build output — the rule above would
+# otherwise swallow it and break fresh clones/worktrees.
+!src/cli/commands/build/
+!src/cli/commands/build/*.py
 *.whl
 *.egg-info/
 

@@ -16,7 +16,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from src.core.llm_client import get_client
+from src.providers.llm.client import get_client
 from .social_poster_agent import SocialPosterAgent
 from .social_reply_agent import SocialReplyAgent
 from .social_daemon_helpers import parse_frontmatter, build_arg_parser

@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from cli.tui.router import (
+from src.cli.tui.router import (
     CommandMatch,
     RouteEntry,
     get_all_commands,
@@ -30,7 +30,7 @@ from cli.tui.router import (
 )
 
 # ── Re-export RouteEntry so command_fabric consumers never import
-#    from cli.tui.router directly ────────────────────────────────────
+#    from src.cli.tui.router directly ────────────────────────────────────
 __all__ = [
     "RouteEntry",
     "CommandMatch",

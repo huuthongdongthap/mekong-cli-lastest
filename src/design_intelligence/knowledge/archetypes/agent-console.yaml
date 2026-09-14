@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: agent-console
+product_type: agent-console
+label: Agent console
+summary: A supervisor view of autonomous work. Logs, diffs, and approvals.
+information_density: comfortable
+navigation_patterns:
+  - run list with status filter
+  - diff viewer per run
+  - approval queue as the landing view
+hierarchy:
+  - failed runs first, not last
+  - diff is the content, not a sidebar
+  - approval buttons are the only global action
+interaction_expectations:
+  - approve/reject with one key each
+  - re-run copies the previous diff
+  - no confirmation on approve — it is reversible
+common_failure_modes:
+  - approval buried behind a filter
+  - diff shown as collapsed JSON
+  - no way to see what a run changed before approving
+accessibility_concerns:
+  - status announced by text, not color
+  - diff navigable by keyboard
+responsive_requirements:
+  - diff scrolls horizontally, never clips
+  - queue becomes a list on mobile
+appropriate_macrostructures:
+  - sidebar-workbench
+  - table-detail
+  - command-palette

@@ -16,9 +16,28 @@ def antigravity_bin():
     return bin_path
 
 
+def _resolve_db_path() -> Path:
+    custom = os.getenv("ANTIGRAVITY_DB")
+    if custom:
+        return Path(custom).resolve()
+    git_ref = Path(".git")
+    if git_ref.is_file():
+        try:
+            content = git_ref.read_text().strip()
+            if content.startswith("gitdir:"):
+                raw_target = content.split(":", 1)[1].strip()
+                target = Path(raw_target).resolve()
+                if target.is_dir() and ".git" in target.parts:
+                    return target / "antigravity" / "session.db"
+        except Exception:
+            pass
+        return (Path.cwd() / ".antigravity" / "session.db").resolve()
+    return (Path.cwd() / ".git" / "antigravity" / "session.db").resolve()
+
+
 @pytest.fixture(scope="function")
 def clean_db():
-    db_path = Path(os.getenv("ANTIGRAVITY_DB", ".git/antigravity/session.db"))
+    db_path = _resolve_db_path()
     if db_path.exists():
         try:
             db_path.unlink()

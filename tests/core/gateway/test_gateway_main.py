@@ -71,8 +71,8 @@ _MODULE_PATCHES = {
         project_paths=[],
     )),
     "src.core.gateway_dashboard.DASHBOARD_HTML": "__PRESETS_JSON____VERSION__",
-    "src.core.llm_client.get_client": MagicMock(return_value=MagicMock(is_available=False)),
-    "src.core.memory.MemoryStore": MagicMock(),
+    "src.providers.llm.client.get_client": MagicMock(return_value=MagicMock(is_available=False)),
+    "src.core.memory_canonical.MemoryStore": MagicMock(),
     "src.core.orchestrator.OrchestrationResult": _FakeOrchResult,
     "src.core.orchestrator.RecipeOrchestrator": MagicMock(),
     "src.core.scheduler.Scheduler": MagicMock(),
@@ -416,7 +416,7 @@ class TestMemoryEndpoints:
         # The MemoryStore was patched at module level with MagicMock().
         # The app closure captured the instance returned by MemoryStore().
         # Access it via the patched class's return_value.
-        mock_cls = _MODULE_PATCHES.get("src.core.memory.MemoryStore")
+        mock_cls = _MODULE_PATCHES.get("src.core.memory_canonical.MemoryStore")
         if mock_cls is None:
             return MagicMock()
         instance = mock_cls.return_value

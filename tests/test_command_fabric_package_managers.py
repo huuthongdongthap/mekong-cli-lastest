@@ -1,8 +1,5 @@
 import json
 
-from typer.testing import CliRunner
-
-from src.cli.app_setup import build_app
 from src.command_fabric.catalog import build_command_catalog
 from src.command_fabric.package_managers import (
     PACKAGE_MANAGER_TARGETS,
@@ -11,10 +8,11 @@ from src.command_fabric.package_managers import (
 
 
 def test_package_manager_metadata_materializes_global_cli_targets(tmp_path) -> None:
-    payload = materialize_package_manager_metadata(tmp_path, build_command_catalog())
+    records = build_command_catalog()
+    payload = materialize_package_manager_metadata(tmp_path, records)
 
     assert payload["schema"] == "mekong.command_fabric.package_managers.v1"
-    assert payload["command_count"] == 91
+    assert payload["command_count"] == len(records)
     assert payload["target_count"] == len(PACKAGE_MANAGER_TARGETS)
     assert set(payload["targets"]) == set(PACKAGE_MANAGER_TARGETS)
     assert (tmp_path / "package-managers.json").exists()
@@ -49,7 +47,7 @@ def test_package_manager_metadata_materializes_global_cli_targets(tmp_path) -> N
     assert (tmp_path / "debian" / "control").exists()
     assert (tmp_path / "rpm" / "mekong-cli.spec").exists()
     assert (tmp_path / "docker" / "Dockerfile").exists()
-    assert "Mekong command fabric CLI with 91 command definitions" in (
+    assert f"Mekong command fabric CLI with {len(records)} command definitions" in (
         tmp_path / "homebrew" / "mekong-cli.rb"
     ).read_text(encoding="utf-8")
     assert 'system "#{bin}/mekong", "--help"' in (tmp_path / "homebrew" / "mekong-cli.rb").read_text(
@@ -141,13 +139,9 @@ def test_package_manager_metadata_materializes_global_cli_targets(tmp_path) -> N
     assert 'ENTRYPOINT ["mekong"]' in docker_metadata
 
 
-def test_command_fabric_cli_materializes_package_manager_metadata(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        ["command-fabric", "package-managers", "--scope", "project", "--out", str(tmp_path)],
-    )
+def test_package_manager_metadata_default(tmp_path) -> None:
+    payload = materialize_package_manager_metadata(tmp_path)
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
+    assert payload["schema"] == "mekong.command_fabric.package_managers.v1"
     assert payload["target_count"] == len(PACKAGE_MANAGER_TARGETS)
     assert (tmp_path / "package-managers.json").exists()

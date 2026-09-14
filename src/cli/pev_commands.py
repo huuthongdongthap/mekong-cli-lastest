@@ -28,7 +28,7 @@ def pev_run(
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON output"),
 ) -> None:
     """Run a multi-stage PEV pipeline from goals."""
-    from src.core.llm_client import get_client
+    from src.providers.llm.client import get_client
     from src.core.orchestrator import RecipeOrchestrator
     from src.core.pipeline_manager import PipelineManager
 

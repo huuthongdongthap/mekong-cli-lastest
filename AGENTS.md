@@ -51,6 +51,12 @@ Mekong applies **harness engineering** principles (shaping the environment aroun
 
 ### Runtime Contract
 - **`HARNESS.md`** — context budget, guardrails, CEO override, high-risk gates, delegation matrix
+- **`docs/core-contract.md`** — canonical agent lifecycle (goal → … → commit), protocol surface, invariants enforced by tests (`tests/test_core_lifecycle_contract.py`, `tests/test_core_boundary.py`)
+- **`docs/autonomy-model.md`** — risk levels (LOW/MEDIUM/HIGH/CRITICAL), approval path, `GOVERNANCE_AUTO_APPROVE` semantics
+
+Status quo (v0.1): the harness PEV engine reuses the core planner
+(`src.core.planner`); lifecycle and boundary contracts are pinned by tests —
+read `docs/core-contract.md` before changing anything in `src/core/`.
 
 ### Directory Structure
 ```

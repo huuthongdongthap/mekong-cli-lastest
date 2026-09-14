@@ -6,16 +6,21 @@ AGI v2 sub-command groups: tools, browse, collab
 Tool registry, browser automation, multi-agent collaboration.
 """
 
-import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+import typer
+
+from src.commands.sophia_video import app as sophia_video_app
 
 console = Console()
 
 tools_app = typer.Typer(help="Tools: dynamic tool registry & discovery")
 browse_app = typer.Typer(help="Browse: web automation & page analysis")
 collab_app = typer.Typer(help="Collab: multi-agent collaboration & debate")
+
+# Wire Sophia AI Video Factory under tools
+tools_app.add_typer(sophia_video_app, name="video")
 
 
 # ---------------------------------------------------------------------------

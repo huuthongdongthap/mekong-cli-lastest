@@ -11,7 +11,7 @@ Built-in: GeminiProvider, OpenAICompatibleProvider, OfflineProvider.
 
 from abc import ABC, abstractmethod  # noqa: E402
 from dataclasses import dataclass  # noqa: E402
-from typing import Any, Optional  # noqa: E402
+from typing import Any, Iterator, Optional  # noqa: E402
 
 import json  # noqa: E402
 import logging  # noqa: E402
@@ -32,12 +32,15 @@ class LLMResponse:
     model: str = ""
     usage: Optional[dict[str, int]] = None
     raw: Optional[dict[str, Any]] = None
+    tool_calls: Optional[list[dict[str, Any]]] = None
 
     def __post_init__(self) -> None:
         if self.usage is None:
             self.usage = {}
         if self.raw is None:
             self.raw = {}
+        if self.tool_calls is None:
+            self.tool_calls = []
 
 
 class LLMProvider(ABC):
@@ -57,14 +60,53 @@ class LLMProvider(ABC):
         temperature: float,
         max_tokens: int,
         json_mode: bool,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
-        """Send chat request. Raise on failure (caller handles failover)."""
+        """Send chat request. Raise on failure (caller handles failover).
+
+        ``tools`` is the OpenAI-compatible tool schema list. Providers that
+        do not support tool calling must raise a clear RuntimeError — never
+        silently return a non-tool-call-shaped response.
+        """
         ...
 
     @abstractmethod
     def is_available(self) -> bool:
         """Return True if provider is configured and usable."""
         ...
+
+    def supports_tool_calling(self) -> bool:
+        """Return True if this provider can execute tool calling.
+
+        Default: False. Providers that support OpenAI-compatible function
+        calling override this to return True. This is a capability flag —
+        consumers use it to fail loudly rather than guessing from response shape.
+        """
+        return False
+
+    def supports_streaming(self) -> bool:
+        """Return True if this provider supports native token-by-token streaming."""
+        return False
+
+    def stream(
+        self,
+        messages: list[dict[str, str]],
+        model: str = "",
+        temperature: float = 0.7,
+        max_tokens: int = 2048,
+        **kwargs: Any,
+    ) -> Iterator[str]:
+        """Stream response tokens. Default fallback runs chat() and yields full content."""
+        resp = self.chat(
+            messages=messages,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            json_mode=False,
+            **kwargs,
+        )
+        if resp.content:
+            yield resp.content
 
 
 # ---------------------------------------------------------------------------
@@ -108,7 +150,10 @@ class GeminiProvider(LLMProvider):
         temperature: float,
         max_tokens: int,
         json_mode: bool,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
+        if tools is not None:
+            raise RuntimeError("GeminiProvider does not support tool calling")
         if not self._client:
             msg = "GeminiProvider not available (SDK missing or no key)"
             raise RuntimeError(msg)
@@ -262,6 +307,7 @@ class OpenAICompatibleProvider(LLMProvider):
         temperature: float,
         max_tokens: int,
         json_mode: bool,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
         if not self._base_url:
             msg = f"{self.name}: no base_url configured"
@@ -279,6 +325,8 @@ class OpenAICompatibleProvider(LLMProvider):
         }
         if json_mode:
             payload["response_format"] = {"type": "json_object"}
+        if tools:
+            payload["tools"] = tools
 
         headers: dict[str, str] = {"Content-Type": "application/json"}
         if self._api_key:
@@ -304,15 +352,93 @@ class OpenAICompatibleProvider(LLMProvider):
             msg = f"{self.name} connection error: {e}"
             raise RuntimeError(msg) from e
 
-        content = data["choices"][0]["message"]["content"]
-        usage = data.get("usage", {})
+        message = data["choices"][0]["message"]
+        content = message.get("content") or ""
+        tool_calls = message.get("tool_calls") or []
 
         return LLMResponse(
             content=content,
             model=data.get("model", use_model),
-            usage=usage,
+            usage=data.get("usage", {}),
             raw=data,
+            tool_calls=tool_calls,
         )
+
+    def supports_tool_calling(self) -> bool:
+        """OpenAI-compatible endpoints support function calling."""
+        return True
+
+    def supports_streaming(self) -> bool:
+        """OpenAI-compatible endpoints support SSE token streaming."""
+        return True
+
+    def stream(
+        self,
+        messages: list[dict[str, str]],
+        model: str = "",
+        temperature: float = 0.7,
+        max_tokens: int = 2048,
+        **kwargs: Any,
+    ) -> Iterator[str]:
+        """Stream chat completion token-by-token via SSE line-by-line parsing."""
+        if not self._base_url:
+            msg = f"{self.name}: no base_url configured"
+            raise RuntimeError(msg)
+
+        from src.core.model_alias import resolve_model
+        use_model = resolve_model(model or self._default_model, self._provider_name)
+
+        payload: dict[str, Any] = {
+            "model": use_model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": True,
+        }
+        if "tools" in kwargs and kwargs["tools"]:
+            payload["tools"] = kwargs["tools"]
+
+        headers: dict[str, str] = {
+            "Content-Type": "application/json",
+            "Accept": "text/event-stream",
+        }
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+        if self._extra_headers:
+            headers.update(self._extra_headers)
+
+        url = f"{self._base_url}/chat/completions"
+        logger.debug("[%s] STREAM POST %s model=%s", self.name, url, use_model)
+
+        body = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+
+        try:
+            with urllib.request.urlopen(req, timeout=self._timeout) as resp:
+                for raw_line in resp:
+                    line = raw_line.decode("utf-8").strip()
+                    if not line:
+                        continue
+                    if line.startswith("data:"):
+                        data_str = line[5:].strip()
+                        if data_str == "[DONE]":
+                            break
+                        try:
+                            chunk_data = json.loads(data_str)
+                            choices = chunk_data.get("choices") or []
+                            if choices:
+                                delta = choices[0].get("delta", {})
+                                delta_content = delta.get("content")
+                                if delta_content:
+                                    yield delta_content
+                        except json.JSONDecodeError:
+                            continue
+        except urllib.error.HTTPError as e:
+            msg = f"{self.name} HTTP {e.code}: {e.reason}"
+            raise RuntimeError(msg) from e
+        except urllib.error.URLError as e:
+            msg = f"{self.name} connection error: {e}"
+            raise RuntimeError(msg) from e
 
 
 # ---------------------------------------------------------------------------
@@ -336,7 +462,10 @@ class OfflineProvider(LLMProvider):
         temperature: float,
         max_tokens: int,
         json_mode: bool,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
+        if tools is not None:
+            raise RuntimeError("OfflineProvider does not support tool calling")
         user_msg = "unknown"
         for m in reversed(messages):
             if m.get("role") == "user":
@@ -345,6 +474,21 @@ class OfflineProvider(LLMProvider):
 
         content = f"[OFFLINE MODE] LLM unavailable. Request: {user_msg[:200]}"
         return LLMResponse(content=content, model="offline")
+
+    def stream(
+        self,
+        messages: list[dict[str, str]],
+        model: str = "",
+        temperature: float = 0.7,
+        max_tokens: int = 2048,
+        **kwargs: Any,
+    ) -> Iterator[str]:
+        user_msg = "unknown"
+        for m in reversed(messages):
+            if m.get("role") == "user":
+                user_msg = m.get("content", "")
+                break
+        yield f"[OFFLINE MODE] LLM unavailable. Request: {user_msg[:200]}"
 
 
 # ---------------------------------------------------------------------------
@@ -388,6 +532,7 @@ class LiteLLMProvider(LLMProvider):
         temperature: float,
         max_tokens: int,
         json_mode: bool,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
         """Send chat through LiteLLM proxy with auto-failback."""
         if not self._base_url:
@@ -414,6 +559,8 @@ class LiteLLMProvider(LLMProvider):
         }
         if json_mode:
             payload["response_format"] = {"type": "json_object"}
+        if tools:
+            payload["tools"] = tools
 
         url = f"{self._base_url}/v1/chat/completions"
         logger.debug("[LiteLLM] POST %s model=%s", url, model)
@@ -424,7 +571,9 @@ class LiteLLMProvider(LLMProvider):
             resp.raise_for_status()
             data = resp.json()
 
-            content = data["choices"][0]["message"]["content"]
+            message = data["choices"][0]["message"]
+            content = message.get("content") or ""
+            tool_calls = message.get("tool_calls") or []
             usage = data.get("usage", {})
             cost = data.get("_hidden_params", {}).get("response_cost", 0)
 
@@ -435,6 +584,7 @@ class LiteLLMProvider(LLMProvider):
                 model=data.get("model", model),
                 usage=usage,
                 raw={"cost": cost, **data},
+                tool_calls=tool_calls,
             )
 
         except httpx.HTTPStatusError as e:

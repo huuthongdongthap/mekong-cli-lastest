@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: internal-tool
+product_type: internal-tool
+label: Internal tool
+summary: Built for a known team, not a market. Utility beats polish, but not clarity.
+information_density: compact
+navigation_patterns:
+  - flat sidebar with few levels
+  - search across all records
+  - recent and favorites shortcuts
+hierarchy:
+  - task-first: the action is the headline
+  - tables and forms dominate the surface
+  - record status is always visible
+interaction_expectations:
+  - bulk actions on row selections
+  - undo over confirm dialogs
+  - keyboard shortcuts for repeated tasks
+common_failure_modes:
+  - consumer-grade decoration slowing data entry
+  - permissions invisible until they block
+  - destructive actions without an audit trail
+accessibility_concerns:
+  - long sessions demand visible focus and low glare
+  - error messages name the field and the fix
+responsive_requirements:
+  - usable docked and undocked on a laptop
+  - tables degrade to stacked rows, never horizontal scroll
+appropriate_macrostructures:
+  - table-detail
+  - sidebar-workbench
+  - form-workbench

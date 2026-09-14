@@ -250,7 +250,7 @@ async def memory_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 async def cmd_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /cmd <goal> — execute via orchestrator."""
-    from src.core.llm_client import get_client
+    from src.providers.llm.client import get_client
     from src.core.orchestrator import RecipeOrchestrator
 
     goal = " ".join(context.args) if context.args else ""

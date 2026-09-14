@@ -27,6 +27,8 @@ _SKIP_PATHS = {"/health", "/healthz", "/metrics"}
 
 def _resolve_preset(method: str, path: str) -> RateLimitPreset:
     """Map request method/path to the appropriate rate limit preset."""
+    if path in ("/auth/refresh", "/v1/auth/refresh"):
+        return RateLimitPreset.AUTH_REFRESH
     if path.startswith("/v1/auth/") or path.startswith("/auth/"):
         return RateLimitPreset.AUTH_LOGIN
     if method in ("POST", "PUT", "DELETE", "PATCH"):

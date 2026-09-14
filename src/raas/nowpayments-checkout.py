@@ -1,1 +1,0 @@
-nowpayments_checkout.py

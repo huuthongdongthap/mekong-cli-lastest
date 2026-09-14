@@ -4,7 +4,25 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pytest
+
 from src.core.memory_canonical import MemoryEntry, MemoryStore
+
+
+@pytest.fixture(autouse=True)
+def _real_memory_store(restore_real_memory_store, monkeypatch):
+    """Un-mock the session-wide MemoryStore MagicMock for these tests.
+
+    conftest replaces src.core.memory_canonical.MemoryStore with a MagicMock
+    so gateway tests never touch disk. This module imported that mock at
+    collection time, so besides restoring the source module attribute the
+    test module's own binding must be rebound to the genuine class
+    (autouse: unittest.TestCase tests cannot request fixtures by argument).
+    """
+    import src.core.memory_canonical as mc
+
+    monkeypatch.setattr("tests.test_memory.MemoryStore", mc.MemoryStore)
+    yield
 
 
 class TestMemoryEntry(unittest.TestCase):
@@ -182,6 +200,62 @@ class TestMemoryStore(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             store = self._make_store(tmpdir)
             self.assertEqual(store.get_success_rate(), 0.0)
+
+    def test_satisfies_memory_store_protocol(self):
+        """MemoryStore satisfies protocols.MemoryStore runtime checkable protocol."""
+        from src.core.protocols import MemoryStore as MemoryStoreProto
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = self._make_store(tmpdir)
+            self.assertTrue(isinstance(store, MemoryStoreProto))
+            for method in ("store", "retrieve", "delete", "search"):
+                self.assertTrue(hasattr(store, method))
+                self.assertTrue(callable(getattr(store, method)))
+
+    def test_protocol_store_retrieve_roundtrip_bytes(self):
+        """Byte round-trip via protocol store() and retrieve()."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = self._make_store(tmpdir)
+            raw = b"\x00\xff\xfe binary-bytes \x01\x02"
+            store.store("binary-goal", raw)
+            retrieved = store.retrieve("binary-goal")
+            self.assertEqual(retrieved, raw)
+
+    def test_protocol_delete_and_missing(self):
+        """Protocol delete removes stored key, returns False when missing."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = self._make_store(tmpdir)
+            self.assertFalse(store.delete("nonexistent"))
+            self.assertIsNone(store.retrieve("nonexistent"))
+
+            store.store("item", b"value")
+            self.assertTrue(store.delete("item"))
+            self.assertIsNone(store.retrieve("item"))
+            self.assertFalse(store.delete("item"))
+
+    def test_protocol_ttl_expiry(self):
+        """Protocol TTL expires entries appropriately."""
+        import time
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = self._make_store(tmpdir)
+            store.store("ttl-item", b"value", ttl=1)
+            self.assertEqual(store.retrieve("ttl-item"), b"value")
+            time.sleep(1.1)
+            self.assertIsNone(store.retrieve("ttl-item"))
+
+    def test_protocol_search_hits(self):
+        """Protocol search returns MemoryHit-compatible results."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = self._make_store(tmpdir)
+            store.store("invoice-generation", b"pdf-bytes")
+            hits = store.search("invoice", limit=5)
+            self.assertGreaterEqual(len(hits), 1)
+            hit = hits[0]
+            self.assertEqual(hit.key, "invoice-generation")
+            self.assertEqual(hit.data, b"pdf-bytes")
+            self.assertGreater(hit.score, 0.0)
+            self.assertIsInstance(hit.metadata, dict)
 
 
 if __name__ == "__main__":

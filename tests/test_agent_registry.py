@@ -35,13 +35,14 @@ class TestAgentRegistry(unittest.TestCase):
         retrieved = self.test_registry.get("test")
         self.assertEqual(retrieved, TestAgent)
 
-    def test_register_invalid_agent_raises_error(self):
-        """Test registering non-AgentBase class raises TypeError."""
+    def test_register_invalid_agent_warns(self):
+        """Test registering non-AgentBase class logs a warning."""
         class NotAnAgent:
             pass
 
-        with self.assertRaises(TypeError):
+        with self.assertLogs("src.core.agent_registry", level="WARNING") as cm:
             self.test_registry.register("invalid", NotAnAgent)
+        self.assertTrue(any("not an AgentBase subclass" in msg for msg in cm.output))
 
     def test_get_unknown_agent_raises_error(self):
         """Test getting unknown agent raises KeyError with helpful message."""

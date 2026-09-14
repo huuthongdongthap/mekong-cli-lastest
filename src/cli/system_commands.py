@@ -58,7 +58,7 @@ def register_system_commands(app: typer.Typer) -> None:
     def dash() -> None:
         """🟢 Dash: One-button action menu (The Washing Machine)"""
         from src.core.gateway import PRESET_ACTIONS, build_human_summary
-        from src.core.llm_client import get_client
+        from src.providers.llm.client import get_client
         from src.core.orchestrator import RecipeOrchestrator, OrchestrationStatus
 
         console.print(
@@ -209,7 +209,7 @@ def register_system_commands(app: typer.Typer) -> None:
         subsystems = []
         _modules = [
             ("NLU", "src.core.nlu", "IntentClassifier"),
-            ("Memory", "src.core.memory", "MemoryStore"),
+            ("Memory", "src.core.memory_canonical", "MemoryStore"),
             ("Reflection", "src.core.reflection", "ReflectionEngine"),
             ("WorldModel", "src.core.world_model", "WorldModel"),
             ("ToolRegistry", "src.core.tool_registry", "ToolRegistry"),

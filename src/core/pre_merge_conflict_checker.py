@@ -9,6 +9,7 @@ reducing integration failures in worktree-based parallel agent workflows.
 from __future__ import annotations
 
 import logging
+import os
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -36,10 +37,12 @@ class MergeCheckResult:
 # ---------------------------------------------------------------------------
 
 def _run_git(args: list[str], repo_path: str | None) -> subprocess.CompletedProcess:
+    # Pin the locale: CONFLICT line parsing below matches English wording only.
+    env = {**os.environ, "LC_ALL": "C"}
     try:
         return subprocess.run(
             ["git", *args],
-            capture_output=True, text=True, timeout=30, cwd=repo_path,
+            capture_output=True, text=True, timeout=30, cwd=repo_path, env=env,
         )
     except FileNotFoundError as exc:
         raise RuntimeError("git executable not found") from exc

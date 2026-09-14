@@ -23,7 +23,7 @@ from .runner import RecipeOrchestrator
 from ..planner import RecipePlanner, PlanningContext
 from ..verifier import RecipeVerifier
 from ..telemetry import TelemetryCollector
-from ..memory import MemoryStore
+from ..memory_canonical import MemoryStore
 from ..nlu import IntentClassifier
 from ..execution_history import ExecutionHistory
 from ..retry_policy import RetryPolicy

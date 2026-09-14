@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: developer-tool
+product_type: developer-tool
+label: Developer tool
+summary: A power-user surface. Density, copy-paste paths, and keyboard reachability.
+information_density: dense
+navigation_patterns:
+  - command palette as the primary entry
+  - sidebar for navigation, panel for detail
+  - URL is a first-class shareable artifact
+hierarchy:
+  - code/output is the hero, chrome recedes
+  - error is a block, not a banner
+  - copy buttons next to every value
+interaction_expectations:
+  - keyboard-first, mouse-augments
+  - inline config edit, no modal
+  - diffs as unified, not JSON
+common_failure_modes:
+  - config behind a settings drawer
+  - errors that require scrolling to read
+  - no copy on a long identifier
+accessibility_concerns:
+  - focus visible on every focusable element
+  - code navigable by keyboard
+responsive_requirements:
+  - panels stack on mobile
+  - density drops to comfortable on small viewports
+appropriate_macrostructures:
+  - sidebar-workbench
+  - split-detail
+  - command-palette

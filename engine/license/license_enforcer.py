@@ -7,7 +7,6 @@ current license tier is below the required tier.
 from __future__ import annotations
 
 import logging
-from enum import Enum
 from typing import Optional
 
 from fastapi import HTTPException
@@ -42,7 +41,14 @@ class LicenseEnforcer:
     def require_tier(self, minimum: Tier, user_id: Optional[str] = None) -> None:
         """Raise HTTP 402 if current tier < minimum."""
         current = self.get_current_tier(user_id)
-        order = {Tier.FREE: 0, Tier.TRIAL: 1, Tier.PRO: 2, Tier.ENTERPRISE: 3}
+        order = {
+            Tier.FREE: 0,
+            Tier.TRIAL: 1,
+            Tier.STARTER: 2,
+            Tier.GROWTH: 3,
+            Tier.PRO: 4,
+            Tier.ENTERPRISE: 5,
+        }
         if order.get(current, 0) < order.get(minimum, 0):
             logger.warning(
                 "Tier gate: required=%s current=%s user=%s", minimum, current, user_id

@@ -41,6 +41,26 @@ class MissionTracer:
 
     def __init__(self) -> None:
         self._missions: dict[str, MissionRecord] = {}
+        # Lane E8: ordered stage labels (goal→commit) for the agent lifecycle.
+        # Steps (task.id keyed) remain the primary trace; stages are the
+        # high-level lifecycle overlay consumed by ``mekong cook``'s summary.
+        self.stages: list[dict[str, Any]] = []
+
+    def record_stage(self, stage: str, metadata: dict[str, Any] | None = None) -> None:
+        """Append a high-level lifecycle stage (e.g. ``"goal"``, ``"commit"``).
+
+        Backward compatible — existing callers that only use ``log_step``
+        are unaffected; ``stages`` starts empty and is only populated when
+        the canonical runtime (``runtime_adapter._run_goal``) drives the
+        lifecycle through this tracer.
+        """
+        self.stages.append(
+            {
+                "stage": stage,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "metadata": metadata or {},
+            }
+        )
 
     def start_mission(
         self, goal: str, metadata: Optional[dict[str, Any]] = None

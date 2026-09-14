@@ -423,7 +423,7 @@ class TestCmdHandler:
         mock_orchestrator.run_from_goal.return_value = mock_result
 
         # get_client / RecipeOrchestrator are imported inside the handler body
-        with patch("src.core.llm_client.get_client", return_value=mock_client):
+        with patch("src.providers.llm.client.get_client", return_value=mock_client):
             with patch("src.core.orchestrator.RecipeOrchestrator", return_value=mock_orchestrator):
                 await cmd_handler(update, ctx)
 

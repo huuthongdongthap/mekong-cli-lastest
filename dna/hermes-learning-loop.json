@@ -1,12 +1,12 @@
 {
   "schema": "mekong.hermes_learning_loop.v1",
-  "version": "2026.06.03",
+  "version": "2026.08.26",
   "mission": "Closed learning loop: remember outcomes, improve procedures, expose safe tools, and reuse skills across sessions.",
   "capabilities": [
     {
       "id": "persistent-memory",
       "description": "Execution memory survives across sessions.",
-      "required_files": ["src/core/memory.py", "src/core/memory_client.py"]
+      "required_files": ["src/core/memory_client.py", "src/core/memory_store.py"]
     },
     {
       "id": "scoped-memory",
@@ -16,7 +16,7 @@
     {
       "id": "procedural-memory",
       "description": "Procedural memory supports skills, recipes, and reusable patterns.",
-      "required_files": ["src/core/vector_memory_store.py", ".claude/skills/README.md"]
+      "required_files": ["src/core/vector_memory_store.py", "src/cli/recipe_commands.py"]
     },
     {
       "id": "mcp-tool-gateway",
@@ -26,7 +26,7 @@
     {
       "id": "skill-surface",
       "description": "Reusable command/skill surface exists for agent procedures.",
-      "required_files": [".claude/commands/cook-auto-parallel.md", ".claude/commands/skill-creator.md", ".claude/commands/use-mcp.md"]
+      "required_files": ["src/cli/cook_command.py", "src/core/plugin_runtime.py"]
     }
   ],
   "loop": [

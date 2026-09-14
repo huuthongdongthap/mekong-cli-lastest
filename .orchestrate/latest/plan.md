@@ -1,654 +1,281 @@
-# Mekong CLI Phase 2 Architecture Expansion — Implementation Plan
+# Plan — Architecture Gap #4: Harness Verifier Merge + DAG Scheduler Swap
 
-**Author:** Kongming (Principal Engineer)
-**Date:** 2026-08-17
-**Status:** COMPLETE (2026-08-18) — all 28 checklist items verified; Phase 7-9 consolidation committed as `641053e67`
-**Scope:** Consolidate, expand, and formalize the core protocol layer into a fully realized capability bus, provider abstraction, runtime expansion, and autonomy engine.
+> **TL;DR:** Core runtime `MekongCoreRuntimeImpl.verify()` uses a thin custom checker while the rich `RecipeVerifier` (exit_code / file / output / command checks) lives unused inside the core loop; and `_run_goal` iterates multi-step plans sequentially, ignoring the `depends_on` DAG that `GoalEngineAdapter` already embeds in `Step.dependencies`. Fix: (1) make `verify()` delegate to `RecipeVerifier` via a thin adapter that translates `Criteria`→criteria-dict and `VerificationReport`→`Verification`; (2) compute a real topological order from `Step.dependencies` in `_run_goal` and iterate tasks in that order (reusing the existing `TaskGraph.ready_tasks()` semantics, NOT the stub `harness/pev/dag_scheduler.py`); (3) keep the single-task `execute→observe→verify→repair` cycle intact as the inner loop. No second orchestration framework, no rewrite.
 
----
-
-## 1. Reframed Problem
-
-Phase 1 (v0.1-v0.3) delivered 9 structural Protocols, a working 10-step autonomous loop (`MekongCoreRuntimeImpl`), and adapters for memory/telemetry/LLM routing. The code works. What is missing is:
-
-1. **Protocol-implementer gap** — The `LLMRouter` protocol in `protocols.py` has 3 methods (`classify/select_model/estimate_cost`). The real implementations (`llm_router.py`, `llm_client.py`, `provider_registry.py`) expose 5-8x more surface. The protocol is a thin shell; the adapters paper over the mismatch.
-
-2. **No Capability abstraction** — `ToolRegistry` registers raw tools. There is no `Capability` class that carries risk_level, cost estimate, authorization requirement, input/output schemas, or execute-with-governance. The capability bus is the missing link between ToolRegistry and the Policy/Autonomy Engine.
-
-3. **Runtime adapter is a skeleton** — `MekongCoreRuntimeImpl` implements the 10-step loop but lacks filesystem/process/network_policy/preview/health/destroy. These are needed for the runtime to actually DO things without falling through to `_NullDispatcher`.
-
-4. **Agent registration is fragmented** — `AgentRegistry` (type-safe, `AgentBase` subclasses), `AgentDispatcher` (prompt loading, message chains), `DEFAULT_PROMPTS` dict, `.mekong/agents/*.md` discovery, `ROLE_HUB_MAP` — four separate systems for the same job.
-
-5. **No payment abstraction** — `BillingMeter.settle_payment()` is declared but has no implementation. The economic bus (quote/request_payment/verify/settle/refund) does not exist.
-
-6. **Governance is binary** — `Governance` class has SAFE/REVIEW_REQUIRED/FORBIDDEN. No risk levels (LOW/MEDIUM/HIGH/CRITICAL), no autonomy tiers, no cost-aware gating.
-
-**What this plan does NOT do:** It does not build marketplace, tokenomics, custody, Buzz-specific adapters, or new CLI commands. It consolidates and expands what exists.
+Execution: `.orchestrate/latest/execution.md`
+Repo: `/Users/macbook/mekong-cli/.claude/worktrees/super-command-2` @ `8dcb6f759` (SC7 shipped)
 
 ---
 
-## 2. Current State Map
+## 1. Reframed problem
 
-### 2.1 Protocols (9 defined in `src/core/protocols.py`)
+### What the gap actually is
 
-| Protocol | Methods | Implementation Exists? | Gap |
-|---|---|---|---|
-| `MekongCoreRuntime` | run/goal/context/plan/delegate/execute/observe/verify/repair/remember/commit | `runtime_adapter.py` — Yes | Missing async variant, filesystem/network ops |
-| `LLMRouter` | classify/select_model/estimate_cost | `llm_router_adapter.py` — Partial | Real impls have route/record_success/record_failure/get_status; no generate/stream/structured_output |
-| `ToolRegistry` | register/execute/list_tools/list_mcp_tools | `tool_registry.py` — Full | No risk/cost/schema metadata on tools |
-| `AgentDispatcher` | dispatch/build_message_chain/load_agent_prompt | `agent_dispatcher.py` — Yes | Fragmented with AgentRegistry |
-| `BillingMeter` | record_usage/check_quota/settle_payment | `mcu_billing.py` — Partial | settle_payment() not implemented |
-| `MemoryStore` | store/retrieve/delete/search | `memory_store_adapter.py` — Full | Good |
-| `ObservabilitySink` | emit/flush | `telemetry_sink_adapter.py` — Full | Good |
-| `VerificationEngine` | verify/explain | `verifier.py` — Full | Good |
-| `GoalEngine` | decompose/adapt/commit | `goal_engine.py` — Full | Good |
+The repo has **three** verification/DAG surfaces that don't talk to each other:
 
-### 2.2 Existing Implementations (not adapting to Protocol)
-
-| Module | What it does | Phase 2 relevance |
+| Surface | Location | State |
 |---|---|---|
-| `src/core/providers.py` | Abstract `LLMProvider` + fable-5/OpenAI/Offline | Foundation for expanded LLM Protocol |
-| `src/core/llm_client.py` | Multi-provider with 10+ backends, circuit breaker | Needs to satisfy expanded LLM Protocol |
-| `src/core/provider_registry.py` | Provider registry with circuit breaker | Can become the LLM Protocol impl |
-| `src/core/memory.py` + `vector_memory_store.py` | YAML+vector memory with semantic search | Good — already satisfies Protocol |
-| `src/core/memory_bridge.py` | Unified MemoryBridge with MemoryKind | Good — richer than Protocol requires |
-| `src/core/governance.py` | SAFE/REVIEW_REQUIRED/FORBIDDEN | Needs risk level expansion |
-| `src/core/permission_registry.py` | Command-level permissions | Good foundation for authorization |
-| `src/core/entitlement_enforcer.py` | Usage cap enforcement | Good foundation for economic bus |
-| `src/core/tool_registry.py` | Full tool lifecycle | Good — needs Capability wrapper |
-| `src/core/mcp_server.py` | 25 MCP tools (1128 lines) | Needs Capability adapter |
+| Core runtime verify | `src/core/runtime_adapter.py:716` `verify()` | Thin: only `exit_code` + `output_pattern` via `_evaluate_check` |
+| Harness/Orchestrator verifier | `src/core/verifier.py:74` `RecipeVerifier` + `VerificationReport` | Rich: `verify_exit_code`, `verify_file_exists`, `verify_file_not_exists`, `verify_output_contains`, `verify_output_not_contains`, `verify_custom_check` — used by `PEVOrchestrator` and `RecipeOrchestrator`, **NOT** by `MekongCoreRuntimeImpl`. NOTE: there is NO `command_succeeds` method (corrected per plan gate Finding 1). |
+| Core DAG scheduler | `src/core/dag_scheduler.py:34` `DAGScheduler` | Real topological sort + ThreadPoolExecutor — used by `src/core/orchestrator/runner.py`, **NOT** by core runtime |
+| Harness DAG scheduler | `src/harness/pev/dag_scheduler.py:11` | **STUB** — returns `range(len(steps))` |
+| GoalEngine task graph | `src/mekongcli/core/goal_engine/models.py:112` `TaskGraph.ready_tasks()` | Computes ready tasks from `depends_on` — used internally by GoalEngine service, **NOT** consumed by core runtime |
+
+The core runtime (`_run_goal`, line 365) loops `for task in tasks: _run_task_loop(task, ...)` — **sequential, dependency-blind**. But `GoalEngineAdapter._task_to_step` (line 162) already copies `task.depends_on` into `Step.dependencies`. The data is there; the loop ignores it.
+
+### Why it matters
+
+- Multi-step plans from GoalEngine (7 role-aware tasks with `depends_on` edges) execute in arbitrary order. A `reviewer` task that depends on `qa+security+docs` can run before them — meaningless verification.
+- Core runtime verification is weaker than the harness standard. A goal that passes core `verify()` can fail the richer `RecipeVerifier` checks (file existence, command success) that the rest of the repo uses — two divergent quality bars.
+- The stub `harness/pev/dag_scheduler.py` is dead code; the real `DAGScheduler` already exists in core. Closing the gap means **one** verifier, **one** DAG order, both flowing through the core runtime.
+
+### What we are NOT doing
+
+- NOT rewriting `RecipeVerifier` or `DAGScheduler` — both are mature and tested.
+- NOT removing `PEVOrchestrator` or `RecipeOrchestrator` — they keep using `RecipeVerifier` directly; the change is that core runtime now shares the same verifier.
+- NOT touching `src/harness/pev/dag_scheduler.py` stub unless tests require it (it's isolated; `PEVOrchestrator` does not import it — confirmed, orchestrator imports from `src.core.verifier`, not the stub).
+- NOT making execution concurrent — `_run_task_loop` stays single-threaded; we only reorder the outer loop topologically. (Concurrency is a future gap, not this one.)
+- NOT touching `.github/workflows/*` (owned by concurrent PR #7).
 
 ---
 
-## 3. Phase Breakdown
+## 2. Work checklist
 
-### Phase 2A: Protocol Consolidation + Capability Bus (highest ROI)
+### Phase 1 — Harness verifier merge into core runtime `verify()`
 
-**Goal:** Fix the Protocol-implementer gap, add the Capability abstraction that everything else depends on.
+**Goal:** `MekongCoreRuntimeImpl.verify()` produces the same verdict as `RecipeVerifier` for equivalent criteria, while keeping the core `Verification` return type so `_run_task_loop` is untouched.
 
-#### Step 1: Expand `LLMRouter` Protocol
+**Step 1.1 — Add adapter helper to translate core Criteria ↔ RecipeVerifier criteria-dict.**
 
-**Files to modify:**
-- `src/core/protocols.py` — Expand `LLMRouter` Protocol
-- `src/core/llm_router_adapter.py` — Update adapter to satisfy expanded Protocol
+File: `src/core/runtime_adapter.py` (add a module-level helper, ~25 LOC).
 
-**What to add to `LLMRouter` Protocol:**
+- Add `_criteria_to_verifier_dict(criteria: Criteria) -> dict` that maps:
+  - `CheckSpec(kind="exit_code", params={"expected": 0})` → `{"exit_code": {"expected": N}}`
+  - `CheckSpec(kind="output_pattern", params={"pattern": "..."})` → `{"output_contains": {"pattern": "..."}}`
+  - Unknown kinds → skipped (logged at debug). This keeps the adapter strict-YAGNI: only maps the kinds core currently emits. **NOTE:** `RecipeVerifier` does NOT have a `command_succeeds` method. The actual methods are: `verify_exit_code`, `verify_file_exists`, `verify_file_not_exists`, `verify_output_contains`, `verify_output_not_contains`, `verify_custom_check`. The adapter only maps criteria to the verifier methods that exist.
+- Add `_report_to_verification(report: "VerificationReport") -> Verification` that maps:
+  - `report.passed` and any FAILED/WARNING check → `VerificationCheck(check=CheckSpec(kind=check.name), passed=(status==PASSED), detail=check.message)`
+  - `report.errors` → `Verification.failures`
+
+**Step 1.2 — Inject `RecipeVerifier` into `MekongCoreRuntimeImpl` and call it from `verify()`.**
+
+File: `src/core/runtime_adapter.py`.
+
+- In `__init__`, add optional `verifier: RecipeVerifier | None = None` param; default `self._verifier = verifier or RecipeVerifier(strict_mode=True)`. (Import inside `__init__` to avoid circular import — `verifier.py` imports nothing from runtime_adapter.)
+- Rewrite `verify()` (line 716) to:
+  1. Build `criteria_dict = _criteria_to_verifier_dict(criteria)`.
+  2. Build a minimal `ExecutionResult`-shaped object from `Observation` (needs `.exit_code`, `.stdout`, `.stderr`, `.metadata`). **Key detail:** core `Observation.result` is a `Result` (has `.output`, `.error`, `.metadata`), NOT an `ExecutionResult`. So build an adapter dataclass `_ExecResultLike(exit_code: int, stdout: str, stderr: str, metadata: dict)` with this explicit mapping:
+    - `exit_code = 0 if result.error is None else 1`
+    - `stdout = str(result.output)` — `verify_output_contains` reads `result.stdout + "\n" + result.stderr` (verifier.py:193), so output goes to stdout.
+    - `stderr = result.error or ""` — error content routed to stderr so `verify_output_not_contains` can detect it.
+    - `metadata = result.metadata or {}` — preserved for `verify_custom_check` consumers.
+    This mirrors how `RecipeExecutor` sets exit codes and matches `ExecutionResult` field semantics (verifier.py:32-40).
+  3. Call `self._verifier.verify(exec_result_like, criteria_dict) -> VerificationReport`.
+  4. Return `_report_to_verification(report)`.
+- Keep `_evaluate_check` as a **fallback** only if `criteria_dict` is empty (no criteria): then `verify()` returns `Verification(passed=(result.error is None))`. This preserves the current no-criteria behavior so existing tests with `_DEFAULT_CRITERIA` (which has one `exit_code` check) still pass.
+
+**Step 1.3 — Tests for Phase 1.**
+
+File: `tests/test_runtime_verify_merge.py` (new).
+
+- `test_verify_exit_code_pass`: criteria `exit_code expected=0`, observation with no error → `Verification.passed=True`, one check named `exit_code` PASSED.
+- `test_verify_exit_code_fail`: observation with `error="boom"` → `passed=False`, failure mentions exit_code.
+- `test_verify_output_pattern`: criteria `output_pattern pattern="OK"`, observation output `"OK done"` → passed; output `"no"` → failed.
+- `test_verify_empty_criteria_falls_back`: empty Criteria → passed iff no error (parity with old behavior).
+- `test_verify_uses_recipe_verifier`: assert `mock_verifier.verify` was called with an object whose `exit_code` matches — proves wiring, not reimplementation.
+- `test_verify_report_errors_surface`: a `VerificationReport` with `errors=["x"]` → `Verification.failures == ["x"]`.
+
+**Acceptance:** `tests/test_runtime_verify_merge.py` all pass; existing `test_core_lifecycle_contract.py`, `test_runtime_delegate.py`, `test_runtime_safety.py`, `test_autonomous_loop.py` unchanged and green.
+
+---
+
+### Phase 2 — DAG-aware task ordering in `_run_goal`
+
+**Goal:** Multi-step plans (steps with `dependencies`) execute in topological order; single-step plans unchanged.
+
+**Step 2.1 — Add topological-order helper operating on `list[Task]`.**
+
+File: `src/core/runtime_adapter.py` (add module-level, ~30 LOC).
+
+- Add `def _topological_task_order(tasks: list[Task]) -> list[Task]`:
+  - Build `id→task` map. For each task, `deps = task.step.dependencies` (list of step ids — **string IDs** like `"task-abc123"`, from `GoalEngineAdapter._task_to_step` at `adapters/goal_engine_adapter.py:162-173`).
+  - Kahn's algorithm: compute in-degree from deps; seed queue with zero-in-degree tasks; emit in order; decrement dependents. Detect cycles — on cycle, **fail loud** by raising `RuntimeError("circular task dependency: ...")` rather than silently ordering. (Cycles indicate a GoalEngine planner bug; masking them is worse.)
+  - **This does NOT reuse `DAGScheduler`** (`src/core/dag_scheduler.py:34`). `DAGScheduler` keys by `order` (int) and compares `dependencies` against completed order indices — but `Step.dependencies` is `list[str]` (string IDs, per `protocols.py:140`). Reusing `DAGScheduler` would cause silent type-mismatch failures (string vs int comparison never matches). Instead, this helper implements a **string-ID-keyed** topological sort directly on `task.step.dependencies`, matching the same algorithm as `TaskGraph.ready_tasks()` (models.py:112) but operating on core `Task` objects — no import of GoalEngine models into core runtime (keeps core small, no new dependency).
+  - **Degenerate case:** single-step plans or plans with all `dependencies=[]` → topological sort returns tasks in original order (sequential parity preserved).
+
+**Step 2.2 — Use the order in `_run_goal`.**
+
+File: `src/core/runtime_adapter.py`, `_run_goal` (line 365).
+
+Replace:
 ```python
-class LLMRouter(Protocol):
-    def classify(self, task: str) -> Dict[str, Any]: ...
-    def select_model(self, task: Dict[str, Any], tier: str) -> str: ...
-    def estimate_cost(self, model: str, tokens: int) -> CostEstimate: ...
-    # NEW — these already exist in provider_registry.py / llm_client.py:
-    def generate(self, messages: List[Dict[str, str]], model: str, **kwargs: Any) -> Dict[str, Any]: ...
-    def health(self, model: str) -> Dict[str, Any]: ...
+results: list[Result] = []
+for task in tasks:
+    results.append(self._run_task_loop(task, goal.criteria))
 ```
-
-**Design decision:** Do NOT add `stream()` or `structured_output()` yet. Those are nice-to-have but not justified by any current caller. YAGNI. The 2 new methods (`generate` + `health`) are the minimum needed to make the LLM Router self-sufficient for the runtime.
-
-**Acceptance criteria:**
-- `LLMRouterAdapter` satisfies the expanded Protocol
-- `src/core/llm_router_adapter.py` has `generate()` and `health()` methods
-- Existing tests (9 protocol compliance + autonomous loop) still pass
-- New test: `test_llm_router_adapter_generate` — verify generate() delegates correctly
-- New test: `test_llm_router_adapter_health` — verify health() returns status dict
-
-**Test file:** `tests/test_llm_router_expanded.py`
-
----
-
-#### Step 2: Define `Capability` Class + `CapabilityBus` Protocol
-
-**Files to create:**
-- `src/core/capability.py` — `Capability` dataclass + `CapabilityBus` Protocol
-
-**Files to modify:**
-- `src/core/protocols.py` — Add `CapabilityBus` to `__all__`
-
-**Capability dataclass design:**
+With:
 ```python
-@dataclass
-class Capability:
-    id: str                          # e.g., "git:status", "shell:run"
-    name: str                        # Human-readable name
-    description: str                 # What it does
-    input_schema: Dict[str, Any]     # JSON Schema for inputs
-    output_schema: Dict[str, Any]    # JSON Schema for outputs
-    risk_level: RiskLevel            # LOW | MEDIUM | HIGH | CRITICAL
-    cost_per_invocation: float       # MCU cost (0.0 for free)
-    required_permissions: List[str]  # e.g., ["read"], ["write", "execute"]
-    source: CapabilitySource         # BUILTIN | CLI | API | MCP | CUSTOM
-    execute_fn: Callable | None      # The actual function to call
-
-class RiskLevel(str, Enum):
-    LOW = "low"        # Auto-execute
-    MEDIUM = "medium"  # Audit log
-    HIGH = "high"      # Requires approval
-    CRITICAL = "critical"  # Always deny
-
-class CapabilitySource(str, Enum):
-    BUILTIN = "builtin"
-    CLI = "cli"
-    API = "api"
-    MCP = "mcp"
-    CUSTOM = "custom"
+results: list[Result] = []
+ordered = _topological_task_order(tasks) if _plan_has_dependencies(plan) else tasks
+for task in ordered:
+    results.append(self._run_task_loop(task, goal.criteria))
 ```
+Where `_plan_has_dependencies(plan)` returns `any(s.dependencies for s in plan.steps)` — fast path skips the algorithm for single-step plans (the common `mekong run` path), preserving current behavior exactly.
 
-**CapabilityBus Protocol:**
-```python
-class CapabilityBus(Protocol):
-    def register(self, cap: Capability) -> None: ...
-    def get(self, cap_id: str) -> Capability | None: ...
-    def list_capabilities(self, source: CapabilitySource | None = None) -> List[Capability]: ...
-    def execute(self, cap_id: str, params: Dict[str, Any]) -> Dict[str, Any]: ...
-    def search(self, query: str) -> List[Capability]: ...
-```
+**Step 2.3 — Tests for Phase 2.**
 
-**CapabilityBusImpl** (thin adapter over ToolRegistry):
-- `register()` wraps `ToolRegistry.register()` with Capability metadata
-- `get()` wraps `ToolRegistry.get()` and enriches with risk/cost
-- `execute()` checks risk_level, then delegates to `ToolRegistry.execute()`
-- `search()` wraps `ToolRegistry.search()`
+File: `tests/test_runtime_dag_order.py` (new).
 
-**Why this over modifying ToolRegistry directly:** ToolRegistry is working and conformant. Adding risk/cost/authorization to it would break its existing contract. A thin CapabilityBus that wraps ToolRegistry keeps both clean.
+- `test_single_step_unaffected`: plan with 1 step, no deps → order is identity; `_run_task_loop` called once.
+- `test_linear_chain_order`: 3 tasks A→B→C (B depends on A, C on B) → execution order is [A, B, C]. Assert via mock on `_run_task_loop` call args.
+- `test_diamond_order`: architect → [backend, infra] → reviewer. Valid topsort: architect first, reviewer last, backend/infra in middle (order between them non-deterministic — assert set equality for the middle). This mirrors the real GoalEngine 7-task graph shape.
+- `test_cycle_raises`: A depends on B, B depends on A → `RuntimeError` with "circular".
+- `test_no_deps_uses_fast_path`: 3 tasks, none with dependencies → `_plan_has_dependencies` False → `_topological_task_order` NOT called (assert via mock patch).
+- `test_merged_result_aggregates_all`: verify `_merge_results` still receives all results in execution order.
 
-**Acceptance criteria:**
-- `Capability` dataclass has all 9 fields
-- `RiskLevel` enum has 4 values (LOW/MEDIUM/HIGH/CRITICAL)
-- `CapabilityBus` Protocol has 5 methods
-- `CapabilityBusImpl` wraps `ToolRegistry` and adds governance checks
-- Test: `test_capability_bus_register_and_get`
-- Test: `test_capability_bus_risk_level_low_auto_executes`
-- Test: `test_capability_bus_risk_level_high_requires_approval`
-- Test: `test_capability_bus_execute_delegates_to_tool_registry`
-- Test: `test_capability_bus_search_returns_matching`
-
-**Test file:** `tests/test_capability_bus.py`
+**Acceptance:** `tests/test_runtime_dag_order.py` pass; existing lifecycle/delegate tests green.
 
 ---
 
-#### Step 3: Agent Registry Consolidation
+### Phase 3 — Wire DAG order + verifier together through `run()` and `run_from_payload()`
 
-**Files to create:**
-- `src/core/agent_registry_consolidated.py` — Unified `AgentRegistryConsolidated`
+**Goal:** End-to-end, a multi-step goal flows `plan() → delegate() → topological execute→verify→repair per task → observe → remember → commit`. No behavior change for single-step goals.
 
-**Files to modify:**
-- `src/core/protocols.py` — Add `AgentRegistry` Protocol (or extend existing)
+**Step 3.1 — E2E test proving the full multi-step cycle.**
 
-**Design:** Merge `AgentRegistry` (type-safe class registry) + `AgentDispatcher` (prompt loading, message chain) + `DEFAULT_PROMPTS` + `.mekong/agents/` discovery into one class. This is NOT a rewrite — it is a facade that delegates to existing components.
+File: `tests/test_runtime_multistep_cycle.py` (new).
 
-```python
-class AgentRegistryConsolidated:
-    """Single source of truth for agent definitions.
+- Build a `MekongCoreRuntimeImpl` with a real `GoalEngineAdapter` (in-memory `SQLiteGoalStore`) and a mock dispatcher that returns success for every task.
+- Call `run("implement a hello-world CLI")` (registered `cto` agent → multi-step plan).
+- Assert:
+  - `plan()` returned a Plan with 7 steps and non-empty `dependencies` on steps 2–7.
+  - `delegate()` returned 7 tasks.
+  - `_run_task_loop` was called 7 times, in an order that respects `dependencies` (architect first, reviewer last).
+  - Final `Result.error is None` (all passed verify).
+  - `remember()` was called (memory write path intact).
+- Second test: make the dispatcher fail the `backend` task → assert downstream tasks (qa/security/docs/reviewer, which depend on backend) still execute (they verify and may fail), but the final merged result carries the error. This proves the DAG does NOT short-circuit on failure (current behavior preserved — `_run_task_loop` handles per-task repair, not graph cancellation).
 
-    Combines:
-    - AgentRegistry (class registration, validation)
-    - AgentDispatcher (prompt loading, message chain)
-    - .mekong/agents/*.md discovery
-    - DEFAULT_PROMPTS fallback
-    """
-    def register(self, name: str, cls: type, meta: AgentMeta) -> None: ...
-    def get(self, name: str) -> type: ...
-    def list_all(self) -> List[AgentMeta]: ...
-    def load_prompt(self, role: str) -> str: ...
-    def build_message_chain(self, role: str, task: Dict[str, Any]) -> List[dict]: ...
-    def dispatch(self, agent_role: str, task: Dict[str, Any]) -> Any: ...
-```
+**Step 3.2 — Parity sweep.**
 
-**Acceptance criteria:**
-- Consolidated class can load prompts from `.mekong/agents/*.md`
-- Consolidated class falls back to `DEFAULT_PROMPTS`
-- `list_all()` returns all registered agents with metadata
-- Existing `AgentRegistry` and `AgentDispatcher` remain untouched (backward compat)
-- Test: `test_consolidated_loads_prompt_from_md`
-- Test: `test_consolidated_fallback_to_default`
-- Test: `test_consolidated_register_and_get`
-- Test: `test_consolidated_list_all`
+Run full test suite, compare against baseline `.orchestrate/latest/baseline_d71e13fa02.txt`. New failures = 0.
 
-**Test file:** `tests/test_agent_registry_consolidated.py`
+**Acceptance:** E2E test passes; parity gate EMPTY for new failures.
 
 ---
 
-### Phase 2A (continued): MCP Adapter
+### Phase 4 — Quality gates + cleanup
 
-**Goal:** Wrap existing `mcp_server.py` tools as Capability instances, so MCP tools can be invoked through the CapabilityBus.
-
-#### Step 3.5: MCP Adapter for Capability Bus
-
-**Files to create:**
-- `src/core/adapters/mcp_capability_adapter.py` — adapter that wraps MCP tools as `Capability` instances
-
-**Files to modify:**
-- `src/core/capability.py` — ensure `Capability` dataclass has all fields needed by MCP tools
-- `tests/test_mcp_capability_adapter.py` — verify MCP tools are discoverable and executable via CapabilityBus
-
-**Implementation:**
-- Import MCP tool definitions from `src.core.mcp_server`
-- For each tool, create a `Capability` with: id = `mcp:<tool_name>`, input_schema from tool params, output_schema, risk_level=MEDIUM, cost estimate
-- `execute()` calls the corresponding MCP handler function
-- CapabilityBus can `discover()` all MCP capabilities
-
-**Acceptance criteria:**
-- `isinstance(mcp_cap, Capability)` is True
-- `capability.execute({"param": "value"})` returns same result as direct MCP tool call
-- At least 5 MCP tools wrapped and tested
-- Zero new dependencies
-
-**Test file:** `tests/test_mcp_capability_adapter.py`
+- `python3 -m ruff check src/core/runtime_adapter.py tests/test_runtime_verify_merge.py tests/test_runtime_dag_order.py tests/test_runtime_multistep_cycle.py` → clean.
+- `python3 -m mypy src/core/runtime_adapter.py` (or pyright) → 0 new errors.
+- `python3 -m pytest tests/ -q` → all green.
+- Update `docs/architecture.md` §runtime: note that core runtime now shares `RecipeVerifier` and executes multi-step plans in topological order. (Delegate to docs-manager if available; otherwise a -line inline edit is fine.)
+- Update `docs/development-roadmap.md` and `docs/project-changelog.md`: gap #4 closed.
 
 ---
 
-### Phase 2B: Runtime Adapter Expansion
+## 3. Risks & gates
 
-**Goal:** Give `MekongCoreRuntimeImpl` real capabilities (filesystem, process, health) without bloating it.
+| Risk | Mitigation |
+|---|---|
+| `ExecutionResult` shape mismatch — core `Result` lacks `exit_code` | Build `_ExecResultLike` adapter in Step 1.2; `exit_code = 0 if error is None else 1` mirrors `RecipeExecutor` convention. Test explicitly. |
+| `_evaluate_check` fallback regression | Keep fallback for empty criteria; test `test_verify_empty_criteria_falls_back` locks parity. |
+| Topological sort changes execution order for existing multi-step users | Only triggers when `Step.dependencies` is non-empty. Single-step (`mekong run` for unknown agents) takes the fast path — zero behavior change. |
+| Cycle in GoalEngine planner output hangs or silently mis-orders | Kahn's algorithm raises `RuntimeError` on cycle (fail loud). Add to changelog as a planner-quality signal. |
+| `RecipeVerifier` import creates circular dependency | `src/core/verifier.py` imports only stdlib + `src.core.executor` (ExecutionResult). No import of runtime_adapter. Verified — safe to import inside `__init__`. |
+| `_run_task_loop` repair count (`_repair_count`) is per-mission, not per-task | This is pre-existing behavior; we do NOT change it. Document as a known limitation in the plan notes. (Per-task repair budget is a future gap.) |
+| Protected flows (NOWPayments IPN, license gate, payment) | These flow through `run_from_payload` → `_run_goal`. Single-step payloads take the fast path (no deps) → zero change. Verified by `test_buzz_transport.py` + `test_phase6_license_validation.py` staying green. |
+| `.github/workflows/*` | NOT touched (PR #7 owns them). |
 
-#### Step 4: Expand Runtime with Capability Bus
-
-**Files to modify:**
-- `src/core/runtime_adapter.py` — Add `CapabilityBus` integration, `health()`, `destroy()`
-- `src/core/protocols.py` — Expand `MekongCoreRuntime` Protocol with `health()` and `destroy()`
-
-**New methods on `MekongCoreRuntimeImpl`:**
-```python
-def health(self) -> Dict[str, Any]:
-    """Return runtime health status."""
-    return {
-        "status": "healthy",
-        "memory_entries": self._memory_store.stats().get("total", 0),
-        "telemetry": "connected" if self._telemetry else "missing",
-    }
-
-def destroy(self) -> None:
-    """Graceful shutdown: flush telemetry, close connections."""
-    if hasattr(self._telemetry, 'flush'):
-        self._telemetry.flush()
-```
-
-**Why not add filesystem/process/network now:** Those are NOT needed for Phase 2. The runtime already delegates to `ToolRegistry.execute()` which handles shell commands, file read/write, etc. Adding redundant filesystem methods to the runtime would be YAGNI. The `CapabilityBus` integration is the RIGHT abstraction — the runtime uses capabilities, not raw filesystem calls.
-
-**Acceptance criteria:**
-- `MekongCoreRuntime` Protocol has `health()` and `destroy()` methods
-- `MekongCoreRuntimeImpl.health()` returns status dict
-- `MekongCoreRuntimeImpl.destroy()` flushes telemetry
-- `MekongCoreRuntimeImpl` accepts optional `capability_bus` in constructor
-- When `capability_bus` is set, `execute()` routes through it (governance checks)
-- Existing tests pass
-- New test: `test_runtime_health_returns_status`
-- New test: `test_runtime_destroy_flushes_telemetry`
-- New test: `test_runtime_execute_via_capability_bus`
-
-**Test file:** `tests/test_runtime_expansion.py`
+**Gates (must pass before merge):**
+1. `ruff check` clean on changed files.
+2. `mypy`/`pyright` 0 new errors on changed files.
+3. `pytest tests/ -q` all green, parity vs baseline: 0 new failures.
+4. New tests in §2 all pass.
+5. `mekong run`, `mekong cook`, `mekong goal`, `mekong implement` smoke-tested manually (see Ship plan).
 
 ---
 
-#### Step 5: Wire `mekong run` to Capability Bus
+## 4. Agent assignments
 
-**Files to modify:**
-- `src/commands/run.py` — Wire `CapabilityBusImpl` into runtime construction
-
-**Acceptance criteria:**
-- `mekong run --goal "..."` constructs runtime with CapabilityBusImpl
-- CapabilityBusImpl wraps the existing ToolRegistry
-- Existing `mekong run` behavior unchanged
-- Test: `test_run_command_wires_capability_bus` (unit test with mocks)
-
-**Test file:** `tests/test_run_command_capability_bus.py`
-
----
-
-### Phase 2C: Economic Bus + Autonomy Engine
-
-**Goal:** PaymentProvider abstraction + risk-level governance.
-
-#### Step 6: Economic Bus (PaymentProvider Protocol)
-
-**Files to create:**
-- `src/core/economic_bus.py` — `PaymentProvider` Protocol + `MCUBillingPaymentAdapter`
-
-**Files to modify:**
-- `src/core/protocols.py` — Add `PaymentProvider` Protocol
-
-**PaymentProvider Protocol:**
-```python
-class PaymentProvider(Protocol):
-    def quote(self, service: str, params: Dict[str, Any]) -> Dict[str, Any]: ...
-    def request_payment(self, amount: float, currency: str, recipient: str) -> PaymentResult: ...
-    def verify(self, transaction_id: str) -> Dict[str, Any]: ...
-    def settle(self, transaction_id: str) -> PaymentResult: ...
-    def refund(self, transaction_id: str, reason: str) -> PaymentResult: ...
-```
-
-**MCUBillingPaymentAdapter** — thin wrapper over `MCUBilling`:
-- `quote()` returns MCU cost from `MCU_COSTS` dict
-- `request_payment()` calls `billing.deduct()`
-- `verify()` checks transaction exists
-- `settle()` is no-op (MCU is instant settlement)
-- `refund()` calls `billing.add_credits()`
-
-**Acceptance criteria:**
-- `PaymentProvider` Protocol has 5 methods
-- `MCUBillingPaymentAdapter` satisfies Protocol
-- Test: `test_payment_provider_quote`
-- Test: `test_payment_provider_request_payment`
-- Test: `test_payment_provider_verify`
-- Test: `test_payment_provider_settle`
-- Test: `test_payment_provider_refund`
-
-**Test file:** `tests/test_economic_bus.py`
-
----
-
-#### Step 7: Autonomy Engine (Policy Engine)
-
-**Files to create:**
-- `src/core/autonomy_engine.py` — `AutonomyEngine` class
-
-**Files to modify:**
-- `src/core/protocols.py` — Add `AutonomyEngine` Protocol
-
-**AutonomyEngine Protocol:**
-```python
-class AutonomyEngine(Protocol):
-    def classify(self, capability: str, context: Dict[str, Any]) -> RiskLevel: ...
-    def should_execute(self, risk_level: RiskLevel, context: Dict[str, Any]) -> bool: ...
-    def audit_log(self, capability: str, risk_level: RiskLevel, decision: bool) -> None: ...
-```
-
-**AutonomyEngineImpl:**
-- `classify()` — Looks up risk_level from CapabilityBus, applies context overrides
-- `should_execute()` — LOW: always true, MEDIUM: true + audit, HIGH: checks approval flag, CRITICAL: false
-- `audit_log()` — Delegates to existing `Governance` audit trail
-
-**Acceptance criteria:**
-- `AutonomyEngineImpl` satisfies Protocol
-- LOW risk auto-executes
-- MEDIUM risk logs audit
-- HIGH risk checks approval (configurable)
-- CRITICAL always denies
-- Test: `test_autonomy_low_risk_auto_executes`
-- Test: `test_autonomy_medium_risk_audits`
-- Test: `test_autonomy_high_risk_checks_approval`
-- Test: `test_autonomy_critical_always_denies`
-- Test: `test_autonomy_audit_log_writes_to_governance`
-
-**Test file:** `tests/test_autonomy_engine.py`
-
----
-
-#### Step 8: Wire Autonomy Engine into Runtime
-
-**Files to modify:**
-- `src/core/runtime_adapter.py` — Add `autonomy_engine` to constructor, check before execute
-
-**Acceptance criteria:**
-- Runtime checks `autonomy_engine.classify()` before executing a capability
-- CRITICAL capabilities are blocked
-- Existing behavior unchanged when no autonomy_engine provided
-- Test: `test_runtime_blocks_critical_capabilities`
-- Test: `test_runtime_allows_low_risk_without_engine`
-
-**Test file:** `tests/test_runtime_expansion.py` (extend existing)
-
----
-
-### Phase 2D: Documentation + Quality Gate
-
-**Goal:** Document the architecture, run full suite, produce final report.
-
-#### Step 9: Architecture Documentation
-
-**Files to create:**
-- `docs/core-architecture.md` — Architecture overview for developers
-- `docs/core-contract.md` — Protocol contracts and adapter patterns
-
-**What to document:**
-- 9 Protocols + CapabilityBus + PaymentProvider + AutonomyEngine = 12 contracts
-- Adapter pattern: Protocol -> Adapter -> Implementation
-- Capability Bus flow: register -> classify -> authorize -> execute -> audit
-- Memory hierarchy: session/mission/agent/persistent
-- No developer jargon. Vietnamese + English bilingual headers.
-
-**Acceptance criteria:**
-- `core-architecture.md` covers all 12 contracts
-- `core-contract.md` has code examples for each Protocol
-- Both files have bilingual headers (Vietnamese + English)
-- No stale references to removed modules
-
----
-
-#### Step 10: Quality Gate — Full Suite Run
-
-**Steps:**
-1. `python3 -m ruff check src/ tests/` — zero violations
-2. `python3 -m pytest tests/test_protocol_compliance.py tests/test_autonomous_loop.py tests/test_llm_router_expanded.py tests/test_capability_bus.py tests/test_agent_registry_consolidated.py tests/test_runtime_expansion.py tests/test_economic_bus.py tests/test_autonomy_engine.py -v` — all pass
-3. `python3 -m pytest tests/ -v` — full suite, no regressions
-
-**Acceptance criteria:**
-- ruff clean (zero violations)
-- New tests: 20+ tests, all passing
-- Existing tests: 0 regressions
-- Total test count increases by at least 20
-
----
-
-#### Step 11: Final Architecture Report
-
-**File to create:**
-- `docs/architecture-after-phase-2.md` — Before/after comparison
-
-**Contents:**
-- Phase 1 state: 9 Protocols, 4 adapters, 10-step loop
-- Phase 2 state: 12 contracts, 7 adapters, capability bus, autonomy engine, payment provider
-- Files created/modified count
-- Test coverage delta
-- Remaining dormant code (if any) — see §8.1 MED-1 escrow: `billing_proration.py`
-  + `billing_idempotency.py` (tightly coupled via `billing_event_emitter.py`,
-  `raas/__init__.py`, `test_billing.py`). Zero dormant code remains deletable
-  without breaking the RaaS sync pipeline. All 6 Phase 7 "dead code" candidates
-  were re-audited and found to have live importers; restored from HEAD.
-
----
-
-## 4. Dependency Map
-
-```
-Phase 2A.1 (LLM Protocol expand)     ─┐
-Phase 2A.2 (Capability Bus)           ─┤── independent, parallel OK
-Phase 2A.3 (Agent Consolidation)      ─┘
-         │
-         ▼
-Phase 2B.4 (Runtime expand)     ← depends on 2A.2 (Capability Bus)
-Phase 2B.5 (Wire run command)   ← depends on 2B.4
-         │
-         ▼
-Phase 2C.6 (Economic Bus)       ─┐── independent, parallel OK
-Phase 2C.7 (Autonomy Engine)    ─┘
-         │
-         ▼
-Phase 2C.8 (Wire Autonomy)      ← depends on 2C.7 + 2B.4
-         │
-         ▼
-Phase 2D.9  (Docs)              ← depends on all above
-Phase 2D.10 (Quality Gate)      ← depends on all above
-Phase 2D.11 (Final Report)      ← depends on all above
-```
-
-**Parallel opportunity:** Steps 1, 2, 3 can run in parallel. Steps 6, 7 can run in parallel. Steps 9-11 are sequential.
-
----
-
-## 5. What to Avoid
-
-1. **Do NOT modify existing working adapters** (MemoryStoreAdapter, TelemetrySinkAdapter, LLMRouterAdapter) beyond what's strictly necessary. They work. They satisfy their Protocols. Expanding them is scope creep.
-
-2. **Do NOT add filesystem/process/network_policy methods to the runtime.** The ToolRegistry already handles these through `execute()`. Adding them to the runtime would duplicate functionality.
-
-3. **Do NOT create Buzz-specific adapters.** The "Buzz Runtime Adapter" from the Super Command is deferred. There is no Buzz host to adapt to. YAGNI.
-
-4. **Do NOT refactor the 200+ line tool_registry.py.** It works. It conforms. Wrapping it in CapabilityBus is cleaner than rewriting it.
-
-5. **Do NOT add stream() or structured_output() to the LLM Protocol.** No caller uses them. YAGNI.
-
-6. **Do NOT touch the `src/daemon/` directory.** That's the existing LLM routing infrastructure. The adapter layer (`src/core/llm_router_adapter.py`) is the right integration point.
-
-7. **Do NOT create new dependencies.** Everything uses stdlib + existing deps (yaml, requests, etc.).
-
-8. **Do NOT break the 218+ existing core tests.** Every new test must be additive.
-
----
-
-## 6. Risks and Gates
-
-| Risk | Impact | Mitigation | Gate |
-|---|---|---|---|
-| Expanding LLM Protocol breaks existing adapter | HIGH | Add new methods with default impls; keep old methods | `test_protocol_compliance.py` must pass |
-| CapabilityBus adds overhead to every tool execution | MEDIUM | Governance check is a dict lookup (O(1)), not a network call | Benchmark: <1ms overhead per execution |
-| Agent consolidation introduces import cycles | MEDIUM | Consolidated class imports lazily, never at module level | `ruff check` clean |
-| AutonomyEngine blocks legitimate operations | HIGH | CRITICAL level reserved for actual dangerous ops only; default is LOW | Manual review of risk_level assignments |
-| Test count drops below baseline | HIGH | Never delete existing tests; only add | `pytest` count check |
-
----
-
-## 7. Ship Plan
-
-### Pre-deploy Checklist
-
-1. All 11 steps complete
-2. `python3 -m ruff check src/ tests/` — zero violations
-3. `python3 -m pytest tests/ -v` — all tests pass, no regressions
-4. New test count >= baseline + 20
-5. No new external dependencies (check `pyproject.toml` / `requirements.txt`)
-6. No `.env` files or secrets in new code
-7. All new files have MIT license header
-8. `docs/core-architecture.md` and `docs/core-contract.md` exist and are current
-9. `docs/architecture-after-phase-2.md` exists with before/after comparison
-
-### Commit Strategy
-
-| Commit | Steps | Message |
+| Phase | Agent | Why |
 |---|---|---|
-| 1 | 1 | `feat(core): expand LLMRouter Protocol with generate and health methods` |
-| 2 | 2 | `feat(core): add Capability class and CapabilityBus Protocol` |
-| 3 | 3 | `feat(core): add consolidated agent registry facade` |
-| 4 | 4-5 | `feat(core): expand MekongCoreRuntime with health, destroy, capability bus` |
-| 5 | 6 | `feat(core): add PaymentProvider Protocol and MCUBilling adapter` |
-| 6 | 7-8 | `feat(core): add AutonomyEngine with risk-level governance` |
-| 7 | 9-11 | `docs: Phase 2 architecture documentation and quality gate` |
+| Phase 1 (verifier merge) | **fullstack-developer** | Precise adapter wiring between two existing modules; needs to read both `verifier.py` and `runtime_adapter.py` carefully. |
+| Phase 2 (DAG order) | **fullstand-developer** (sequential after Phase 1 — same file `runtime_adapter.py`, avoid write conflict) | Kahn's algorithm + `_run_goal` edit; depends on Phase 1's `_topological_task_order` being in place. |
+| Phase 3 (E2E + parity) | **tester** | Builds the multistep cycle test and runs the parity sweep. |
+| Phase 4 (docs) | **docs-manager** | Architecture/roadmap/changelog updates. |
+| Final review | **code-reviewer** | Whole diff review before commit. |
 
-### Verify Command
-
-```bash
-python3 -m ruff check src/ tests/ && python3 -m pytest tests/test_protocol_compliance.py tests/test_autonomous_loop.py tests/test_llm_router_expanded.py tests/test_capability_bus.py tests/test_agent_registry_consolidated.py tests/test_runtime_expansion.py tests/test_economic_bus.py tests/test_autonomy_engine.py -v
-```
+Note: Phases 1 and 2 both touch `src/core/runtime_adapter.py` — run them **sequentially** (not parallel) to avoid file conflict. Phase 3's unit-test files are independent and could be drafted in parallel, but the E2E test needs both phases merged, so Phase 3 runs after Phase 2.
 
 ---
 
-## 8. Work Checklist
+## 5. Ship plan
 
-> **Status: COMPLETE (as of 2026-08-18).** Items below were checked off during
-> Phase 2 execution. The original file names in this checklist were aspirational
-> — the actual implementation landed under different module names. See §8.1 for
-> the mapping and verification evidence.
+### Pre-deploy checklist (run before any commit)
+- [ ] `python3 -m ruff check src/ tests/` → 0 errors
+- [ ] `python3 -m pytest tests/ -q` → all green (establish baseline if `baseline_d71e13fa02.txt` is stale)
+- [ ] `python3 -m mypy src/core/runtime_adapter.py` → 0 new errors
+- [ ] Confirm `.github/workflows/*` untouched (`git status` clean on that path)
 
-### Phase 2A: Protocol Consolidation + Capability Bus
-- [x] 1. Expand `LLMRouter` Protocol — add `generate()`, `health()` → `src/core/llm_router_adapter.py` (LLMRouterAdapter.generate, .health)
-- [x] 2. Update `LLMRouterAdapter` — implement `generate()`, `health()` → `src/core/llm_router_adapter.py`
-- [x] 3. Write `tests/test_llm_router_expanded.py` → `tests/test_llm_router_expanded.py`
-- [x] 4. Create `src/core/capability.py` → `src/core/capability.py` (Capability, RiskLevel, CapabilitySource, CapabilityBus Protocol, CapabilityBusImpl)
-- [x] 5. Add `CapabilityBus` to `src/core/protocols.py` `__all__` → `src/core/protocols.py:16`
-- [x] 6. Write `tests/test_capability_bus.py` → `tests/test_capability_bus.py`
-- [x] 7. Create `src/core/agent_registry_consolidated.py` → implemented as `src/core/agent_registry.py` (AgentMeta, AgentRegistry, get_registry)
-- [x] 8. Write `tests/test_agent_registry_consolidated.py` → `tests/test_agent_registry_consolidated.py`
+### Commit
+- Single conventional-commit: `feat(core): merge RecipeVerifier into runtime verify() and order multi-step plans topologically (gap #4)`
+- Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+- Files: `src/core/runtime_adapter.py`, `tests/test_runtime_verify_merge.py`, `tests/test_runtime_dag_order.py`, `tests/test_runtime_multistep_cycle.py`, `docs/architecture.md`, `docs/development-roadmap.md`, `docs/project-changelog.md`
 
-### Phase 2B: Runtime Expansion
-- [x] 9. Add `health()`, `destroy()` to `MekongCoreRuntime` Protocol → `src/core/runtime_adapter.py` (MekongCoreRuntimeImpl.health, .destroy)
-- [x] 10. Implement `health()`, `destroy()`, optional `capability_bus` on `MekongCoreRuntimeImpl` → `src/core/runtime_adapter.py:119,318,333`
-- [x] 11. Wire `CapabilityBusImpl` into `src/commands/run.py` → `src/commands/run.py` (MemoryStoreBridge, BillingAdapter, ToolRegistry wired into MekongCoreRuntimeImpl)
-- [x] 12. Write `tests/test_runtime_expansion.py` → `tests/test_runtime_expansion.py`
-- [x] 13. Write `tests/test_run_command_capability_bus.py` → covered by `tests/test_runtime_expansion.py` (no separate file)
+### PR
+- Title: `feat(core): gap #4 — harness verifier merge + DAG scheduler swap`
+- Body: summarize the three surfaces collapsed into one, link this plan, list gates.
+- Target: `main`.
 
-### Phase 2C: Economic Bus + Autonomy Engine
-- [x] 14. Create `src/core/economic_bus.py` → implemented as `src/core/billing_adapter.py` (BillingAdapter implements PaymentProvider Protocol) + `src/core/protocols.py:216` (PaymentProvider)
-- [x] 15. Write `tests/test_economic_bus.py` → `tests/test_economic_bus.py`
-- [x] 16. Create `src/core/autonomy_engine.py` → implemented as `src/core/governance.py` (Governance, ActionClass, GovernanceDecision, AuditEntry)
-- [x] 17. Wire AutonomyEngine into runtime execute path → `src/core/runtime_adapter.py` (governance= kwarg on MekongCoreRuntimeImpl)
-- [x] 18. Write `tests/test_autonomy_engine.py` → `tests/test_autonomy_engine.py`
+### CI verify
+- GitHub Actions green (lint + test). Do NOT merge on red.
 
-### Phase 2D: Documentation + Quality
-- [x] 19. Write `docs/core-architecture.md` → `plans/reports/CURRENT_ARCHITECTURE.md` (386 lines)
-- [x] 20. Write `docs/core-contract.md` → `plans/reports/MEKONG_CORE_CONTRACT.md` (605 lines)
-- [x] 21. Run full test suite — zero regressions → 6876 pass; 3 collection errors + 7 memory/smart_router failures pre-exist on clean tree (verified via `git stash`)
-- [x] 22. Run ruff — zero violations → `python3 -m ruff check src/` clean on all modified files
-- [x] 23. Write `docs/architecture-after-phase-2.md` → `plans/reports/DEPENDENCY_MAP.md`, `DUPLICATION_MAP.md`, `DEPRECATION_MAP.md`, `AUTONOMY_GAPS.md`
+### Merge
+- Squash or merge commit per repo convention.
 
-### Phase 7-9: Dead Code + Memory & Billing Consolidation (2026-08-18)
-- [x] 24. Add DEPRECATED headers to `src/core/memory.py`, `src/api/vn_pilot_billing.py`, `src/api/vn_payments_routes.py`
-- [x] 25. Create `src/core/memory_canonical.py` — canonical MemoryStore re-export
-- [x] 26. Migrate 16 importers from `src.core.memory` to `src.core.memory_canonical`
-- [x] 27. Wire `BillingAdapter` into `src/gateway.py` and `src/commands/run.py`
-- [x] 28. Commit Phase 7-9 → commit `641053e67`
+### Deploy
+- No separate deploy step for this change (library/CLI code; deploy happens via the regular release track, not this PR).
+
+### Prod smoke (after merge)
+- `mekong run "analyze Q3 revenue"` → single-step path, completes, no error.
+- `mekong cook "build a todo API"` → multi-step (`cto`), 7 tasks execute, reviewer runs last.
+- `mekong goal "ship tax module"` → goal persisted, task graph resumable.
+- `mekong implement "add logging"` → multi-step, verify passes each task.
+
+### Feature smoke
+- Inspect mission tracer output (if attached): stages `goal → plan → delegate → execute → observe → remember → commit → finish` present, and per-task `log_step` records appear in topological order.
+
+### Rollback readiness
+- If parity gate shows new failures post-merge: revert the single commit (`git revert <sha>`), re-run parity, re-open gap. The change is isolated to `runtime_adapter.py` + 3 new test files — revert is clean, no migration, no schema.
+
+### Ops / journal
+- On ship: append to `docs/project-changelog.md` — `## v6.x — Gap #4 closed: core runtime shares RecipeVerifier + topological multi-step execution`.
+- If cycle-raise fires in prod (should not, unless GoalEngine planner regresses): journal the incident with the cycle details — it's a planner bug surfacing, not a runtime bug.
 
 ---
 
-### §8.1 Checklist-name vs. actual-file mapping
+## 6. Assumptions (confidence, what would change the answer)
 
-The checklist used placeholder names (`economic_bus.py`, `autonomy_engine.py`,
-`agent_registry_consolidated.py`) that did not match where the work landed.
-Each item is verified against the **real** module that implements it:
-
-| Checklist item | Checklist name | Actual implementation | Evidence |
-|---|---|---|---|
-| 14 | `src/core/economic_bus.py` | `src/core/billing_adapter.py` + `PaymentProvider` Protocol | `protocols.py:216`, `billing_adapter.py:6` |
-| 16 | `src/core/autonomy_engine.py` | `src/core/governance.py` | `Governance`, `ActionClass` classes |
-| 7 | `src/core/agent_registry_consolidated.py` | `src/core/agent_registry.py` | `AgentRegistry`, `get_registry()` |
-
-All 20 Phase 2 tests collect and pass: `56 passed` across
-`test_autonomy_engine.py`, `test_agent_registry_consolidated.py`,
-`test_economic_bus.py`, `test_capability_bus.py`, `test_llm_router_expanded.py`,
-`test_runtime_expansion.py`.
+- **HIGH:** `src/core/verifier.py:RecipeVerifier.verify()` accepts a criteria-dict with keys `exit_code`, `output_contains`, `output_not_contains`, `file_exists`, `file_not_exists`, `custom_check`. **NO `command_succeeds` key** — that method does not exist. Confirmed by reading `verify()` (line 281) and the individual `verify_*` methods (lines 89-460).
+- **HIGH:** `GoalEngineAdapter._task_to_step` copies `depends_on` into `Step.dependencies` (verified line 162–173). So `_run_goal` can read the DAG without touching GoalEngine internals.
+- **HIGH:** `src/harness/pev/dag_scheduler.py` stub is NOT imported by `PEVOrchestrator` (orchestrator imports `src.core.verifier`, not the stub). So leaving the stub untouched is safe. If any test imports it, that test is testing the stub itself and is out of scope.
+- **MEDIUM:** `ExecutionResult` (used by `RecipeVerifier`, verifier.py:32-40) has fields `exit_code: int`, `stdout: str`, `stderr: str`, `output_files: list`, `metadata: dict`, `error: str | None`. The `_ExecResultLike` adapter provides `exit_code`, `stdout`, `stderr`, `metadata` (Step 1.2). `verify_output_contains` reads `result.stdout + "\n" + result.stderr` (verifier.py:193), so the stdout/stderr split matters. Verified during Phase 1.1.
+- **MEDIUM:** `_repair_count` is per-mission (reset only in `start_mission`). With 7 tasks each potentially retrying 3×, the cap (3) will trip early. This is **pre-existing** behavior, not introduced by this change. Flag as a follow-up (per-task repair budget) but do NOT fix here — out of scope.
+- **LOW:** `mekong run` for unknown agents produces a single-step plan (line 438–440) with no dependencies → fast path → zero behavior change. Verified by reading `plan()`.
 
 ---
 
-## 9. Success Metrics — ACTUAL (as of 2026-08-18)
+## 7. File/function quick-reference (for subagent handoff)
 
-| Metric | Target | Actual | Evidence |
-|---|---|---|---|
-| Protocol compliance | 12 contracts | **12** | `protocols.py` `__all__` — 9 original + `CapabilityBus`, `PaymentProvider`, `TaskProfile`/`CostEstimate`/`ToolDef`/`ToolResult`/`QuotaStatus`/`PaymentResult`/`MemoryHit`/`TelemetryEvent`/`Result`/`FailureInfo`/`MekongCoreRuntime`/`LLMRouter`/`ToolRegistry`/`AgentDispatcher`/`BillingMeter`/`MemoryStore`/`ObservabilitySink`/`VerificationEngine`/`GoalEngine` |
-| New adapters | 3 | **3** | `CapabilityBusImpl`, `BillingAdapter` (MCUBillingPayment), `LLMRouterAdapter` |
-| New tests | >= 20 | **56** | 6 Phase 2 test files: `test_llm_router_expanded`, `test_capability_bus`, `test_agent_registry_consolidated`, `test_runtime_expansion`, `test_economic_bus`, `test_autonomy_engine` |
-| Existing tests | 0 regressions | **0** | 6876 pass; 3 collection errors + 7 failures pre-exist (verified via `git stash`) |
-| ruff violations | 0 | **0** | `ruff check src/` clean on all modified files |
-| New dependencies | 0 | **0** | `pyproject.toml` unchanged |
-| Documentation | 2 new docs | **6** | `plans/reports/` — CURRENT_ARCHITECTURE, DEPENDENCY_MAP, DUPLICATION_MAP, DEPRECATION_MAP, AUTONOMY_GAPS, MEKONG_CORE_CONTRACT |
-| Capability risk levels | 4 levels | **4** | `RiskLevel` enum (LOW/MEDIUM/HIGH/CRITICAL) in `src/core/capability.py` |
-| Autonomy decisions | Auto-audit-deny chain works | **PASS** | `tests/test_autonomy_engine.py` — Governance FORBIDDEN block + cost estimate + retry limit (MAX_REPAIR_RETRIES=3) |
-| Memory consolidation | canonical module | **DONE** | `src/core/memory_canonical.py` + 16 importers migrated; 0 old-path importers |
-| Billing consolidation | canonical entry point | **DONE** | `BillingAdapter` wired into `gateway.py` + `run.py`; 77/77 billing tests pass |
-
----
-
-## 10. Assumptions
-
-1. **The 218+ test count refers to core/engine tests, not the full 7522-test suite.** Confidence: HIGH. The full suite includes app/, engine/, packages/ which are outside the Phase 2 scope. The core protocol+loop tests (9+1 = 10) are the direct baseline.
-
-2. **Existing `AgentRegistry` and `AgentDispatcher` remain untouched.** The consolidated class is a NEW facade, not a replacement. Confidence: HIGH. Replacing would break 43 existing commands.
-
-3. **MCU is the only payment provider for Phase 2.** No Stripe/USDT/x402 integration yet. Confidence: HIGH. The user constraint says "no marketplace, no tokenomics, no custody."
-
-4. **The CapabilityBus wraps ToolRegistry, not replaces it.** ToolRegistry is the persistence and execution layer. CapabilityBus adds governance. Confidence: HIGH. ToolRegistry has 626 lines of working code.
-
-5. **`stream()` and `structured_output()` — DELIVERED in Phase 6** (commit `0195a70a3`).
-   The original Phase 2 plan deferred them ("No current caller needs them.
-   YAGNI applies"). They were implemented regardless — `LLMRouter.stream()` and
-   `LLMRouter.structured_output()` now exist. Confidence: HIGH (verified in
-   `src/core/llm_router_adapter.py`).
-
-6. **Buzz Runtime Adapter — DELIVERED.** `src/core/buzz_adapter.py` exists
-   (`BuzzAdapter` class). The original plan deferred it ("No Buzz host exists
-   to adapt to") — the adapter was built anyway as a thin external-host
-   wrapper. Confidence: HIGH.
-
-7. **Memory separation (session/mission/agent/persistent/artifacts/observability) is deferred.** The existing `MemoryBridge` with `MemoryKind` enum already provides this taxonomy. Confidence: MEDIUM. May need revisiting if callers demand stricter separation.
-
-8. **Observability (mission-level trace) is deferred.** The existing `TelemetrySinkAdapter` + `TelemetryCollector` provide event-level tracing. Mission-level trace requires a higher-level abstraction that is not yet justified by callers. Confidence: MEDIUM.
-
-9. **Deprecation map is deferred.** There are many dormant modules in `src/core/` (200+ files) but cataloging them is a documentation task, not an architecture task. Confidence: HIGH.
+| File | Function/line | Change |
+|---|---|---|
+| `src/core/runtime_adapter.py` | `__init__` (line 167) | Add `verifier: RecipeVerifier | None = None` param + `self._verifier` |
+| `src/core/runtime_adapter.py` | `verify()` (line 716) | Rewrite to delegate to `self._verifier.verify()` via `_criteria_to_verifier_dict` + `_report_to_verification` |
+| `src/core/runtime_adapter.py` | `_run_goal()` (line 365) | Replace sequential `for task in tasks` with topologically-ordered loop |
+| `src/core/runtime_adapter.py` | module level | Add `_criteria_to_verifier_dict`, `_report_to_verification`, `_ExecResultLike`, `_topological_task_order`, `_plan_has_dependencies` |
+| `src/core/verifier.py` | `RecipeVerifier.verify` (line 281) | NO change — consumed as-is |
+| `src/core/adapters/goal_engine_adapter.py` | `_task_to_step` (line 162) | NO change — already provides `Step.dependencies` |
+| `src/mekongcli/core/goal_engine/models.py` | `TaskGraph.ready_tasks` (line 112) | NO change — reference algorithm only |
+| `tests/test_runtime_verify_merge.py` | new | Phase 1 tests |
+| `tests/test_runtime_dag_order.py` | new | Phase 2 tests |
+| `tests/test_runtime_multistep_cycle.py` | new | Phase 3 E2E test |

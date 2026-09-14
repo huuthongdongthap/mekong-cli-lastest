@@ -33,7 +33,11 @@ class AGIBridge:
         """
         entry = self.worker_dir / "task-watcher.js"
         if not entry.exists():
-            return False
+            raise FileNotFoundError(
+                f"AGI daemon entry script not found: {entry}\n"
+                "apps/openclaw-worker/task-watcher.js does not exist. "
+                "Install the openclaw-worker package or disable AGI daemon features."
+            )
         try:
             self._process = subprocess.Popen(
                 ["node", "task-watcher.js"],
@@ -45,7 +49,9 @@ class AGIBridge:
             time.sleep(2)
             return self._process.poll() is None
         except FileNotFoundError:
-            return False
+            raise  # Re-raise caller-facing errors; only system-level missing 'node' is caught below
+        except OSError as exc:
+            raise RuntimeError(f"Failed to spawn AGI daemon process: {exc}") from exc
 
     def stop(self) -> bool:
         """Stop the daemon if we spawned it.

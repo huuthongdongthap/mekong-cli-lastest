@@ -135,7 +135,7 @@ def _run_wizard(  # noqa: C901  (wizard complexity is inherent)
         confirmed = Confirm.ask("[bold]Continue?[/]", default=True)
         if not confirmed:
             console.print("[yellow]Aborted.[/]")
-            raise typer.Exit(code=0)
+            raise typer.Exit(code=1)
 
     return init_company(cfg, base_dir=output_dir)
 

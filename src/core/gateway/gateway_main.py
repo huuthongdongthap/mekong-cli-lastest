@@ -50,7 +50,7 @@ from src.core.gateway.models import (
 )
 from src.core.gateway_config import GatewayConfig, load_config
 from src.core.gateway_dashboard import DASHBOARD_HTML
-from src.core.llm_client import get_client
+from src.providers.llm.client import get_client
 from src.core.memory_canonical import MemoryStore
 from src.core.orchestrator import OrchestrationResult, RecipeOrchestrator
 from src.core.scheduler import Scheduler

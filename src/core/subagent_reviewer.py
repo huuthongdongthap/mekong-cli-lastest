@@ -77,7 +77,7 @@ class SubagentReviewer:
         """Initialize with LLM client for review calls.
 
         Args:
-            llm_client: Instance of LLMClient from src.core.llm_client
+            llm_client: Instance of LLMClient from src.providers.llm.client
         """
         self._llm = llm_client
 

@@ -16,7 +16,7 @@ from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from src.core.llm_client import LLMClient
+    from src.providers.llm.client import LLMClient
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +143,7 @@ class NLPCommander:
     def _get_client(self) -> "LLMClient":
         """Lazy-load LLM client."""
         if self._client is None:
-            from src.core.llm_client import get_client
+            from src.providers.llm.client import get_client
 
             self._client = get_client()
         return self._client  # type: ignore[return-value]

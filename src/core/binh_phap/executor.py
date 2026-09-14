@@ -202,9 +202,24 @@ class BinhPhapExecutor:
             result = self._execute_chapter(ch)
             self.state.mark(result)
             self.state.save()
-            if result.status == "failed" and self._handle_failure(result):
-                continue
-            if result.status in ("success", "skipped"):
+            decision = None
+            while result.status == "failed":
+                attempt = self._consecutive_failures.get(ch, 0) + 1
+                decision = evaluate(ch, attempt, result.error or "unknown")
+                if decision.action == "retry" and should_retry(
+                    ch, attempt, result.error or "unknown"
+                ):
+                    self._handle_failure(result)
+                    result = self._execute_chapter(ch)
+                    self.state.mark(result)
+                    self.state.save()
+                    continue
+                else:
+                    self._handle_failure(result)
+                    break
+            if result.status in ("success", "skipped") or (
+                decision and decision.action == "fallback"
+            ):
                 continue
             if ch not in self.dag.human_only:
                 logger.warning("Stopping after failure at chapter %d", ch)

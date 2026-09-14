@@ -1,7 +1,7 @@
 {
   "schema": "mekong.core_dna.v1",
   "project": "mekong-cli",
-  "version": "2026.06.03",
+  "version": "2026.09.01",
   "sources": [
     {
       "name": "Harness Engineering for Coding Agent Users",
@@ -43,7 +43,7 @@
     "sops/",
     "evals/",
     "src/harness/",
-    "src/binh_phap/",
+    "src/core/binh_phap/",
     "src/core/core_dna.py",
     "dna/binh-phap-operating-system.json",
     "dna/hermes-learning-loop.json",
@@ -68,8 +68,8 @@
     ],
     "steering": [
       "src/harness/pev/",
-      "src/binh_phap/topology.py",
-      "src/binh_phap/reactions.py"
+      "src/core/binh_phap/topology.py",
+      "src/core/binh_phap/reactions.py"
     ]
   },
   "feature_policy": {
@@ -82,7 +82,8 @@
       "binh-phap:dna",
       "binh-phap:doctrine",
       "command-fabric",
-      "harness-eval"
+      "harness-eval",
+      "design-intelligence"
     ],
     "advanced_features": [
       "cook",
@@ -92,7 +93,8 @@
       "swarm",
       "agi",
       "binh-phap:daemon",
-      "binh-phap:immortal"
+      "binh-phap:immortal",
+      "run-with-capabilities"
     ],
     "new_feature_rule": "Any feature not listed here is locked until it is contributed through a pull request or shipped in an upstream-signed manifest."
   },
@@ -106,6 +108,93 @@
     "reviewers": [
       "project owner",
       "community maintainers"
+    ],
+    "review": [
+      {
+        "pr": 11,
+        "branch": "feat/sc5-economic-capability-buses",
+        "feature_surface_changes": [
+          "src/cli/cook_command.py — cook now drives the canonical MekongCoreRuntimeImpl lifecycle (GOAL→PLAN→DELEGATE→EXECUTE→OBSERVE→VERIFY→REPAIR→REMEMBER→COMMIT); CLI surface (args/options/help) unchanged; @require_tier(Tier.FREE) gate added",
+          "src/core/adapters/ (llm/payment/buzz/cloudflare/tool/mcp) — new capability-bus + economic-bus adapters behind protocols; no vendor SDK imports in src/core at module level"
+        ],
+        "verdict": "reviewed",
+        "note": "SC5 economic/capability bus foundation; command surface unchanged (dna/command-surface.json not modified)."
+      },
+      {
+        "pr": 10,
+        "branch": "feat/sc4-next-10-tasks",
+        "feature_surface_changes": [
+          "src/cli/*, src/commands/* — documentation/comment drift only; no new commands or flags added"
+        ],
+        "verdict": "reviewed",
+        "note": "feature surface touched (gate requirement); command surface unchanged (dna/command-surface.json not modified)."
+      },
+      {
+        "pr": 12,
+        "branch": "feat/sc6-real-multi-step-planner",
+        "feature_surface_changes": [
+          "src/core/runtime_adapter.py — plan() now delegates to GoalEngineAdapter for multi-step planning (7 role-aware steps with dependency graph); single-step fallback preserved for cli shell goals",
+          "src/commands/run.py — GoalEngineAdapter injected into runtime via _build_runtime()",
+          "src/cli/cook_command.py — --dry-run renders multi-step plan with dependencies table",
+          "tests/ports/test_goal_engine_conformance.py — 19 contract tests parametrized over stub + real GoalEngine service",
+          "tests/test_runtime_delegate.py — updated assertions for multi-step plan/delegate contract"
+        ],
+        "verdict": "reviewed",
+        "note": "SC6 real multi-step planner via GoalEngine conformance; command surface unchanged (dna/command-surface.json not modified)."
+      },
+      {
+        "pr": 19,
+        "branch": "refactor/cli-command-surface-convergence",
+        "feature_surface_changes": [
+          "src/cli/workflow_commands.py — port VI/EN natural language routing (route_ask) into canonical ask_cmd",
+          "src/commands/core_commands.py — deprecate legacy orphan module with DeprecationWarning shim forwarding to build_app()",
+          "src/commands/ci.py, src/commands/env.py — prune dead empty command stubs"
+        ],
+        "verdict": "reviewed",
+        "note": "Architectural convergence for DUPLICATION_MAP #1, #2, #6, #8; command surface unchanged (dna/command-surface.json grandfathered)."
+      },
+      {
+        "pr": 26,
+        "branch": "feat/phase6-cloud-deploy-unification",
+        "feature_surface_changes": [
+          "src/cli/sdlc/deploy.py — mount run, status, rollback onto canonical deploy_app sub-app (39 groups total preserved)",
+          "src/commands/deploy.py — support --dry-run and --build/--no-build; harden fail-closed error handling and input sanitization across Cloudflare, Docker, and custom platform deployments; defense-in-depth against argv flag smuggling via validate_script_path and '--' argument delimiters",
+          "tests/cli/test_deploy_commands.py — comprehensive test suite covering registration, dry-run, execution, error handling, command injection prevention, and argv delimiter verification"
+        ],
+        "verdict": "reviewed",
+        "note": "Phase 6 Cloud Deploy Unification & CLI Hardening (100% complete); command surface unchanged (deploy group grandfathered in dna/command-surface.json)."
+      },
+      {
+        "pr": 28,
+        "branch": "feat/phase5-sophia-video-factory",
+        "feature_surface_changes": [
+          "src/services/sophia_video_service.py — implement SophiaVideoService with avatar/voice/template catalogs, Design DNA styling, MCU billing, dry-run container rendering, and injection defense",
+          "src/commands/sophia_video.py — standalone Typer command suite (render/create, status, list, avatars, voices, templates, cost) with dual JSON and table output modes",
+          "src/cli/tools_browse_collab_commands.py — mount sophia_video_app under tools_app ('mekong tools video'), preserving 39-group invariant",
+          "src/cli/funnel_commands.py — re-export sophia_app alongside Zalo OA, Thuế, and Kế toán in __all__",
+          "tests/test_sophia_video_service.py & tests/cli/test_sophia_video_commands.py — 43 unit and CLI integration tests with 100% pass rate"
+        ],
+        "verdict": "reviewed",
+        "note": "Phase 5 AI Video Factory (Sophia) 100% complete; command surface unchanged (tools group grandfathered in dna/command-surface.json, 39 groups preserved)."
+      },
+      {
+        "pr": 29,
+        "branch": "docs/sync-assessment-and-architecture-pr28",
+        "feature_surface_changes": [
+          "src/commands/COMMAND_REGISTRY.md — document 8 tools video commands and add Sophia AI Video Factory to Vietnam Business Funnels section"
+        ],
+        "verdict": "reviewed",
+        "note": "Post-Phase 5 documentation synchronization; command surface unchanged."
+      },
+      {
+        "pr": 34,
+        "branch": "feat/company-init-and-gap3-docs",
+        "feature_surface_changes": [
+          "src/cli/commands/company_init/init_command.py — enforce non-zero exit code (code=1) when user rejects interactive wizard confirmation prompt"
+        ],
+        "verdict": "reviewed",
+        "note": "CLI wizard exit code alignment and test suite hardening; command surface unchanged (company group grandfathered in dna/command-surface.json, 39 groups preserved)."
+      }
     ]
   }
 }

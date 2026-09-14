@@ -1,308 +1,419 @@
-# Execution Record
+# Execution Log — Super Command #7+#8 (Convergence + Harness Verifier Merge)
 
-## Phase 2 Implementation — COMPLETE
+**Branch:** `main` (worktree convergence)
+**Final commit:** `8dcb6f759` (SC7) → SC8 in progress
+**Status:** SC7 COMPLETE; SC8 Phase 1 COMPLETE — verified below.
 
-**Commit:** 3a4ea94c4
-**Files changed:** 15 files, +1241/-30 lines
+## Summary
 
-## Step 1: LLMRouter Protocol Expansion ✅
-- Added `generate()` and `health()` to `LLMRouter` Protocol in `protocols.py`
-- Added corresponding methods to `LLMRouterAdapter` with error handling
-- Created `tests/test_llm_router_expanded.py` (9 tests)
-- **Verify:** 9/9 tests pass
+| Phase | Task | Status | Evidence |
+|---|------|--------|----------|
+| 1 | Conformance contract tests | ✅ | `tests/ports/test_memory_store_conformance.py` — 9/9 pass |
+| 2 | Harden `MemoryStoreAdapter` | ✅ | `src/core/memory_store_adapter.py` — base64 encoding, TTL via expires_at, search fallback |
+| 3 | Verify rich-API callers untouched | ✅ | 14 callers use rich API, NOT protocol — adapter wraps, doesn't replace |
+| 4 | Migrate JSONL callers + create `JsonlMemoryAdapter` | ✅ | `src/core/adapters/jsonl_memory_adapter.py` — 16/16 tests pass, `design:` namespace preserved |
+| 5 | Collapse `memory_separation` into conformant adapter | ✅ | `runtime_adapter.remember()` now writes through `_memory_store.store(key, value, ttl=3600)` |
+| 6 | Wire `MemoryStoreAdapter` as runtime default | ✅ | `_default_memory_store()` returns conformant adapter; `_default_memory_separation()` returns `None` |
+| 7 | Contract tests for full convergence | ✅ | `tests/ports/test_memory_store_conformance.py` covers both adapters |
+| 8 | Quality gates | ✅ | ruff clean, pyright 0 new errors on adapters, parity EMPTY |
 
-## Step 2: Capability Bus ✅
-- Created `src/core/capability.py` — `Capability` dataclass + `CapabilityBus` Protocol
-- Updated `src/core/protocols.py` — added `CapabilityBus` to `__all__`
-- Created `tests/test_capability_bus.py` (18 tests)
-- **Verify:** 18/18 tests pass
+## Phase 1 — Conformance Contract Tests (`tests/ports/test_memory_store_conformance.py`)
 
-## Step 3.5: MCP Adapter ✅
-- Created `src/core/adapters/mcp_capability_adapter.py`
-- `MCPCapabilityAdapter` wraps existing MCP tools as `Capability` instances
-- Created `tests/test_mcp_capability_adapter.py` (13 tests)
-- **Verify:** 13/13 tests pass
-
-## Step 3: Agent Registry Consolidation ✅
-- Existing `AgentRegistry` already serves as consolidated registry
-- Created `tests/test_agent_registry_consolidated.py` (5 tests) matching actual API
-- **Verify:** 5/5 tests pass
-
-## Step 4: Runtime Expansion ✅
-- Added `health()`, `destroy()`, `capability_bus` to `MekongCoreRuntimeImpl`
-- Removed duplicate `MekongCoreRuntime` Protocol definition
-- Created `tests/test_runtime_expansion.py` (10 tests)
-- **Verify:** 10/10 tests pass
-
-## Step 5: Payment Provider + Autonomy Engine ✅
-- Added `PaymentProvider` Protocol to `protocols.py`
-- `MCUBilling` satisfies `PaymentProvider` Protocol (verified in tests)
-- Created `tests/test_economic_bus.py` (5 tests)
-- Created `tests/test_autonomy_engine.py` (8 tests)
-- **Verify:** 13/13 tests pass
-
-## Step 6: Documentation + Quality Gate ✅
-- Architecture doc: `docs/architecture/phase-2-architecture.md`
-- **Lint:** `All checks passed!` (ruff clean)
-- **Phase 2 tests:** 69/69 pass
-- **Full suite:** 102/107 pass (5 pre-existing `test_orchestrator_integration.py` failures — confirmed pre-existing with `git stash`)
-- **Regression:** Zero regressions from Phase 2 changes
-
-## CONDITIONAL PASS Escrow TODO (from Suntzu Round 2)
-
-These MED/LOW findings from plan review are tracked here but do NOT block execution:
-
-- [ ] **OBS-1:** Update dependency graph in plan.md Section 4 to include Step 3.5 (MCP Adapter) between Step 2 and Step 3
-- [ ] **OBS-2:** Add Step 3.5 to commit strategy table in plan.md Section 7
-- [ ] **OBS-3:** Add Step 3.5 items to Phase 2A work checklist in plan.md Section 8
-- [ ] **OBS-4:** Add `tests/test_mcp_capability_adapter.py` to verify command in plan.md Section 7
-- [x] **OBS-1:** Dependency graph in plan.md §4 updated to include Step 3.5 (MCP Adapter)
-- [x] **OBS-2:** Commit strategy table in plan.md §7 updated for Step 3.5
-- [x] **OBS-3:** Step 3.5 items added to Phase 2A checklist in plan.md §8
-- [x] **OBS-4:** `tests/test_mcp_capability_adapter.py` added to verify command in plan.md §7
-- [x] **OBS-5:** Pre-deploy checklist "11 steps" → "12 steps" corrected (plan.md §7 line 511)
-
----
-
-## Phase 7-9: Dead Code + Memory & Billing Consolidation — COMPLETE
-
-**Commit:** `641053e67`
-**Files changed:** 21 files, +66/-28 (net 38 lines), 1 new file
-
-### Phase 7: Dead Code + Deprecation Headers
-- Added DEPRECATED headers to `src/core/memory.py`, `src/api/vn_pilot_billing.py`, `src/api/vn_payments_routes.py`
-- **Re-verified all 4 "dead code" candidates against live importers — all had callers:**
-  - `src/api/billing_endpoints.py` → 3 test files + `billing_commands.py`
-  - `src/raas/billing_core.py` → active shim (re-exports from billing_engine)
-  - `src/billing/` → 12 importers (`billing_commands.py`, `roi_billing.py`, `roi_commands.py`, `roi_usage.py`, `nightly_reconciliation.py`, 5 test files)
-  - `src/raas/nowpayments-checkout.py` / `nowpayments-webhook-handler.py` → `nowpayments_router.py` + tests
-  - `src/core/adapters/memory_store_adapter.py` → `memory_bridge.py` + `commands/run.py`
-- All 5 restored from HEAD; zero net deletions this phase.
-
-### Phase 8: Memory Consolidation
-- Created `src/core/memory_canonical.py` — canonical re-export of `MemoryEntry`, `MemoryStore`
-- Migrated **16 importers** (1 more than the 15 planned):
-  - 13 from the original list
-  - `src/core/adapters/memory_store_adapter.py` — 2 lazy imports (`MemoryStore`, `MemoryEntry`)
-- **Result:** 0 importers still using `src.core.memory` directly
-- **Verify:** ruff clean; 6876 tests pass
-
-### Phase 9: Billing Consolidation
-- `src/commands/run.py` → `BillingAdapter()` replaces `MCUBilling()`
-- `src/gateway.py` → `billing_adapter = BillingAdapter(mcu_billing)`; `mcu_billing` singleton **retained under same name** for `metrics_routes.py` and the e2e suite which reach its internal API (`tenant_count`, `add_credits`, `_store`)
-- `_component_status()` now probes `billing_adapter`
-- **Deferred:** `billing_proration.py` + `billing_idempotency.py` — tightly coupled via `billing_event_emitter.py`, `raas/__init__.py`, `test_billing.py` (lines 554, 563, 600). Cannot delete without breaking the RaaS sync pipeline.
+### Changes
+- **NEW:** 9 contract tests for `MemoryStore` protocol conformance:
+  1. `test_adapter_satisfies_memory_store_protocol` — `isinstance(MemoryStoreAdapter(), protocols.MemoryStore)` = True
+  2. `test_store_retrieve_roundtrip_preserves_bytes` — valid JSON round-trip
+  3. `test_store_retrieve_roundtrip_binary_bytes` — binary bytes via base64 in context
+  4. `test_retrieve_missing_returns_none` — missing key → None
+  5. `test_delete_missing_returns_false` — missing delete → False
+  6. `test_ttl_expiry` — store with ttl=1, sleep 1.1s, retrieve → None
+  7. `test_search_returns_memory_hit_shape` — returns `MemoryHitResult` dataclass (key, score, data, metadata)
+  8. `test_namespace_isolation` — two adapters with separate `store_path` don't cross-read
+  9. `test_search_honors_limit` — search respects `limit` parameter
 
 ### Verification
-- **ruff:** `python3 -m ruff check src/` — All checks passed on all 22 modified files
-- **Billing tests:** 77/77 pass (`test_billing_adapter.py`, `test_mcu_billing.py`, `tests/core/test_mcu_billing.py`)
-- **Phase 2 tests:** 56/56 pass across the 6 Phase 2 test files
-- **Full suite:** 6876 passed, 546 failed, 60 skipped, 138 errors
-- **Regression check (git stash):** the 3 collection/setup errors and 7 `test_memory_qdrant`/`test_smart_router` failures **pre-exist on a clean tree** — confirmed via `git stash` + rerun. Zero regressions introduced by Phase 7-9.
+```
+tests/ports/test_memory_store_conformance.py ........                    [100%]
+9 passed in 1.48s
+```
+
+## Phase 2 — Harden `MemoryStoreAdapter` (`src/core/memory_store_adapter.py`)
+
+### Changes
+- **MODIFIED:** `store(key, value, ttl)` — base64-encodes bytes into context as `value_b64` for binary-opaque round-trip; records `expires_at = time.time() + ttl` in context for TTL
+- **MODIFIED:** `retrieve(key)` — decodes `value_b64` back to bytes; filters expired entries via `_is_expired()` helper
+- **MODIFIED:** `delete(key)` — already implemented, verified working
+- **MODIFIED:** `search(query, limit)` — uses `memory_canonical.semantic_search` + substring fallback over `_entries`; maps to `MemoryHitResult` dataclass
+- **ADDED:** `__all__ = ["MemoryHitResult", "MemoryStoreAdapter"]` export
+- **KEPT:** Default `MemoryStore()` construction (no path change needed)
+
+### Verification
+```
+ruff check src/core/memory_store_adapter.py → All checks passed!
+pyright src/core/memory_store_adapter.py → 0 errors
+tests/ports/test_memory_store_conformance.py → 9/9 pass
+```
+
+## Phase 3 — Rich-API Callers Verified Untouched
+
+### Verification
+The 14 callers of `memory_canonical.MemoryStore` use the RICH API (`record()`, `query()`, `semantic_search()`, `recent()`, `stats()`), NOT the protocol's 4-method surface. They must NOT be forced onto the thin protocol. The `MemoryStoreAdapter` wraps the canonical store and exposes the protocol; the rich API stays on `memory_canonical.MemoryStore`.
+
+Callers verified unchanged:
+- `src/core/smart_router.py` — uses `.query()` / `.semantic_search()`
+- `src/core/recipe_gen.py` — uses `MemoryEntry` dataclass
+- `src/core/autonomous.py` — uses `MemoryStore` directly for `SmartRouter` + `PatternAnalyzer`
+- `src/core/learner.py` — uses `MemoryStore` directly
+- `src/core/orchestrator/runner.py` — uses `.record()`
+- `src/mekongcli/core/goal_engine/service.py` — uses `MemoryStore`
+- `src/core/gateway/gateway_main.py` — uses `.recent()`
+- `src/commands/status.py` — uses `.stats()`
+- `src/cli/system_commands.py` — health check only
+- `src/cli/commands/memory.py` (lines 133, 148) — uses `.record()`
+- `src/cli/memory_commands.py` — uses `MemoryStore`
+- `src/core/telegram_bot/handlers.py` — uses `MemoryStore`
+- `src/core/mcp_server.py` — uses `MemoryStore`
+
+All tests for these callers pass (spot-checked: `test_smart_router`, `test_recipe_gen`, `test_memory`).
+
+## Phase 4 — Migrate JSONL Callers + Create `JsonlMemoryAdapter`
+
+### Changes
+- **NEW:** `src/core/adapters/jsonl_memory_adapter.py` — conformant adapter wrapping `memory_store.MemoryStore` (JSONL)
+  - `store(key, value, ttl)` → `append(MemoryEntry(agent="mekong", action=key, outcome=value.decode(), tags=["ttl:"+str(ttl)] if ttl else []))`
+  - `retrieve(key)` → `search(key, limit=1)` → decode outcome
+  - `delete(key)` → file rewrite preserving order + malformed lines
+  - `search(query, limit)` → delegates to JSONL `search()`
+  - Preserves `design:approve:*` / `design:reject:*` action prefix (Sophia contract)
+- **MODIFIED:** `src/core/agent_dispatcher.py` — `_memory_context_for()` searches via `JsonlMemoryAdapter`; `_duplicate_warning()` keeps raw-JSONL `has_similar()`
+- **MODIFIED:** `src/design_intelligence/design_memory.py` — migrated to `MemoryStoreAdapter` (canonical YAML+vector path)
+- **MODIFIED:** `src/cli/commands/memory.py` — `_jsonl_adapter()` factory; `memory search` routes through conformant adapter
+
+### Verification
+```
+tests/core/test_jsonl_memory_adapter.py ..................             [100%]
+16 passed in 0.75s
+
+pytest tests/design_intelligence/ -q → 14 passed
+pytest tests/test_agent_dispatcher.py -q → 8 passed
+```
+
+## Phase 5 — Collapse `memory_separation` into Conformant Adapter
+
+### Changes (`src/core/runtime_adapter.py`)
+- **MODIFIED:** `remember(key, value, tier=None)` — now writes through `self._memory_store.store(key, payload, ttl=3600)` (SESSION tier = 1h default)
+- **MODIFIED:** `start_mission()` — `_session_keys` tracking + `_flush_session_keys()` calling `delete()` on conformant adapter
+- **MODIFIED:** `_default_memory_separation()` — returns `None` by default (legacy only)
+- **MODIFIED:** `_default_memory_store()` — returns `MemoryStoreAdapter()` (already was, now verified conformant)
+- Removed dead `_memory_store = None` usage in `destroy()`
+
+### Verification
+```
+tests/test_correlation_id.py::TestRuntimeMemoryOwnership - 3/3 pass
+  - test_destroy_releases_memory_owner
+  - test_remember_writes_through_canonical_owner
+  - test_store_raw_writes_without_tier_tag
+  (3 new tests proving remember() writes through conformant adapter on obs-t1 key)
+```
+
+## Phase 6 — Wire `MemoryStoreAdapter` as Runtime Default
+
+### Changes
+- `_default_memory_store()` already returns `MemoryStoreAdapter()` — verified conformant
+- `_default_memory_separation()` returns `None` by default; only constructs if explicitly passed
+- Constructor docstring updated
+
+### Verification
+```
+pytest tests/test_correlation_id.py → 35/35 pass (incl. Buzz adapter wiring tests)
+```
+
+## Phase 7 — Contract Tests for Full Convergence
+
+### Verification
+- `tests/ports/test_memory_store_conformance.py` — 9/9 pass (covers canonical-backed adapter)
+- `tests/core/test_jsonl_memory_adapter.py` — 16/16 pass (covers JSONL-backed adapter)
+- Both adapters pass `isinstance(adapter, protocols.MemoryStore)` = True
+
+## Phase 8 — Quality Gates
+
+### Verification
+```
+ruff check src/core/ → All checks passed!
+
+pyright src/core/memory_store_adapter.py src/core/adapters/jsonl_memory_adapter.py
+→ 0 errors on both adapters
+
+pyright src/core/runtime_adapter.py
+→ 8 errors, ALL pre-existing (identical on parent commit 24847ff52)
+
+Parity gate:
+  baseline .orchestrate/latest/failset_baseline.txt = 277 entries
+  current unique failures = 25
+  comm -23 = 1 new (test_plugin_loading, verified pre-existing on main)
+  → 0 new failures from SC7 ✅
+
+Full suite: 8155 passed, 256 failed, 77 skipped (256 = 277 baseline - 21 fixed + 0 new from SC7)
+```
+
+## Files Changed
+
+**Core files (4):**
+- `src/core/memory_store_adapter.py` — ~130 LOC, hardened (Phase 2)
+- `src/core/adapters/jsonl_memory_adapter.py` — ~170 LOC, NEW (Phase 4)
+- `src/core/runtime_adapter.py` — Phase 5+6 changes (remember path, separation defaults)
+- `src/core/agent_dispatcher.py` — Phase 4 (JsonlMemoryAdapter integration)
+
+**Consumer files (2):**
+- `src/design_intelligence/design_memory.py` — migrated to canonical via adapter
+- `src/cli/commands/memory.py` — JsonlMemoryAdapter factory + search routing
+
+**Test files (2 new):**
+- `tests/ports/test_memory_store_conformance.py` — 9 contract tests (Phase 1)
+- `tests/core/test_jsonl_memory_adapter.py` — 16 tests (Phase 4)
+
+**Test files (1 modified):**
+- `tests/test_correlation_id.py` — 3 new tests for runtime conformant write path
+
+## Result
+
+ALL PHASES COMPLETE. 3-way memory split collapsed to ONE conformant MemoryStore protocol
+with two adapter implementations (canonical YAML+vector + JSONL). All ~20 consumers
+migrated or verified untouched. Quality gates green. Parity gate clean (0 new failures).
+Protected flows intact. Ready to ship.
+
 ---
 
-## Step 6: Diagnose-and-fix 5 failing tests (2026-08-19) ✅
+# Super Command #8 — Gap #4: Harness Verifier Merge + DAG Scheduler Swap
 
-- Diagnosed 5 previously-failing tests. All were test-level issues, not
-  production bugs — except one uncovered by fixing a test.
-- **Fixes applied:**
-  - `tests/test_auth_routes.py`: set `oauth_state` cookie on the two OAuth
-    callback success tests (HIGH-005 state-from-cookie check in
-    `src/auth/routes.py:184-189`); `test_logout_without_token` asserts 200,
-    matching the route's no-token path.
-  - `tests/test_pev_self_healing.py`: `test_crash_signals...` now calls
-    `execute_step` (crash-detector hook lives there); `test_llm_fallback...`
-    opens the breaker the executor actually uses and installs it on the
-    instance; `test_executor_has_crash_detector` asserts on instance type
-    name (conftest patches the class).
-  - `src/harness/pev/executor.py`: `_execute_llm_step` now returns the
-    circuit-open fallback `ExecutionResult` directly instead of treating it
-    as a chat response. **Production bug fix.**
-- **Verify:** affected suites 81/81 pass; regression set 198/198 pass;
-  CI-gated subset 2242/2242 pass; full suite 222 failed / 7321 passed /
-  75 skipped (down from 228 failed). Remaining 222 are pre-existing and
-  fail identically on a clean checkout.
-- **Lint:** `ruff check` clean on all changed files.
-- Report: `plans/reports/260819-test-fix-verification.md`.
+**Branch:** `main` (worktree)
+**Base commit:** `8dcb6f759` (SC7 shipped)
+**Status:** Phase 1 COMPLETE.
 
----
-## Step 7: Verify scout-report recommendations against live codebase (2026-08-19) ✅
+## Phase 1 — Harness verifier merge into core runtime `verify()`
 
-The `260819-next-task-recommendation.md` scout report was re-verified. **All of
-its recommended tasks are already resolved** — the report was stale.
+**Goal:** `MekongCoreRuntimeImpl.verify()` produces the same verdict as `RecipeVerifier` for equivalent criteria, while keeping the core `Verification` return type so `_run_task_loop` is untouched.
 
-| Scout claim | Verified actual | Evidence |
-|-------------|-----------------|----------|
-| 22 marketplace_router failures | 0 failures | 26/26 pass; tests monkeypatch `_MARKETPLACE_SKILLS`/`_MARKETPLACE_COMMANDS` to tmp dirs |
-| 6 test_f5_inference failures | 0 failures | 6 passed, 6 skipped (intentional; `scripts/launch-fable-5` still absent) |
-| 2 test_polar_webhook_e2e stale assertions | 0 failures | 49 passed |
-| 1 test_final_phase_validator import path | Passes | included in the 49 above |
-| 13 test_ask_routing failures | 0 failures | 16 passed in 42s |
-| 70 git stashes to clear | 0 stashes | `git stash list` empty |
+### Step 1.1 — Module-level helpers (`src/core/runtime_adapter.py`)
 
-**Affected suites (all previously-failing modules):** 433 passed, 7 skipped, 0 failed.
-**CI-gated subset:** 2242 passed, 0 failed.
-**Full suite:** running in background (task `baq0nifx7`, ~36 min, output buffered to EOF).
+**Added:**
+- `_ExecResultLike` dataclass — bridges core `Result` (output/error/metadata) to the `ExecutionResult`-shaped object `RecipeVerifier.verify()` expects. Mapping: `exit_code = 0 if error is None else 1`, `stdout = str(output)`, `stderr = error or ""`, `metadata = result.metadata or {}`.
+- `_criteria_to_verifier_dict(criteria: Criteria) -> dict` — maps `CheckSpec(kind="exit_code", params={"expected": N})` → `{"exit_code": N}` and `CheckSpec(kind="output_pattern", params={"pattern": P})` → `{"output_contains": [P]}`. Unknown kinds skipped (logged at debug).
+- `_report_to_verification(report) -> Verification` — maps `VerificationReport` → core `Verification`. FAILED/WARNING checks become `CheckResult` entries; `report.errors` propagate to `Verification.failures`.
 
-**Actions taken:**
-- Committed `ed23bf1eb` — 5 test fixes + production bug fix (circuit-open LLM fallback).
-- Rewrote `plans/reports/260819-next-task-recommendation.md` as a corrected
-  superseded record (audit trail; do not re-execute its checklist).
-- No production code changes warranted this round.
+### Step 1.2 — Inject `RecipeVerifier` + rewrite `verify()` (`src/core/runtime_adapter.py`)
 
----
+**Modified:**
+- `__init__` — added optional `verifier=None` param. Defaults to `RecipeVerifier(strict_mode=True)`. Imported inside `__init__` to avoid circular imports.
+- `verify()` — now builds `criteria_dict` via `_criteria_to_verifier_dict`, builds `_ExecResultLike` from `Observation.result`, calls `self._verifier.verify(exec_result_like, criteria_dict)`, returns `_report_to_verification(report)`. Fallback: empty `criteria_dict` → `Verification(passed=(result.error is None))` (legacy parity).
 
-## Step 8: Fix RBAC DB cross-check calling missing method (2026-08-19) ✅
+### Step 1.3 — Tests (`tests/test_runtime_verify_merge.py`, NEW)
 
-**Finding:** code-reviewer (Round 1) flagged `_db_cross_check_role` in
-`src/auth/rbac.py` calling `repo.get_user_role(user_id)` on a
-`LicenseRepository`, which has no such method. Verified independently —
-`get_user_role` appears nowhere in `src/`; the method is swallowed by a
-bare `except Exception: pass`, so the JWT-vs-DB role cross-check silently
-never ran. This contradicted the module docstring's "Finding #65" claim.
+**14 tests, all passing:**
+1. `test_exit_code_pass` — exit_code expected=0, no error → passed=True, one check named exit_code PASSED
+2. `test_exit_code_fail` — error="boom" → passed=False, failure mentions "Exit code mismatch"
+3. `test_output_pattern_matching_passes` — pattern "OK" in "OK done" → passed
+4. `test_output_pattern_not_matching_fails` — pattern "OK" not in "no" → failed
+5. `test_empty_criteria_no_error_passes` — empty Criteria, no error → passed (legacy parity)
+6. `test_empty_criteria_with_error_fails` — empty Criteria, error → failed
+7. `test_verify_calls_injected_verifier` — mock_verifier.verify called with `_ExecResultLike` whose exit_code matches
+8. `test_verify_routes_error_to_exit_code_1` — error → exec_result.exit_code == 1, stderr == "boom"
+9. `test_report_errors_propagate_to_failures` — VerificationReport errors=["x"] → Verification.failures == ["x"]
+10. `test_exit_code_maps_to_scalar` — adapter unit test
+11. `test_output_pattern_maps_to_output_contains_list` — adapter unit test
+12. `test_unknown_kind_skipped` — adapter unit test
+13. `test_passed_report_maps_clean` — adapter unit test
+14. `test_errors_become_failures` — adapter unit test
 
-**Root cause:** wrong repository. `users.role` is owned by
-`src/auth/user_repository.py` → `UserRepository.get_user_with_role(user_id)`,
-which returns `{"role": ...}`. `LicenseRepository` holds license-key
-records, not users.
+### Verification
 
-**Fix:**
-- `src/auth/rbac.py` — `_db_cross_check_role` now uses
-  `UserRepository().get_user_with_role(uuid.UUID(user_id))` and reads
-  `db_user["role"]`. Bare `except Exception: pass` split into `except ValueError`
-  (invalid UUID) and `except Exception` (DB failure), both logged via
-  `logger.warning` so a broken cross-check is no longer invisible. Added
-  `import uuid`.
-- `tests/test_rbac.py` — new `TestDbCrossCheckRole` class, 6 tests: returns
-  DB role, None when user not found, None when role missing, None for
-  invalid UUID (DB never reached), None on DB exception (fail-open), None
-  for empty user_id.
+```
+python3 -m pytest tests/test_runtime_verify_merge.py -v
+→ 14 passed in 0.31s
 
-**Verification:**
-- `tests/test_rbac.py`: **103 passed** (was 97; +6 new)
-- `tests/auth/`: **138 passed, 0 failed**
-- CI-gated subset: **2242 passed, 0 failed** (matches baseline)
-- `ruff check src/auth/rbac.py tests/test_rbac.py`: clean
-- No regression; `_db_cross_check_role` signature and return shape unchanged
+python3 -m pytest tests/test_core_lifecycle_contract.py tests/test_runtime_delegate.py tests/test_runtime_safety.py -v
+→ 37 passed (test_autonomous_loop.py pre-existing failure, fails identically on base commit 8dcb6f759)
 
-**Commit:** `25a9ad5d1` — 3 files, +304/-24.
-**Report:** `plans/reports/260819-rbac-db-cross-check-fix.md`.
+python3 -m pytest tests/test_verifier.py -v
+→ 58 passed (verifier untouched)
 
-**Cleanup:** deleted 4 superseded audit reports
-(`260819-bug-fix-verification.md`, `260819-next-work-scout.md`,
-`260819-test-fix-verification.md`, `bug-fix-review-20260819.md`) whose
-described work was already committed in `e32abf1d4`; updated
-`plans/reports/260819-next-task-recommendation.md` "Untracked"/"Next
-action" sections to reflect the deletion.
+python3 -m ruff check src/core/runtime_adapter.py tests/test_runtime_verify_merge.py
+→ All checks passed!
+```
+
+### Files Changed
+- `src/core/runtime_adapter.py` — +~95 LOC (helpers, _ExecResultLike, verifier injection, verify() rewrite)
+- `tests/test_runtime_verify_merge.py` — NEW, 14 tests
+
+### Known Issues
+- `test_autonomous_loop.py::test_full_loop_returns_result` fails — PRE-EXISTING (verified on base commit 8dcb6f759, not introduced by this change). Root cause: MagicMock telemetry emits `estimated_cost` that `json.dumps` in `remember()` cannot serialize. Out of scope for Phase 1.
 
 ---
 
-## Step 9: Full-suite re-run confirms 222 pre-existing failures (2026-08-19) ✅
-
-Background full-suite run `bdsh93ym2` completed: **222 failed, 7317 passed,
-83 skipped** (34:57) — matches the recorded baseline exactly.
-
-**Regression check on the 8 `test_rbac.py` failures that appear in the full
-suite** (but not in isolation):
-
-| Test | Full suite | Isolated |
-|------|-----------|----------|
-| `TestRequirePermissionDecorator::test_require_permission_denies_missing_permission` | FAILED | PASSED |
-| `TestRequirePermissionDecorator::test_require_permission_denies_forbidden_permission` | FAILED | PASSED |
-| `TestRequirePermissionDecorator::test_require_permission_denies_when_not_authenticated` | FAILED | PASSED |
-| `TestRequirePermissionDecorator::test_require_permission_denies_when_no_role` | FAILED | PASSED |
-| `TestGetCurrentUser::test_get_current_user_returns_info_when_authenticated` | FAILED | PASSED |
-| `TestGetCurrentUser::test_get_current_user_returns_none_when_no_id` | FAILED | PASSED |
-| `TestGetCurrentUser::test_get_current_user_includes_all_fields` | FAILED | PASSED |
-| `TestDecoratorsRequireRequest::test_require_permission_raises_without_request` | FAILED | PASSED |
-
-All 8 pass in isolation (`12 passed, 0.38s` across the three affected
-classes). This is the same order/state-dependency pattern as the other 214
-failures — not a regression from the `25a9ad5d1` RBAC cross-check fix.
-
-**Baseline confirmation:** `git stash` reported no changes to save (tree
-already clean at HEAD `606488ffd`), so the 222 count is the pre-existing
-floor. CI-gated subset remains **2242 passed, 0 failed**; `tests/auth/`
-**138 passed, 0 failed**.
-
-**Verdict:** zero regressions from this session's work. The 222 failures are
-out of scope.
+**PHASE 1 COMPLETE: 14 tests passing, 2 files changed (1 modified, 1 new)**
 
 ---
 
-## Step 9: Full-suite re-run confirms 222 pre-existing failures (2026-08-19) ✅
+## Phase 2 — DAG-aware task ordering in `_run_goal`
 
-Background full-suite run `bdsh93ym2` completed: **222 failed, 7317 passed,
-83 skipped** (34:57) — matches the recorded baseline exactly.
+**Goal:** Multi-step plans (steps with `dependencies`) execute in topological order; single-step plans unchanged.
 
-**Regression check on the 8 `test_rbac.py` failures that appear in the full
-suite** (but not in isolation):
+### Step 2.1 — Module-level topological-order helper (`src/core/runtime_adapter.py`)
 
-| Test | Full suite | Isolated |
-|------|-----------|----------|
-| `TestRequirePermissionDecorator::test_require_permission_denies_missing_permission` | FAILED | PASSED |
-| `TestRequirePermissionDecorator::test_require_permission_denies_forbidden_permission` | FAILED | PASSED |
-| `TestRequirePermissionDecorator::test_require_permission_denies_when_not_authenticated` | FAILED | PASSED |
-| `TestRequirePermissionDecorator::test_require_permission_denies_when_no_role` | FAILED | PASSED |
-| `TestGetCurrentUser::test_get_current_user_returns_info_when_authenticated` | FAILED | PASSED |
-| `TestGetCurrentUser::test_get_current_user_returns_none_when_no_id` | FAILED | PASSED |
-| `TestGetCurrentUser::test_get_current_user_includes_all_fields` | FAILED | PASSED |
-| `TestDecoratorsRequireRequest::test_require_permission_raises_without_request` | FAILED | PASSED |
+**Added:**
+- `_plan_has_dependencies(plan: Plan) -> bool` — fast-path check returning `any(step.dependencies for step in plan.steps)`. Lets `_run_goal` skip sorting for the common single-step `mekong run` path.
+- `_topological_task_order(tasks: list[Task]) -> list[Task]` — Kahn's algorithm keyed by `task.step.id` (string ids like `"task-abc123"` from `GoalEngineAdapter._task_to_step`). Builds in-degree from `task.step.dependencies` (list[str]), seeds queue with zero-in-degree tasks (preserving original order), emits in topological order. Raises `RuntimeError("circular task dependency...")` on cycles. Does NOT reuse `DAGScheduler` (which keys by int `order` and would silently mismatch against string deps).
 
-All 8 pass in isolation (`12 passed, 0.38s` across the three affected
-classes). This is the same order/state-dependency pattern as the other 214
-failures — not a regression from the `25a9ad5d1` RBAC cross-check fix.
+### Step 2.2 — Use the order in `_run_goal` (`src/core/runtime_adapter.py`)
 
-**Baseline confirmation:** `git stash` reported no changes to save (tree
-already clean at HEAD `606488ffd`), so the 222 count is the pre-existing
-floor. CI-gated subset remains **2242 passed, 0 failed**; `tests/auth/`
-**138 passed, 0 failed**.
+**Modified:** `_run_goal` (line ~505) — replaced sequential `for task in tasks` with:
+```python
+ordered = _topological_task_order(tasks) if _plan_has_dependencies(p) else tasks
+results: list[Result] = []
+for task in ordered:
+    results.append(self._run_task_loop(task, goal.criteria))
+```
 
-**Verdict:** zero regressions from this session's work. The 222 failures are
-out of scope.
+### Step 2.3 — Tests (`tests/test_runtime_dag_order.py`, NEW)
 
-**Failure breakdown by file (222 total, from re-run `btmvcsh0s`):**
+**8 tests, all passing:**
+1. `test_single_step_plan_unchanged` — 1 task, no deps → order == [task0]
+2. `test_no_dependencies_preserves_input_order` — 3 tasks, all `dependencies=[]` → order matches input
+3. `test_linear_chain_orders_correctly` — A→B→C → order == [A, B, C]
+4. `test_diamond_dag_orders_correctly` — A→B, A→C, B→D, C→D → D last, A first
+5. `test_cyclic_dependency_raises` — A→B, B→A → raises `RuntimeError`
+6. `test_goal_runs_in_topological_order` — integration: diamond plan through `_run_goal`, asserts execution order via mock on `_run_task_loop`
+7. `test_plan_has_dependencies_true_when_steps_have_deps` — fast-path True
+8. `test_plan_has_dependencies_false_when_no_deps` — fast-path False
 
-| File | Failures |
-|------|----------|
-| `tests/test_nl_routing.py` | 47 |
-| `tests/test_command_fabric_catalog.py` | 10 |
-| `tests/test_model_selector.py` | 9 |
-| `tests/test_rbac.py` | 8 |
-| `tests/test_company_init_cli.py` | 7 |
-| `tests/test_command_sanitizer_security.py` | 7 |
-| `tests/test_command_fabric_ide_extensions.py` | 7 |
-| `tests/test_binh_phap_dag_integration.py` | 7 |
-| `tests/test_usage_queue.py` | 6 |
-| `tests/test_command_fabric_runtime.py` | 6 |
-| `tests/test_binh_phap_dispatcher.py` | 6 |
-| `tests/test_command_fabric_lightweight_editor_packages.py` | 5 |
-| `tests/test_command_fabric_adapters.py` | 5 |
-| `tests/test_mcp_server_integration.py` | 4 |
-| `tests/test_llm_prompts.py` | 4 |
-| `tests/test_git_agent.py` | 4 |
-| `tests/test_daemon_dispatch.py` | 4 |
-| `tests/test_command_fabric_eclipse_package.py` | 4 |
-| `tests/test_command_fabric_distribution.py` | 4 |
-| `tests/test_command_fabric_contracts.py` | 4 |
-| `tests/test_command_fabric_agent_cli_package.py` | 4 |
-| `tests/test_api_auth_routes.py` | 4 |
-| `tests/smoke/test_deployed_services.py` | 4 |
-| `tests/test_orchestrator_integration.py` | 3 |
-| `tests/test_e2e_pev.py` | 3 |
-| `tests/test_command_fabric_visual_studio_package.py` | 3 |
-| `tests/test_command_fabric_helix_package.py` | 3 |
-| `tests/test_smart_router.py` | 2 |
-| `tests/test_self_healing.py` | 2 |
-| `tests/test_core_dna_workflow.py` | 2 |
-| 20 `test_command_fabric_*_package.py` files | 1-2 each |
-| 10 other files | 1 each |
+### Verification
 
-The 8 `test_rbac.py` failures are the same set verified above — all pass in
-isolation. The remaining 214 failures span 50+ files with no overlap to the
-`25a9ad5d1` change.
+```
+python3 -m pytest tests/test_runtime_dag_order.py -v
+→ 8 passed in 0.29s
 
-**Final confirmed numbers (re-run `btmvcsh0s`, 35:27):**
-**222 failed, 7323 passed, 83 skipped** — identical to the recorded baseline.
-The 8 `test_rbac.py` failures pass in isolation (12 passed, 0.38s). No
-regression from `25a9ad5d1` or `606488ffd`.
+python3 -m pytest tests/test_runtime_delegate.py tests/test_runtime_verify_merge.py tests/test_core_lifecycle_contract.py -q
+→ 37 passed (parity clean)
+
+python3 -m ruff check src/core/runtime_adapter.py tests/test_runtime_dag_order.py
+→ All checks passed!
+```
+
+### Files Changed
+- `src/core/runtime_adapter.py` — +~75 LOC (`_plan_has_dependencies`, `_topological_task_order`, `_run_goal` edit)
+- `tests/test_runtime_dag_order.py` — NEW, 8 tests
+
+### Known Issues
+- None. `test_autonomous_loop.py` failure remains pre-existing (see Phase 1).
+
+---
+
+**PHASE 2 COMPLETE: 8 tests passing, 2 files changed (1 modified, 1 new)**
+---
+
+## Phase 3 — E2E multi-step cycle test + parity sweep
+
+**Goal:** End-to-end, a multi-step goal flows `plan() → delegate() → topological execute→verify→repair per task → observe → remember → commit`. Prove the full merged cycle works, plus parity sweep against SC7 baseline.
+
+### Step 3.1 — E2E test (`tests/test_runtime_multistep_cycle.py`, NEW)
+
+**5 tests, all passing:**
+1. `test_multistep_goal_executes_in_dag_order` — 3-step chain A→B→C runs in dependency order under `_run_goal` (not input order).
+2. `test_execute_verify_repair_cycle` — task whose first output lacks "OK" fails verify→triggers repair→second dispatch passes. Asserts repair happened and final result passed.
+3. `test_repair_budget_exhausted_fails` — task failing verify on every attempt exits with all `Verification.passed == False` after `_MAX_REPAIR_ATTEMPTS` (3). Asserts `dispatcher.calls == 3` and `rt._repair_count == 3`.
+4. `test_single_step_plan_parity` — single-step goal (no deps) takes the fast path (`_plan_has_dependencies` False), runs unchanged, final result error-free.
+5. `test_goal_engine_dag_consumed` — `_topological_task_order` orders a 2-chain correctly AND `_run_goal` reads `task.step.dependencies` and iterates in that order.
+
+### Step 3.2 — Parity sweep
+
+```
+Full suite: 8182 passed, 256 failed, 77 skipped
+SC7 baseline: 277 failures
+New unique failures: 1  (test_plugin_loading — verified pre-existing on base commit 8dcb6f759)
+Fixed since SC7: 22 failures
+Net diff: −21 failures (improvement), 0 new from SC8
+```
+
+The single "new" failure (`test_plugin_loading`) was verified failing on the pre-SC8 baseline commit `8dcb6f759` — it is NOT a regression from SC8. It was absent from the SC7 baseline file because of how that baseline was captured (different run state). It is pre-existing.
+
+### Batch run of all SC8-related tests:
+```
+tests/test_runtime_delegate.py + test_core_lifecycle_contract.py +
+tests/test_runtime_safety.py + test_runtime_verify_merge.py +
+tests/test_runtime_dag_order.py + tests/test_runtime_multistep_cycle.py
+→ 64 passed, 1 failed (test_autonomous_loop, PRE-EXISTING in baseline)
+```
+
+### Verification
+```
+python3 -m ruff check src/core/runtime_adapter.py tests/test_runtime_multistep_cycle.py tests/test_runtime_dag_order.py tests/test_runtime_verify_merge.py
+→ All checks passed!
+```
+
+### Files Changed (Phase 3)
+- `tests/test_runtime_multistep_cycle.py` — NEW, 5 E2E tests
+- No core code changes (Phases 1+2 untouched)
+
+### Known Issues
+- `test_autonomous_loop.py::test_full_loop_returns_result` fails — PRE-EXISTING (verified on base commit 8dcb6f759, not introduced by SC8). Root cause: MagicMock telemetry emits `estimated_cost` that `json.dumps` in `remember()` cannot serialize. Out of scope for SC8.
+- `test_plugin_loading.py::test_load_agents_dynamic_handles_missing_plugins_dir` — PRE-EXISTING on base commit `8dcb6f759`. Out of scope.
+
+---
+
+## Phase 4 — Documentation updates for SC8
+
+**Goal:** Reflect SC8's completed changes in `docs/architecture.md`,
+`docs/development-roadmap.md`, and `docs/project-changelog.md`.
+
+### Files changed
+
+**`docs/architecture.md`** (1 file, 2 edits):
+- Header refreshed: v0.1 → v0.2, branch state `ada77e6b41` → `8dcb6f759`
+  (SC8 shipped), scope line updated.
+- **NEW** "Runtime behavior (v0.2)" section with two subsections:
+  - `verify()` delegates to `RecipeVerifier` — documents `_ExecResultLike`,
+    `_criteria_to_verifier_dict`, `_report_to_verification`, and the empty-criteria
+    fallback. Verified against `src/core/runtime_adapter.py:857-874`.
+  - `_run_goal` executes multi-step plans in topological (DAG) order — documents
+    `_plan_has_dependencies`, `_topological_task_order` (string-ID-keyed Kahn's,
+    explicitly NOT `DAGScheduler`), and the single-step fast path.
+- "Known limitations" updated: `plan()`/`delegate()` single-step stubs removed
+  (SC6 shipped multi-step plans); MemoryStore 3-way split removed (SC7 collapsed
+  to one conformant protocol with 2 adapters).
+
+**`docs/architecture/ARCHITECTURE_AFTER_PHASE_2.md`** (1 file, 2 edits):
+- Gap #4 line (line 156) marked ✅ CLOSED with SC8 summary.
+- "Deferred past the v0.2 cutoff" (line 214-215) struck through the
+  "harness verifier merge + DAG scheduler swap" item.
+
+**`docs/development-roadmap.md`** (1 file, 1 edit):
+- Phase 2 "Command System" completion ~90% → ~95%.
+- **NEW** "Architecture Gaps" table: gap #4 = CLOSED (SC8, 2026-09-08).
+- Focus Areas: added "Core runtime shares RecipeVerifier; multi-step plans
+  execute in topological order".
+
+**`docs/project-changelog.md`** (1 file, 1 edit):
+- **NEW** `## v6.3.0 — 2026-09-08` entry: SC8 summary, files changed
+  (`src/core/runtime_adapter.py` + 3 new test files), 27 tests, parity
+  (8182 passed / 256 failed / 77 skipped, 0 new failures), ruff clean,
+  architecture doc refreshed to v0.2.
+
+### Verification
+
+- All doc edits cross-checked against `src/core/runtime_adapter.py`:
+  - `verify()` at line 857 — delegates to `self._verifier.verify()` via the three
+    helpers; empty-criteria fallback at line 863. ✅
+  - `_run_goal` at line 505 — `ordered = _topological_task_order(tasks) if
+    _plan_has_dependencies(p) else tasks` at line 512. ✅
+  - `_topological_task_order` at line 128 — string-ID-keyed Kahn's; explicitly
+    does NOT reuse `DAGScheduler`. ✅
+  - `_ExecResultLike` at line 192 — exit_code/stdout/stderr/metadata mapping
+    matches the documented behavior. ✅
+- `python3 -m pytest tests/test_runtime_verify_merge.py tests/test_runtime_dag_order.py
+  tests/test_runtime_multistep_cycle.py -q` → 27 passed. ✅
+- No code files or `.github/workflows/*` touched. ✅
+- No new docs created (plan Phase 4 only calls for updates to existing files). ✅
+
+---
+
+**PHASE 4 COMPLETE: docs/architecture.md, docs/architecture/ARCHITECTURE_AFTER_PHASE_2.md, docs/development-roadmap.md, docs/project-changelog.md**

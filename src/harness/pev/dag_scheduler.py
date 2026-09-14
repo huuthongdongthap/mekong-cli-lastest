@@ -1,19 +1,22 @@
 # Mekong CLI — AI-Powered Business Operations for Vietnam
 # MIT License. Copyright (c) 2026 MekongMind. See LICENSE file.
 
-"""Stub: DAG scheduler for PEV orchestrator."""
+"""DAG scheduler for PEV orchestrator — unified with canonical core scheduler."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional, Tuple
 
-def validate_dag(steps: List[Dict[str, Any]]) -> Tuple[bool, Optional[str]]:
-    return True, None
+from typing import Any
 
-class DAGScheduler:
-    def __init__(self, steps: List[Dict[str, Any]]) -> None:
-        self.steps = steps
+from src.core.dag_scheduler import (
+    DAGScheduler,
+    DAGStepResult,
+    validate_dag as _core_validate_dag,
+)
 
-    def get_execution_order(self) -> List[int]:
-        return list(range(len(self.steps)))
 
-    def get_parallel_groups(self) -> List[List[int]]:
-        return [[i] for i in range(len(self.steps))]
+def validate_dag(steps: list[Any]) -> tuple[bool, str | None]:
+    """Validate DAG for PEV callers, returning (is_valid, error_message)."""
+    err = _core_validate_dag(steps)
+    return (err is None, err)
+
+
+__all__ = ["DAGScheduler", "DAGStepResult", "validate_dag"]

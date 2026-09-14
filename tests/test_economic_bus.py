@@ -1,39 +1,44 @@
 """Phase 2C: Economic Bus — PaymentProvider Protocol + MCUBillingPaymentAdapter."""
 
-from src.core.mcu_billing import MCUBilling
+from src.core.billing_adapter import BillingAdapter
 from src.core.protocols import PaymentProvider
 
 
-class TestMCUBillingPaymentAdapter:
-    """MCUBilling satisfies PaymentProvider Protocol."""
+class TestBillingAdapterSatisfiesPaymentProvider:
+    """BillingAdapter wraps MCUBilling and satisfies PaymentProvider Protocol."""
 
-    def test_mcu_billing_satisfies_payment_protocol(self):
-        """MCUBilling must satisfy PaymentProvider Protocol."""
-        billing = MCUBilling()
-        assert isinstance(billing, PaymentProvider)
+    def test_billing_adapter_satisfies_payment_protocol(self):
+        """BillingAdapter must satisfy PaymentProvider Protocol."""
+        adapter = BillingAdapter()
+        assert isinstance(adapter, PaymentProvider)
 
-    def test_record_usage_exists(self):
-        """record_usage must be callable."""
-        billing = MCUBilling()
-        assert callable(billing.record_usage)
+    def test_record_usage_delegates(self):
+        """record_usage delegates to MCUBilling."""
+        adapter = BillingAdapter()
+        assert callable(adapter.record_usage)
 
-    def test_check_quota_returns_quota_status(self):
-        """check_quota must return dict with remaining_mcu."""
-        billing = MCUBilling()
-        # MCUBilling requires tenant setup — test via method existence
-        assert hasattr(billing, "check_quota")
+    def test_check_quota_delegates(self):
+        """check_quota delegates to MCUBilling."""
+        adapter = BillingAdapter()
+        assert callable(adapter.check_quota)
 
-    def test_settle_payment_exists(self):
-        """settle_payment must exist on MCUBilling."""
-        billing = MCUBilling()
-        # MCUBilling has record_usage + check_quota; settle_payment wraps record_usage
-        # Verify the method exists (may be added by adapter or base class)
-        assert hasattr(billing, "record_usage")
+    def test_settle_payment_delegates(self):
+        """settle_payment delegates to MCUBilling."""
+        adapter = BillingAdapter()
+        assert callable(adapter.settle_payment)
 
-    def test_estimate_cost_exists(self):
-        """estimate_cost must exist."""
-        billing = MCUBilling()
-        assert hasattr(billing, "estimate_cost") or hasattr(billing, "get_balance")
+    def test_estimate_cost_delegates(self):
+        """estimate_cost delegates to MCUBilling (with fallback)."""
+        adapter = BillingAdapter()
+        assert callable(adapter.estimate_cost)
+
+    def test_extended_methods_exist_on_adapter(self):
+        """Extended economic-bus methods exist and return not-implemented."""
+        adapter = BillingAdapter()
+        assert callable(adapter.quote)
+        assert callable(adapter.request_payment)
+        assert callable(adapter.verify)
+        assert callable(adapter.refund)
 
 
 class TestPaymentProviderProtocol:

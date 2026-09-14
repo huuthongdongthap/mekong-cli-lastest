@@ -184,8 +184,7 @@ def implement_run(
 def _create_goal(title: str) -> Optional[str]:
     """Create a goal via the goal engine, return goal ID."""
     try:
-        from src.mekongcli.core.goal_engine import GoalEngine
-        from src.mekongcli.core.verification import SQLiteGoalStore
+        from src.mekongcli.core.goal_engine import GoalEngine, SQLiteGoalStore
 
         store = SQLiteGoalStore()
         engine = GoalEngine(store=store, cwd=Path.cwd())

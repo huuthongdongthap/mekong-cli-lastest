@@ -1,8 +1,5 @@
 import json
 
-from typer.testing import CliRunner
-
-from src.cli.app_setup import build_app
 from src.command_fabric.catalog import build_command_catalog
 from src.command_fabric.zed_package import extension_toml, lib_rs, materialize_zed_package
 
@@ -22,23 +19,21 @@ def test_zed_extension_entrypoint_returns_mcp_command() -> None:
 
 
 def test_zed_package_materializes_extension_scaffold(tmp_path) -> None:
-    payload = materialize_zed_package(tmp_path, build_command_catalog())
+    records = build_command_catalog()
+    payload = materialize_zed_package(tmp_path, records)
 
     assert payload["schema"] == "mekong.command_fabric.zed_package.v1"
-    assert payload["command_count"] == 91
+    assert payload["command_count"] == len(records)
     assert (tmp_path / "extension.toml").exists()
     assert (tmp_path / "src" / "lib.rs").exists()
     manifest = json.loads((tmp_path / "data" / "zed.json").read_text(encoding="utf-8"))
     assert manifest["schema"] == "mekong.command_fabric.adapter.zed.v1"
 
 
-def test_command_fabric_cli_materializes_zed_package(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        ["command-fabric", "zed-package", "--scope", "project", "--out", str(tmp_path)],
-    )
+def test_zed_package_materializes_default(tmp_path) -> None:
+    payload = materialize_zed_package(tmp_path)
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
+    assert payload["schema"] == "mekong.command_fabric.zed_package.v1"
     assert payload["artifact_count"] == 6
     assert (tmp_path / "Cargo.toml").exists()
+    assert payload["command_count"] == len(build_command_catalog())

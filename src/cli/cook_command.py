@@ -18,8 +18,6 @@ from rich.panel import Panel
 from rich.table import Table
 
 
-from src.core.orchestrator import RecipeOrchestrator, OrchestrationStatus
-from src.core.llm_client import get_client
 from src.mekongcli.core.goal_engine import GoalEngine, GoalStatus, SQLiteGoalStore
 from src.mekongcli.core.verification import VerificationPipeline
 
@@ -271,6 +269,7 @@ def register_cook_command(app: typer.Typer) -> None:
         if completed.status != GoalStatus.SATISFIED:
             raise typer.Exit(code=1)
 
+    @require_tier(Tier.FREE)
     @app.command()
     def cook(
         goal: str = typer.Argument(..., help="High-level goal to plan, execute, and verify"),
@@ -281,117 +280,103 @@ def register_cook_command(app: typer.Typer) -> None:
         json_output: bool = typer.Option(False, "--json", "-j", help="Machine-readable JSON output"),
         agi_dash: bool = typer.Option(False, "--agi-dash", help="Show AGI dashboard after execution"),
     ) -> None:
-        """Cook: Plan -> Execute -> Verify workflow."""
-        from src.cli.agi_dashboard import show_agi_dashboard
+        """Cook: Plan -> Execute -> Verify workflow.
 
-        llm_client = get_client()
+        Lane E8: this command now drives the canonical ``MekongCoreRuntimeImpl``
+        lifecycle (Goal -> Plan -> Delegate -> Execute -> Observe -> Verify ->
+        Repair -> Remember -> Commit) instead of the legacy Binh Phap
+        ``RecipeOrchestrator`` engine. The old engine is kept as a legacy
+        consumer (see ``src/core/orchestrator.py``) -- it is NOT deleted.
+
+        CLI surface is preserved byte-for-byte: every argument, option and
+        help string above is unchanged. ``--dry-run`` now calls
+        ``runtime.plan()`` directly instead of ``RecipePlanner``.
+        """
+        from src.cli.agi_dashboard import show_agi_dashboard
+        from src.core.mission_tracer import MissionTracer
 
         if dry_run:
-            from src.core.planner import RecipePlanner
-            planner = RecipePlanner(llm_client=llm_client if llm_client.is_available else None)
-            recipe = planner.plan(goal)
-            console.print(
-                Panel(
-                    f"[bold]{recipe.name}[/bold]\n{recipe.description}",
-                    title="Dry Run - Plan Only",
-                    border_style="yellow",
-                )
+            from src.commands.run import _build_runtime
+
+            runtime = _build_runtime()
+            from src.core.runtime_adapter import Context
+
+            planned_goal = runtime.goal(
+                goal,
+                Context(principal="cli", session_id="dry-run"),
             )
+            plan_result = runtime.plan(planned_goal)
             plan_table = Table(title="Steps (not executed)")
             plan_table.add_column("#", style="bold cyan", justify="right")
             plan_table.add_column("Task", style="bold")
             plan_table.add_column("Description", style="dim")
-            for step in recipe.steps:
-                plan_table.add_row(str(step.order), step.title, step.description[:80])
+            plan_table.add_column("Deps", style="dim")
+            for i, step in enumerate(plan_result.steps):
+                deps = ", ".join(step.dependencies) if step.dependencies else "-"
+                plan_table.add_row(str(i + 1), step.id, step.description[:80], deps)
+            console.print(
+                Panel(
+                    f"[bold]{goal}[/bold]",
+                    title="Dry Run - Plan Only",
+                    border_style="yellow",
+                )
+            )
             console.print(plan_table)
-            console.print("\n[yellow]Dry run complete - no steps executed.[/yellow]")
+            console.print(
+                f"\n[yellow]Dry run complete - no steps executed. "
+                f"Plan status: {'ok' if plan_result.status else 'blocked'}[/yellow]"
+            )
             return
 
-        orchestrator = RecipeOrchestrator(
-            llm_client=llm_client if llm_client.is_available else None,
-            strict_verification=strict,
-            enable_rollback=not no_rollback,
-        )
+        from src.commands.run import _build_runtime
+
+        runtime = _build_runtime()
+        tracer = MissionTracer()
+        runtime.start_mission(goal, tracer=tracer)
 
         if verbose:
             console.print(
                 Panel(
                     f"[bold]Goal:[/bold] {goal}\n"
                     f"[bold]Strict:[/bold] {strict}\n"
-                    f"[bold]Rollback:[/bold] {not no_rollback}",
+                    f"[bold]Rollback:[/bold] {not no_rollback}\n"
+                    f"[bold]Engine:[/bold] canonical MekongCoreRuntimeImpl",
                     title="Cook Configuration",
                     border_style="dim",
                 )
             )
 
-        result = orchestrator.run_from_goal(goal)
+        result = runtime.run(goal)
 
         if json_output:
+            mission_record = None
+            if tracer._missions:
+                mission_record = list(tracer._missions.values())[0]
             output = {
-                "status": result.status.value,
+                "status": "success" if result.error is None else "failed",
                 "goal": goal,
-                "total_steps": result.total_steps,
-                "completed_steps": result.completed_steps,
-                "failed_steps": result.failed_steps,
-                "success_rate": result.success_rate,
-                "errors": result.errors,
-                "warnings": result.warnings,
-                "steps": [
-                    {
-                        "order": sr.step.order,
-                        "title": sr.step.title,
-                        "passed": sr.verification.passed,
-                        "exit_code": sr.execution.exit_code,
-                        "summary": sr.verification.summary,
-                    }
-                    for sr in result.step_results
-                ],
+                "task_id": result.task_id,
+                "output": result.output,
+                "error": result.error,
+                "metadata": result.metadata,
+                "stages": [s["stage"] for s in tracer.stages],
+                "steps": len(mission_record.steps) if mission_record else 0,
             }
-            console.print(json.dumps(output, indent=2))
-        if result.status != OrchestrationStatus.SUCCESS:
-            raise typer.Exit(code=1)
-        return
+            console.print(json.dumps(output, indent=2, default=str))
 
-        if verbose and result.step_results:
-            detail_table = Table(title="Step Details")
-            detail_table.add_column("#", style="bold cyan", justify="right")
-            detail_table.add_column("Step", style="bold")
-            detail_table.add_column("Status")
-            detail_table.add_column("Checks", style="dim")
-            for sr in result.step_results:
-                status = "[green]PASS[/green]" if sr.verification.passed else "[red]FAIL[/red]"
-                detail_table.add_row(
-                    str(sr.step.order),
-                    sr.step.title,
-                    status,
-                    sr.verification.summary,
+        if result.error is not None:
+            if verbose:
+                console.print(
+                    Panel(
+                        f"- {result.error}",
+                        title="Errors",
+                        border_style="red",
+                    )
                 )
-            console.print(detail_table)
+            raise typer.Exit(code=1)
 
-        if result.status == OrchestrationStatus.SUCCESS:
+        if verbose:
             console.print("\n[bold green]Mission accomplished![/bold green]")
-        elif result.status == OrchestrationStatus.PARTIAL:
-            console.print("\n[bold yellow]Partial completion[/bold yellow]")
-            if result.errors:
-                console.print(
-                    Panel(
-                        "\n".join(f"- {e}" for e in result.errors),
-                        title="Errors",
-                        border_style="red",
-                    )
-                )
-            raise typer.Exit(code=1)
-        else:
-            console.print("\n[bold red]Mission failed[/bold red]")
-            if result.errors:
-                console.print(
-                    Panel(
-                        "\n".join(f"- {e}" for e in result.errors),
-                        title="Errors",
-                        border_style="red",
-                    )
-                )
-            raise typer.Exit(code=1)
 
         if agi_dash or verbose:
             show_agi_dashboard(goal, result)

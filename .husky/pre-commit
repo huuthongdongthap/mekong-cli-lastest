@@ -21,7 +21,7 @@ if [ -n "$VIOLATIONS" ]; then
 fi
 
 # Check: file moi o root (khong phai file he thong)
-ROOT_NEW=$(echo "$STAGED" | grep -E "^[A-Za-z].*\.(md|json|yaml|yml|toml)$" | grep -v -E "^(CLAUDE|README|LICENSE|CONTRIBUTING|SECURITY|CODE_OF_CONDUCT|ZENOS|ARCHITECTURE|QUICKSTART)\.md$" | grep -v -E "^(package|tsconfig|vitest|turbo)\.json$" | grep -v -E "^(pyproject|pnpm-workspace)\.(toml|yaml)$" | grep -v -E "^dna/" | grep -v -E "^plans/" | grep -v -E "^src/commands/COMMAND_REGISTRY\.md$" || true)
+ROOT_NEW=$(echo "$STAGED" | grep -E "^[A-Za-z][^/]*\.(md|json|yaml|yml|toml)$" | grep -v -E "^(CLAUDE|README|LICENSE|CONTRIBUTING|SECURITY|CODE_OF_CONDUCT|ZENOS|ARCHITECTURE|QUICKSTART)\.md$" | grep -v -E "^(package|tsconfig|vitest|turbo)\.json$" | grep -v -E "^(pyproject|pnpm-workspace)\.(toml|yaml)$" | grep -v -E "^dna/" | grep -v -E "^plans/" | grep -v -E "^src/commands/COMMAND_REGISTRY\.md$" || true)
 if [ -n "$ROOT_NEW" ]; then
   echo ""
   echo "${RED}⚠️  ROOT FILE CREATION DETECTED${NC}"

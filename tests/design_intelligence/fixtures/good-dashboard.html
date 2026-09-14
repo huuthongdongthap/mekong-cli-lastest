@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="atelier">
+<head>
+<meta charset="utf-8">
+<title>Mekong Console — a clean dashboard</title>
+<style>
+  :root {
+    --color-paper: oklch(0.96 0.01 80);
+    --color-ink: oklch(0.2 0.02 60);
+    --color-accent: oklch(0.65 0.15 250);
+    --color-accent-ink: oklch(0.95 0.02 250);
+    --color-muted: oklch(0.6 0.02 60);
+    --color-paper-2: oklch(0.9 0.01 80);
+    --color-focus: oklch(0.65 0.15 250);
+    --color-accent-hover: oklch(0.58 0.15 250);
+    --font-display: 'Inter', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-outlier: 'Inter', sans-serif;
+    --space-xs: 4px; --space-sm: 8px; --space-md: 16px;
+    --space-lg: 24px; --space-xl: 32px; --space-2xl: 48px;
+    --space-3xl: 64px; --space-4xl: 96px; --space-5xl: 128px;
+    --lh-tight: 1.05;
+  }
+  html, body { margin: 0; }
+  body {
+    font-family: var(--font-body);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    overflow-x: clip;
+  }
+  html { overflow-x: clip; }
+  /* Mekong Design · macrostructure: dashboard · tokens locked */
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+  }
+  .nav a { white-space: nowrap; }
+  .hero {
+    padding: var(--space-4xl) var(--space-2xl) var(--space-5xl);
+  }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-style: normal;
+    line-height: var(--lh-tight);
+    max-width: 60ch;
+  }
+  .hero .lede { max-width: 60ch; }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-md);
+  }
+  .stat-card {
+    border: 1px solid var(--color-paper-2);
+    padding: var(--space-lg);
+  }
+  .stat-card img { width: 100%; }
+  .section__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-sm);
+  }
+  button {
+    background: var(--color-accent);
+    color: var(--color-accent-ink);
+    border: 1px solid transparent;
+    padding: 8px 16px;
+    cursor: not-allowed;
+  }
+  button:disabled { opacity: 0.55; }
+  button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+  button:hover { background: var(--color-accent-hover); }
+  input {
+    border-width: 1px;
+    outline: 2px solid transparent;
+    outline-offset: 1px;
+    min-height: 44px;
+  }
+  input:focus-visible { outline: 2px solid var(--color-focus); }
+  .prose { max-width: 62ch; }
+  .display-head {
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  .eyebrow { text-transform: none; }
+  footer { padding: var(--space-2xl); }
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <span class="logo">Mekong</span>
+    <a href="#stats">Stats</a>
+    <a href="#work">Work</a>
+    <button disabled>Get started</button>
+  </nav>
+  <section class="hero">
+    <h1>Ship design quality, not just pixels</h1>
+    <p class="lede">A measured dashboard for the work you actually do.</p>
+    <button>Open console</button>
+  </section>
+  <section id="stats" class="stats">
+    <div class="stat-card"><img src="a.png" alt="Overview"></div>
+    <div class="stat-card"><h2>2,410</h2><p>designs audited</p></div>
+  </section>
+  <section id="work">
+    <div class="section__head">
+      <h2 class="display-head">Recent audits</h2>
+    </div>
+    <p class="prose">Every audit runs the full gate sweep before it ships.</p>
+  </section>
+  <footer>
+    <p>© 2026 MekongMind</p>
+  </footer>
+</body>
+</html>

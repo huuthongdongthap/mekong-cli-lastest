@@ -39,7 +39,7 @@ from src.core.gateway.gateway_main import (
     create_app,
     verify_token,
 )
-from src.core.llm_client import get_client
+from src.providers.llm.client import get_client
 from src.core.orchestrator import OrchestrationResult, RecipeOrchestrator
 
 __all__ = [

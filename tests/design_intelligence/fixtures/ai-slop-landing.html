@@ -1,0 +1,34 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>Unleash Seamless Workflows</title>
+<style>
+body{font-family:'Inter',sans-serif;background:#fff;color:#000}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;text-align:center;padding:17px 23px}
+.hero h1{font-style:italic;font-size:clamp(3rem,8vw,7rem);line-height:0.94;text-transform:uppercase;background:linear-gradient(90deg,#8b5cf6,#3b82f6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:40px}
+.card{border-left:4px solid oklch(0.65 0.2 280);padding:24px;transition:all 0.3s ease}
+.card:hover{transform:scale(1.05)}
+.icon{font-size:2rem}
+button{background:oklch(0.65 0.2 280);color:oklch(0.65 0.2 280);border:none;padding:12px 24px;transition:width 0.3s ease cubic-bezier(0.34,1.56,0.64,1)}
+.mono-label{font-family:'Courier New',monospace}
+.stat-num{font-family:'Georgia',serif}
+.surface-panel{background:oklch(0.97 0 0)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{animation:spin 1s linear infinite}
+.section__head{display:grid;grid-template-columns:auto 1fr;gap:16px}
+.eyebrow{font-size:0.75rem;letter-spacing:0.1em}
+.sticky-nav{position:sticky;top:0}
+.sticky-head{position:sticky;top:0}
+.prose{max-width:120ch}
+.traffic-light{display:flex;gap:6px}
+.traffic-light span{width:12px;height:12px;border-radius:50%}
+</style></head><body>
+<nav class="sticky-nav"><span class="logo">Acme</span><a href="#features">Features</a><a href="#pricing">Pricing</a><button>Get started free</button></nav>
+<section class="hero"><p class="eyebrow">Trusted by 50,000+ teams</p><h1>Unleash Seamless Workflows</h1><p>Acme helps Jane Doe and teams everywhere move faster.</p><button>Start free</button></section>
+<section id="features" class="features"><div class="card"><span class="icon">🚀</span><h3>Fast</h3><p>10x faster than the competition.</p></div><div class="card"><span class="icon">✨</span><h3>Beautiful</h3><p>Pixel-perfect by default.</p></div><div class="card"><span class="icon">⚡</span><h3>Powerful</h3><p>99.9% uptime guaranteed.</p></div></section>
+<section class="sticky-head"><div class="section__head"><span class="eyebrow">01 / FEATURES</span><h2>Everything you need</h2></div><div class="prose"><p>Acme is the seamless way to unleash your team's potential.</p></div></section>
+<div class="traffic-light"><span></span><span></span><span></span></div>
+<img src="hero.png" alt="Product screenshot">
+<svg width="100" height="100"><circle cx="50" cy="50" r="40"/></svg>
+<video autoplay src="demo.mp4"></video>
+<div class="spinner"></div>
+</body></html>

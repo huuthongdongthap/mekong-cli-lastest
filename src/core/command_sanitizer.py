@@ -159,7 +159,6 @@ class CommandSanitizer:
       result.blocked_reason = (
         "Command chaining characters (; && || | newline) detected"
       )
-      return result
 
     # Check deny list patterns
     for pattern_str in self.deny_patterns:

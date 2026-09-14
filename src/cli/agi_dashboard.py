@@ -25,7 +25,7 @@ def show_agi_dashboard(goal: str, result: object) -> None:
 
     try:
         from src.core.nlu import IntentClassifier
-        from src.core.llm_client import get_client
+        from src.providers.llm.client import get_client
         intent = IntentClassifier(llm_client=get_client()).classify(goal)
         panels.append(
             f"[bold]📡 NLU:[/bold] {intent.intent.value} ({intent.confidence:.0%})"

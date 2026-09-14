@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from src.core.llm_client import LLMClient
+    from src.providers.llm.client import LLMClient
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class SocialReplyAgent:
         """Initialize with an LLMClient instance.
 
         Args:
-            llm_client: Configured LLMClient (from src.core.llm_client.get_client).
+            llm_client: Configured LLMClient (from src.providers.llm.client.get_client).
         """
         self.llm = llm_client
         self.raas_url = os.getenv("RAAS_URL", "https://www.mekongmind.com")

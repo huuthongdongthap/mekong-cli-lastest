@@ -27,7 +27,7 @@ class TestPluginLoading(unittest.TestCase):
 
     def test_load_agents_dynamic_handles_missing_plugins_dir(self):
         """Should not crash when plugins/ directory does not exist."""
-        with patch("src.core.registry.Path") as mock_path_cls:
+        with patch("src.core.registry.dynamic.Path") as mock_path_cls:
             # Make the plugins path report as non-existent
             # but still allow the real builtin path to work
             original_path = Path
@@ -41,6 +41,9 @@ class TestPluginLoading(unittest.TestCase):
                 return real
 
             mock_path_cls.side_effect = side_effect
+            agents_mocked = load_agents_dynamic()
+            self.assertIsInstance(agents_mocked, dict)
+            self.assertGreater(len(agents_mocked), 0)
 
         # Direct call without mock - the real plugins/ dir likely doesn't exist
         agents = load_agents_dynamic()

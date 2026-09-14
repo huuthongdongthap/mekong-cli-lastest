@@ -6,7 +6,7 @@ pytest session, permanently replacing real classes with MagicMock:
 
     src.core.scheduler.Scheduler          -> MagicMock()
     src.core.orchestrator.RecipeOrchestrator -> MagicMock()
-    src.core.memory.MemoryStore           -> MagicMock()
+    src.core.memory_canonical.MemoryStore -> MagicMock()
 
 That is correct for gateway tests (they import the real FastAPI app and
 need the orchestrator stubbed so mission creation does not spin up a real
@@ -40,7 +40,7 @@ _RESTORE_TARGETS = (
     ("src.core.orchestrator", "src.core.orchestrator.runner", "RecipeOrchestrator"),
     ("src.core.orchestrator", "src.core.orchestrator.models", "OrchestrationResult"),
     ("src.core.orchestrator", "src.core.orchestrator.models", "OrchestrationStatus"),
-    ("src.core.memory", "src.core.memory_canonical", "MemoryStore"),
+    ("src.core.memory_canonical", "src.core.memory_canonical", "MemoryStore"),
 )
 
 # Plain modules whose module-level names (functions, not classes) were

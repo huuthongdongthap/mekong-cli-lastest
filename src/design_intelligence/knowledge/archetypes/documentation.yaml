@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: documentation
+product_type: documentation
+label: Documentation
+summary: A reading surface. Prose measure, code blocks, and search are the product.
+information_density: comfortable
+navigation_patterns:
+  - left sidebar tree, collapsible
+  - right rail with on-page headings
+  - search with keyboard shortcut
+hierarchy:
+  - one H1 per page, headings in order
+  - code blocks are the content, not decoration
+  - prose measure 45-75ch
+interaction_expectations:
+  - copy button on every code block
+  - anchor links on headings
+  - no autoplay, no carousels
+common_failure_modes:
+  - prose wider than 75ch
+  - code blocks without language labels
+  - sidebar that hides the current page
+accessibility_concerns:
+  - heading order is semantic
+  - code blocks have a text alternative
+responsive_requirements:
+  - sidebar becomes a drawer on mobile
+  - code blocks scroll horizontally, never wrap
+appropriate_macrostructures:
+  - editorial-column
+  - sidebar-workbench
+  - split-detail

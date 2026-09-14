@@ -1,8 +1,3 @@
-import json
-
-from typer.testing import CliRunner
-
-from src.cli.app_setup import build_app
 from src.command_fabric.native_install import materialize_native_install
 
 
@@ -61,25 +56,15 @@ def test_native_install_write_copies_cross_shell_completions(tmp_path) -> None:
     assert (completion_root / "elvish" / "mekong.elv").exists()
 
 
-def test_native_install_cli_defaults_to_dry_run(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        [
-            "command-fabric",
-            "install",
-            "--scope",
-            "project",
-            "--host",
-            "gemini-cli",
-            "--target-root",
-            str(tmp_path / "home"),
-            "--out",
-            str(tmp_path / "out"),
-        ],
+def test_native_install_defaults_to_dry_run(tmp_path) -> None:
+    payload = materialize_native_install(
+        tmp_path / "out",
+        scope="project",
+        hosts=["gemini-cli"],
+        target_root=tmp_path / "home",
+        dry_run=True,
     )
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     assert payload["dry_run"] is True
     assert payload["install_count"] == 1
     assert payload["installs"][0]["host"] == "gemini-cli"
@@ -105,3 +90,4 @@ def test_native_install_writes_manifest_agent_cli_packages(tmp_path) -> None:
     assert (target_root / ".mekong" / "command-fabric" / "goose" / "manifest.json").exists()
     assert (target_root / ".mekong" / "command-fabric" / "crush" / "manifest.json").exists()
     assert (target_root / ".mekong" / "command-fabric" / "kiro-cli" / "manifest.json").exists()
+

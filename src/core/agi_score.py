@@ -52,7 +52,7 @@ class AGIScoreReport:
 # Module registry: (display_name, module_path, class_name, icon)
 _AGI_MODULES = [
     ("NLU", "src.core.nlu", "IntentClassifier", "📡"),
-    ("Memory", "src.core.memory", "MemoryStore", "💾"),
+    ("Memory", "src.core.memory_canonical", "MemoryStore", "💾"),
     ("Reflection", "src.core.reflection", "ReflectionEngine", "🪞"),
     ("WorldModel", "src.core.world_model", "WorldModel", "🌍"),
     ("ToolRegistry", "src.core.tool_registry", "ToolRegistry", "🔧"),

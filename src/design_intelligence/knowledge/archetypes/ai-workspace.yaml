@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: ai-workspace
+product_type: ai-workspace
+label: AI workspace
+summary: A canvas where an agent acts. The UI is a sidekick, not a control panel.
+information_density: comfortable
+navigation_patterns:
+  - canvas fills the viewport
+  - side panel for context, collapsible
+  - command bar at the bottom
+hierarchy:
+  - output is the hero, controls recede
+  - one primary action: run / submit / send
+  - streaming state is first-class
+interaction_expectations:
+  - streaming text with a caret, not a spinner
+  - inline edit of generated output
+  - undo on every generation
+common_failure_modes:
+  - settings panel wider than the canvas
+  - generated output in a collapsed drawer
+  - no cancel on a long-running task
+accessibility_concerns:
+  - streaming content announced as it arrives
+  - focus moves to the new output block
+responsive_requirements:
+  - panel collapses to a bottom sheet on mobile
+  - input docks, never floats
+appropriate_macrostructures:
+  - split-visual-cta
+  - sidebar-workbench
+  - single-focus-hero

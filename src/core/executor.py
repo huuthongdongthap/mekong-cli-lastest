@@ -209,7 +209,7 @@ class RecipeExecutor:
 
     def _execute_llm_step(self, step: RecipeStep) -> ExecutionResult:
         """Execute LLM generation step via Antigravity Proxy or OpenAI."""
-        from src.core.llm_client import get_client
+        from src.providers.llm.client import get_client
 
         self.console.print(f"[cyan][LLM] Generating:[/cyan] {step.description}")
 

@@ -1,48 +1,55 @@
-## Ship Report — AUTONOMY_GAPS Closeout
+# Ship Report — Super Command #8 (Harness Verifier Merge + DAG Scheduler Swap)
 
-### Commits (2026-08-19 / 2026-08-20)
+## Pipeline Summary
 
-| SHA | Title | Scope |
-|-----|-------|-------|
-| `1b56f9e65` | fix: auth-gate swarm endpoints and consolidate telemetry shim | #7 swarm auth + #4 telemetry shim |
-| `76b6493ca` | fix: delete dead orchestrator_pkg and add query-param auth fallback | #10 orchestrator_pkg deletion + auth parity |
-| `5cc3ef3d9` | chore: update telemetry shim docstring | docstring fix |
+| Phase | Status | Evidence |
+|---|---|---|
+| PLAN (Khổng Minh) | ✅ | `.orchestrate/latest/plan.md` |
+| PLAN GATE (Tôn Tử) | ✅ CONDITIONAL PASS → resolved | `.orchestrate/latest/plan-verdict.md` |
+| EXECUTE (4 phases) | ✅ | `.orchestrate/latest/execution.md` |
+| Code Review | ✅ APPROVE | `plans/reports/sc8-code-review.md` |
+| RESULT GATE (Tôn Tử) | ✅ PASS ROUND 1 | `.orchestrate/latest/result-verdict.md` |
+| SHIP | ✅ | this file |
 
-### Verification
+## Pre-Deploy Checklist
 
-- CI-gated subset (`tests/core tests/cli tests/seed tests/commands tests/auth tests/unit tests/daemon tests/vn`): **2249 passed, 0 failed** (baseline 2242)
-- `ruff check src/ tests/`: clean
-- Pre-existing failures confirmed on clean checkout: `test_e2e_pev.py` x3, `test_harness_eval.py` x1, `test_orchestrator_integration.py` x5, `smoke/test_deployed_services.py` x1
+- [x] git status sạch (chỉ có thay đổi của task)
+- [x] ruff check — All checks passed
+- [x] 27/27 SC8 tests pass + 37/37 existing core tests pass
+- [x] 0 new `:any` types introduced
+- [x] Protected flows untouched (license_gate, payment)
+- [x] `.github/workflows/*` untouched
 
-### Reports
+## Ship Evidence
 
-- `plans/reports/260819-telemetry-shim-consolidation.md`
-- `plans/reports/260819-swarm-auth-gate.md`
-- `plans/reports/260819-orchestrator-pkg-deletion.md`
+- **Branch:** `feat/sc8-verifier-dag-swap` → merged to `main`
+- **PR:** https://github.com/minhlongs/mekong-cli/pull/13
+- **Merge commit:** `4b4fbd062df1c4f2133f477e82e801d4372d756c`
+- **CI (PR):** 5/5 gates green (DocsOps, Security, Test Suite, CI, Core DNA Gate)
+- **CI (post-merge main):** 6/6 gates green (DocsOps, CI, Security, AI-Native 5-Gates, Quality Gates, Test Suite)
 
-### AUDIT七大交付物
+## Deliverables
 
-- `docs/architecture/CURRENT_ARCHITECTURE.md`
-- `docs/architecture/DEPENDENCY_MAP.md`
-- `docs/architecture/DUPLICATION_MAP.md`
-- `docs/architecture/DEPRECATION_MAP.md`
-- `docs/architecture/AUTONOMY_GAPS.md`
-- `docs/architecture/MEKONG_CORE_CONTRACT.md`
-- `docs/architecture/ARCHITECTURE_ASSESSMENT.md`
+**Code (1 file):**
+- `src/core/runtime_adapter.py` — verify() delegates to RecipeVerifier; _run_goal uses topological order; _ExecResultLike adapter
 
-### AUTONOMY_GAPS Status: ALL 10 PRIORITIES CLOSED
+**Tests (3 new files, 27 tests):**
+- `tests/test_runtime_verify_merge.py` — 14 tests
+- `tests/test_runtime_dag_order.py` — 8 tests
+- `tests/test_runtime_multistep_cycle.py` — 5 E2E tests
 
-| # | Gap | Status |
-|---|-----|--------|
-| 1 | MekongCoreContract | DONE (protocols.py) |
-| 2 | AGI approval gate | DONE (agi_loop.py:359) |
-| 3 | BillingAdapter | DONE (billing_adapter.py) |
-| 4 | Telemetry consolidation | DONE (shim) |
-| 5 | Memory consolidation | DONE (shim, different schemas) |
-| 6 | Cloudflare hardcoding | N/A (deploy.py only, no core imports) |
-| 7 | Swarm auth | DONE (require_swarm_token) |
-| 8 | Lifecycle primitives | DONE (MekongCoreRuntimeImpl, 32 tests) |
-| 9 | MCP schema adapter | DONE (mcp_capability_adapter.py) |
-| 10 | Orchestrator hierarchy | DONE (orchestrator_pkg deleted) |
+**Docs (4 files):**
+- `docs/architecture.md` — v0.2, new "Runtime behavior" section
+- `docs/architecture/ARCHITECTURE_AFTER_PHASE_2.md` — gap #4 CLOSED
+- `docs/development-roadmap.md` — Phase 2 ~95%, gap #4 CLOSED
+- `docs/project-changelog.md` — v6.3.0 entry
 
-### Git Status: CLEAN (pushed to origin/main)
+## Parity
+
+- SC7 baseline: 277 failures
+- SC8 post-merge: 256 failures (22 fixed since SC7)
+- **New failures from SC8: 0** (1 pre-existing `test_plugin_loading`, unrelated)
+
+## Verdict
+
+**GREEN** — architecture gap #4 closed. Harness verifier merged into core runtime, scheduler consumes DAG from GoalEngine, execute→verify→repair proven as real cycle. All gates green. Shipped to main @ 2026-09-08.

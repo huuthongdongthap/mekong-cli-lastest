@@ -51,7 +51,7 @@ def get_quota_status(
             "allow_overage": overage_cfg.allow_overage,
             "overage_rate": overage_cfg.overage_rate_per_credit,
             "overage_credits": balance.get("overage_credits", 0),
-            "overage_charges_usd": balance.get("overage_charges_usd", 0.0),
+            "overage_charges_usd": float(balance.get("overage_charges_usd", 0.0)),
             "max_overage_credits": overage_cfg.max_overage_credits,
         },
         "warnings": {

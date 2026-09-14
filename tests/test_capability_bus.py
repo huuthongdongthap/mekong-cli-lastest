@@ -1,5 +1,22 @@
-"""Phase 2A: CapabilityBus Protocol + Capability dataclass."""
+"""Phase 2A: CapabilityBus Protocol + Capability dataclass.
+
+ Lane E6 — Capability Bus + MCP adapter verification (verify-first).
+
+ Extends the existing suite with two audit-acceptance tests:
+
+ 1. Task 4 — ``shell:run`` is only reachable through the CapabilityBus, and the
+    CommandSanitizer gate blocks the injection BEFORE the subprocess is ever
+    scheduled. The bus is the single path under test, not a direct
+    ``subprocess`` / ``ToolRegistry.execute`` call.
+ 2. Task 4 — Capability dataclass exposes every field the task requires
+    (id, name, description, input_schema, output_schema, risk_level, source,
+    cost, authorization, tags, metadata, registered_by, registered_at,
+    expires_at, execute).
+
+ No existing test or behaviour is modified; new classes only.
+"""
 import time
+import unittest.mock
 
 import pytest
 
@@ -274,3 +291,95 @@ class TestInMemoryCapabilityBus:
         bus.register(cap)
         result = bus.execute("t1", {})
         assert "expired" in result["error"]
+
+
+class TestShellCapabilityThroughBus:
+    """Task 4 acceptance: shell:run must only be reachable through the bus,
+    and the CommandSanitizer gate must deny the injection BEFORE the
+    subprocess is ever scheduled.
+
+    Every assertion below routes through ``bus.execute("tool:shell:run", ...)``
+    — the test never calls ``subprocess`` or ``ToolRegistry.execute`` directly.
+    """
+
+    @staticmethod
+    def _build_bus():
+        """Real ToolRegistry + ToolCapabilityAdapter → InMemoryCapabilityBus."""
+        from src.core.adapters.tool_capability_adapter import ToolCapabilityAdapter
+        from src.core.tool_registry import ToolRegistry
+
+        registry = ToolRegistry(persist_path="/tmp/test_capability_bus_shell.yaml")
+        bus = InMemoryCapabilityBus()
+        ToolCapabilityAdapter(registry).sync_to_bus(bus)
+        return bus, registry
+
+    def test_injected_command_blocked_by_sanitizer_and_never_subprocess(self):
+        """``rm -rf /`` → sanitizer deny → subprocess.run must NOT be called.
+
+        The invariant under test is the SAFETY one: the subprocess is never
+        scheduled for a rejected command. The exact error string surfaced by
+        the pre-existing route is not asserted (it is an AttributeError on
+        ``SanitizationResult.violations`` — a live bug tracked in Known
+        Issues; file ownership of ``tool_registry.py`` belongs to another
+        lane, so the behaviour is observed, not changed here).
+        """
+        bus, _registry = self._build_bus()
+
+        with unittest.mock.patch("src.core.tool_registry.subprocess.run") as mock_run:
+            result = bus.execute("tool:shell:run", {"command": "rm -rf /"})
+
+        assert result["ok"] is False
+        # The sanitizer gate fired; no subprocess was ever scheduled.
+        assert mock_run.called is False
+
+    def test_happy_command_executes_through_bus(self):
+        """``echo hello`` → sanitizer pass → subprocess runs → output."""
+        bus, _registry = self._build_bus()
+
+        with unittest.mock.patch("src.core.tool_registry.subprocess.run") as mock_run:
+            mock_run.return_value = unittest.mock.MagicMock(
+                returncode=0, stdout="hello", stderr=""
+            )
+            result = bus.execute("tool:shell:run", {"command": "echo hello"})
+
+        assert result["ok"] is True
+        assert "hello" in result["result"]
+        # The path actually dispatched to the subprocess for a safe command.
+        assert mock_run.called is True
+
+    def test_sanitizer_blocks_before_subprocess_for_arbitrary_injection(self):
+        """A chained injection (``; ls``) is also blocked pre-subprocess."""
+        bus, _registry = self._build_bus()
+
+        with unittest.mock.patch("src.core.tool_registry.subprocess.run") as mock_run:
+            result = bus.execute("tool:shell:run", {"command": "echo hi; ls /etc/passwd"})
+
+        assert result["ok"] is False
+        assert mock_run.called is False
+
+    def test_capability_field_completeness_task4(self):
+        """Task 4: Capability dataclass exposes every required field."""
+        cap = Capability(
+            id="x:cap",
+            name="X",
+            description="desc",
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
+            risk_level="MEDIUM",
+            source=CapabilitySource.BUILTIN,
+            cost=2.5,
+            authorization="admin",
+            tags=["t"],
+            metadata={"k": "v"},
+            registered_by="alice",
+            registered_at=1.0,
+            expires_at=2.0,
+        )
+        for field in (
+            "id", "name", "description", "input_schema", "output_schema",
+            "risk_level", "source", "cost", "authorization", "tags",
+            "metadata", "registered_by", "registered_at", "expires_at",
+        ):
+            assert hasattr(cap, field), f"Capability missing field: {field}"
+        assert cap.execute is not None  # callable surface
+        assert cap.is_expired(now=3.0) is True

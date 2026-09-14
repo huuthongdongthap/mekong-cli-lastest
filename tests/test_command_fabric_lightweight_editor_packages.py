@@ -1,8 +1,5 @@
 import json
 
-from typer.testing import CliRunner
-
-from src.cli.app_setup import build_app
 from src.command_fabric.catalog import build_command_catalog
 from src.command_fabric.lightweight_editor_packages import (
     fleet_plugin_json,
@@ -53,31 +50,19 @@ def test_shell_runner_executes_lightweight_editor_commands() -> None:
 
 
 def test_lightweight_editor_packages_materialize_all_hosts(tmp_path) -> None:
+    records = build_command_catalog()
     for host in ("fleet", "nova", "lapce", "kakoune", "micro"):
-        payload = materialize_lightweight_editor_package(tmp_path / host, host, build_command_catalog())
+        payload = materialize_lightweight_editor_package(tmp_path / host, host, records)
 
         assert payload["schema"] == f"mekong.command_fabric.{host.replace('-', '_')}_package.v1"
-        assert payload["command_count"] == 91
+        assert payload["command_count"] == len(records)
         manifest = json.loads((tmp_path / host / "data" / f"{host}.json").read_text(encoding="utf-8"))
         assert manifest["schema"] == f"mekong.command_fabric.adapter.{host}.v1"
 
 
-def test_command_fabric_cli_materializes_lightweight_editor_package(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        [
-            "command-fabric",
-            "lightweight-editor-package",
-            "--host",
-            "kakoune",
-            "--scope",
-            "project",
-            "--out",
-            str(tmp_path),
-        ],
-    )
+def test_materialize_lightweight_editor_package_default(tmp_path) -> None:
+    payload = materialize_lightweight_editor_package(tmp_path, "kakoune")
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     assert payload["host"] == "kakoune"
     assert (tmp_path / "kakrc").exists()
+

@@ -1,8 +1,4 @@
-import json
-
-from typer.testing import CliRunner
-
-from src.cli.app_setup import build_app
+from src.command_fabric.catalog import build_command_catalog
 from src.command_fabric.release_bundle import materialize_release_bundle
 from src.command_fabric.target_matrix import (
     EXPECTED_RELEASE_SECTION_COUNT,
@@ -11,10 +7,11 @@ from src.command_fabric.target_matrix import (
 
 
 def test_release_bundle_materializes_all_portability_surfaces(tmp_path) -> None:
+    records = build_command_catalog()
     payload = materialize_release_bundle(tmp_path, scope="project")
 
     assert payload["schema"] == "mekong.command_fabric.release_bundle.v1"
-    assert payload["command_count"] == 91
+    assert payload["command_count"] == len(records)
     assert payload["section_count"] == EXPECTED_RELEASE_SECTION_COUNT
     section_names = {section["name"] for section in payload["sections"]}
     assert section_names == REQUIRED_RELEASE_SECTIONS
@@ -95,25 +92,14 @@ def test_release_bundle_materializes_all_portability_surfaces(tmp_path) -> None:
     assert (tmp_path / "sublime-package" / "mekong_command_fabric.py").exists()
 
 
-def test_release_bundle_cli_supports_host_selection(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        [
-            "command-fabric",
-            "bundle",
-            "--scope",
-            "project",
-            "--ide-host",
-            "vscode",
-            "--agent-host",
-            "codex",
-            "--out",
-            str(tmp_path),
-        ],
+def test_release_bundle_supports_host_selection(tmp_path) -> None:
+    payload = materialize_release_bundle(
+        tmp_path,
+        scope="project",
+        ide_hosts=["vscode"],
+        agent_hosts=["codex"],
     )
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     section_names = {section["name"] for section in payload["sections"]}
     assert "ide-vscode" in section_names
     assert "ide-cursor" not in section_names

@@ -1,15 +1,11 @@
 import json
 
-from typer.testing import CliRunner
-
-from src.cli.app_setup import build_app
 from src.command_fabric.catalog import build_command_catalog
 from src.command_fabric.ide_extensions import (
     extension_package_json,
     materialize_ide_extension,
 )
-from src.command_fabric.jetbrains_extension import plugin_xml
-from src.command_fabric.jetbrains_extension import action_kt
+from src.command_fabric.jetbrains_extension import action_kt, plugin_xml
 
 
 def test_ide_extension_package_json_contributes_commands() -> None:
@@ -38,23 +34,9 @@ def test_command_fabric_materializes_vscode_extension(tmp_path) -> None:
     assert any(command["command"] == "mekong.plan" for command in package["contributes"]["commands"])
 
 
-def test_command_fabric_cli_materializes_cursor_extension(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        [
-            "command-fabric",
-            "ide-extension",
-            "--host",
-            "cursor",
-            "--scope",
-            "project",
-            "--out",
-            str(tmp_path),
-        ],
-    )
+def test_command_fabric_materializes_cursor_extension(tmp_path) -> None:
+    payload = materialize_ide_extension(tmp_path, "cursor")
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     assert payload["host"] == "cursor"
     assert (tmp_path / "cursor" / "package.json").exists()
     assert (tmp_path / "cursor" / "src" / "extension.ts").exists()
@@ -71,23 +53,9 @@ def test_command_fabric_materializes_windsurf_extension(tmp_path) -> None:
     assert "npm run package" in (root / "build-package.sh").read_text(encoding="utf-8")
 
 
-def test_command_fabric_cli_materializes_theia_extension(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        [
-            "command-fabric",
-            "ide-extension",
-            "--host",
-            "theia",
-            "--scope",
-            "project",
-            "--out",
-            str(tmp_path),
-        ],
-    )
+def test_command_fabric_materializes_theia_extension(tmp_path) -> None:
+    payload = materialize_ide_extension(tmp_path, "theia")
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     root = tmp_path / "theia"
     assert payload["host"] == "theia"
     assert (root / "package.json").exists()
@@ -115,23 +83,9 @@ def test_jetbrains_action_runs_command_in_ide_console() -> None:
     assert '"MekongCookAction" to MekongCommand("cook"' in source
 
 
-def test_command_fabric_cli_materializes_jetbrains_extension(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        [
-            "command-fabric",
-            "ide-extension",
-            "--host",
-            "jetbrains",
-            "--scope",
-            "project",
-            "--out",
-            str(tmp_path),
-        ],
-    )
+def test_command_fabric_materializes_jetbrains_extension(tmp_path) -> None:
+    payload = materialize_ide_extension(tmp_path, "jetbrains")
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
     root = tmp_path / "jetbrains"
     assert payload["host"] == "jetbrains"
     assert (root / "build.gradle.kts").exists()
@@ -147,3 +101,4 @@ def test_command_fabric_cli_materializes_jetbrains_extension(tmp_path) -> None:
         / "MekongCommandAction.kt"
     ).exists()
     assert "gradle buildPlugin" in (root / "build-package.sh").read_text(encoding="utf-8")
+

@@ -48,7 +48,7 @@ router = APIRouter(prefix="/v1", tags=["RaaS v1"])
 
 def _build_orchestrator() -> Any:
     """Create a RecipeOrchestrator wired to the LLM client."""
-    from src.core.llm_client import get_client
+    from src.providers.llm.client import get_client
     from src.core.orchestrator import RecipeOrchestrator
 
     client = get_client()

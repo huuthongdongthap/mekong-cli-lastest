@@ -1,0 +1,1225 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.7, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/macbook/mekong-cli/.claude/worktrees/super-command-2
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: cov-7.1.0, asyncio-1.3.0, Faker-40.23.0, langsmith-0.8.5, respx-0.23.1, anyio-4.13.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 8000 items / 2 skipped
+
+tests/api/test_dashboard_app.py .....................................    [  0%]
+tests/auth/test_jwt_secret_required.py ..................                [  0%]
+tests/auth/test_middleware.py ....................                       [  0%]
+tests/auth/test_rate_limiter.py ........................................ [  1%]
+...                                                                      [  1%]
+tests/auth/test_secure_storage_coverage.py ............................. [  1%]
+............................                                             [  2%]
+tests/benchmarks/test_agi_tasks.py ssss                                  [  2%]
+tests/billing/test_audit_trail.py .........................              [  2%]
+tests/cli/test_activate_commands.py .................                    [  2%]
+tests/cli/test_agent_commands.py ...........                             [  2%]
+tests/cli/test_diagnostic_commands.py ...............                    [  3%]
+tests/cli/test_sync_raas.py .........                                    [  3%]
+tests/cli/test_ui_commands.py .......................                    [  3%]
+tests/cli/test_update_checker.py .....................                   [  3%]
+tests/cli/test_usage_commands.py ................                        [  3%]
+tests/commands/test_raas_validate.py ...................                 [  4%]
+tests/commands/test_thue_dnvn.py .......................                 [  4%]
+tests/core/gateway/test_gateway_main.py ................................ [  4%]
+......................                                                   [  5%]
+tests/core/test_activation_sync.py ..................................    [  5%]
+tests/core/test_agent_assembly.py ...................................... [  6%]
+......                                                                   [  6%]
+tests/core/test_agent_factory.py ...........                             [  6%]
+tests/core/test_api_adapter_coverage.py .........................        [  6%]
+tests/core/test_api_key_manager.py ..................................... [  7%]
+.                                                                        [  7%]
+tests/core/test_audit_trail.py ........                                  [  7%]
+tests/core/test_circuit_breaker.py ..................                    [  7%]
+tests/core/test_command_authorizer.py .................................. [  7%]
+........                                                                 [  7%]
+tests/core/test_compression.py ............                              [  8%]
+tests/core/test_connection_cooldown.py ...............                   [  8%]
+tests/core/test_device_certificate.py .................................. [  8%]
+.                                                                        [  8%]
+tests/core/test_entitlement_enforcer.py ................................ [  9%]
+.......                                                                  [  9%]
+tests/core/test_error_sanitizer.py ..............                        [  9%]
+tests/core/test_gateway_client_coverage.py ............................. [  9%]
+.......................                                                  [  9%]
+tests/core/test_health_crash.py ..........................               [ 10%]
+tests/core/test_health_reporter.py ..................................... [ 10%]
+...........                                                              [ 10%]
+tests/core/test_hitl_confidence_gate.py ...............                  [ 11%]
+tests/core/test_machine_fingerprint_coverage.py ........................ [ 11%]
+............................................                             [ 11%]
+tests/core/test_mcu_billing.py ..........................                [ 12%]
+tests/core/test_memory_bridge_integration.py ........................... [ 12%]
+.............................                                            [ 12%]
+tests/core/test_memory_scope.py .....................                    [ 13%]
+tests/core/test_memory_store.py ..............                           [ 13%]
+tests/core/test_model_selector_tier_enforcement.py ..................... [ 13%]
+.....                                                                    [ 13%]
+tests/core/test_nlu.py .......                                           [ 13%]
+tests/core/test_orchestrator_coverage.py ............................... [ 14%]
+...                                                                      [ 14%]
+tests/core/test_p2_prompt_contract.py .........................          [ 14%]
+tests/core/test_permission_registry.py ................................. [ 14%]
+..................                                                       [ 15%]
+tests/core/test_pre_merge_conflict_checker.py .........                  [ 15%]
+tests/core/test_provider_registry.py ................................... [ 15%]
+.............                                                            [ 15%]
+tests/core/test_providers_coverage.py .................................. [ 16%]
+....                                                                     [ 16%]
+tests/core/test_raas_audit_logger.py .......................             [ 16%]
+tests/core/test_raas_auth.py ...................................         [ 17%]
+tests/core/test_raas_auth_coverage.py .................................. [ 17%]
+..............                                                           [ 17%]
+tests/core/test_scheduler.py ....................................        [ 18%]
+tests/core/test_service_credits.py ..................                    [ 18%]
+tests/core/test_session_cache.py ........................                [ 18%]
+tests/core/test_session_lifecycle_manager.py ........................... [ 19%]
+...........                                                              [ 19%]
+tests/core/test_telegram_handlers.py .........................           [ 19%]
+tests/core/test_telemetry_collector_coverage.py ........................ [ 19%]
+.....................                                                    [ 20%]
+tests/core/test_tier_fallback_chain.py ................................. [ 20%]
+.                                                                        [ 20%]
+tests/core/test_tool_output_validator.py .........                       [ 20%]
+tests/core/test_webhook_schema.py ..............                         [ 20%]
+tests/daemon/test_agent_loop.py ...............................          [ 21%]
+tests/daemon/test_improvement_engine.py ................................ [ 21%]
+....                                                                     [ 21%]
+tests/daemon/test_jidoka.py ....................................         [ 22%]
+tests/daemon/test_mission_control.py ................................... [ 22%]
+......                                                                   [ 22%]
+tests/daemon/test_pattern_library.py ................................... [ 22%]
+........                                                                 [ 23%]
+tests/design_intelligence/test_change_detect.py ...............          [ 23%]
+tests/design_intelligence/test_design_memory.py ...........              [ 23%]
+tests/design_intelligence/test_dna.py .................                  [ 23%]
+tests/design_intelligence/test_gates.py ................................ [ 24%]
+.......                                                                  [ 24%]
+tests/design_intelligence/test_pipeline.py .......                       [ 24%]
+tests/design_intelligence/test_schemas.py ..........                     [ 24%]
+tests/design_intelligence/test_scoring.py ..........                     [ 24%]
+tests/design_intelligence/test_visual.py ........                        [ 24%]
+tests/e2e/antigravity_e2e/test_f1_routing.py FFFFFFFFFFFF                [ 24%]
+tests/e2e/antigravity_e2e/test_f2_indexing.py FFFFFFFFFFFF               [ 24%]
+tests/e2e/antigravity_e2e/test_f3_agent_loop.py FFFFFFFFFFFF             [ 25%]
+tests/e2e/antigravity_e2e/test_f4_tools.py FFFFFFFFFFFF                  [ 25%]
+tests/e2e/antigravity_e2e/test_f5_inference.py ssFssssFFFFF              [ 25%]
+tests/e2e/test_1m_sop_flow.py ...............                            [ 25%]
+tests/e2e/test_critical_flows.py .                                       [ 25%]
+tests/e2e/test_purchase_flow.py ssssssssssss                             [ 25%]
+tests/graph/test_graph_api.py sssssssssssssssssssss                      [ 25%]
+tests/graph/test_graph_service.py ..............................         [ 26%]
+tests/integration/test_ask_routing.py ................                   [ 26%]
+tests/integration/test_refactored.py ...                                 [ 26%]
+tests/integration/test_services.py ....                                  [ 26%]
+tests/jobs/test_nightly_reconciliation.py .............................. [ 26%]
+..................                                                       [ 27%]
+tests/lib/test_raas_task_client.py ..................................... [ 27%]
+......                                                                   [ 27%]
+tests/mekongcli/test_goal_cli.py ..........sss....                       [ 27%]
+tests/mekongcli/test_goal_engine.py .........                            [ 28%]
+tests/polymarket/test_api_server.py .................                    [ 28%]
+tests/polymarket/test_billing.py ...............                         [ 28%]
+tests/polymarket/test_clob_client.py .........                           [ 28%]
+tests/polymarket/test_copy_trading.py ................                   [ 28%]
+tests/polymarket/test_funding_rate_arb.py ...........                    [ 28%]
+tests/polymarket/test_kalshi_client.py .........                         [ 29%]
+tests/polymarket/test_kelly_sizing.py .............                      [ 29%]
+tests/polymarket/test_market_scanner.py .......................          [ 29%]
+tests/polymarket/test_order_manager.py ...........                       [ 29%]
+tests/polymarket/test_position_tracker.py ..................             [ 29%]
+tests/polymarket/test_prediction_calibration.py ...............          [ 30%]
+tests/polymarket/test_prediction_executor.py .........                   [ 30%]
+tests/polymarket/test_public_signals.py ......                           [ 30%]
+tests/polymarket/test_referral_tracker.py ....................           [ 30%]
+tests/polymarket/test_risk_manager.py .................                  [ 30%]
+tests/polymarket/test_sdk.py ...............                             [ 30%]
+tests/polymarket/test_strategy_marketplace.py ..............             [ 31%]
+tests/polymarket/test_telegram_monitor.py ............                   [ 31%]
+tests/polymarket/test_trading_pipeline.py ........                       [ 31%]
+tests/raas/test_billing_sync.py ..........................               [ 31%]
+tests/raas/test_final_phase_validator.py ............................    [ 31%]
+tests/raas/test_license_activation.py .................s..........       [ 32%]
+tests/raas/test_marketplace_router.py ..........................         [ 32%]
+tests/raas/test_payload_encryptor.py ..................                  [ 32%]
+tests/raas/test_phase6_integration.py ..................                 [ 33%]
+tests/raas/test_polar_webhook_e2e.py .....................               [ 33%]
+tests/raas/test_sync_client_phase5.py ..................                 [ 33%]
+tests/raas/test_usage_event_schema.py .............                      [ 33%]
+tests/raas/test_webhook_bridge.py ..................                     [ 33%]
+tests/regression/test_golden_agents.py ......                            [ 34%]
+tests/seed/test_seed_agents_base.py ............                         [ 34%]
+tests/seed/test_seed_agents_ceo.py .......                               [ 34%]
+tests/seed/test_seed_agents_dev_tester.py .............                  [ 34%]
+tests/seed/test_seed_config.py ......                                    [ 34%]
+tests/seed/test_seed_main_pipeline.py ............                       [ 34%]
+tests/seed/test_seed_memory.py ..........                                [ 34%]
+tests/smoke/test_deployed_services.py FFFF                               [ 34%]
+tests/smoke/test_doctor_command.py ..                                    [ 34%]
+tests/test_a2ui_renderer.py ............................................ [ 35%]
+......                                                                   [ 35%]
+tests/test_ab_test_service.py ...................                        [ 35%]
+tests/test_agent_base.py ............................................... [ 36%]
+...F                                                                     [ 36%]
+tests/test_agent_codebuff_port.py ...................................... [ 36%]
+..............                                                           [ 36%]
+tests/test_agent_dispatcher.py ..............                            [ 37%]
+tests/test_agent_registry.py .....F..............s                       [ 37%]
+tests/test_agent_registry_consolidated.py ..............                 [ 37%]
+tests/test_agi_integration.py .......................................    [ 38%]
+tests/test_agi_loop.py ..................................                [ 38%]
+tests/test_aider_bridge.py sssssssss                                     [ 38%]
+tests/test_analytics_queries.py ................                         [ 38%]
+tests/test_anomaly_detection.py ..........................               [ 39%]
+tests/test_api_adapter.py ..................                             [ 39%]
+tests/test_api_auth_routes.py .FFF.F                                     [ 39%]
+tests/test_api_key_manager.py .....................................      [ 39%]
+tests/test_attestation.py .........................................      [ 40%]
+tests/test_auth_jwt_security.py ........................................ [ 40%]
+............                                                             [ 41%]
+tests/test_auth_routes.py .............................F................ [ 41%]
+.                                                                        [ 41%]
+tests/test_autonomous.py ....................                            [ 41%]
+tests/test_autonomous_loop.py F                                          [ 41%]
+tests/test_autonomy_engine.py ........                                   [ 42%]
+tests/test_billing.py .................................................. [ 42%]
+...                                                                      [ 42%]
+tests/test_billing_adapter.py ............                               [ 42%]
+tests/test_binh_phap_dag_integration.py .........FFF.FFFF..              [ 43%]
+tests/test_binh_phap_dispatcher.py ........FFFFFF                        [ 43%]
+tests/test_browser_agent.py .............                                [ 43%]
+tests/test_build.py ......                                               [ 43%]
+tests/test_build_cli.py .............                                    [ 43%]
+tests/test_buzz_adapter.py .................                             [ 43%]
+tests/test_buzz_transport.py .............................               [ 44%]
+tests/test_c1_orchestration.py ....................................      [ 44%]
+tests/test_capability_bus.py ...........................                 [ 45%]
+tests/test_challenger_verification.py ....                               [ 45%]
+tests/test_circuit_breaker.py .......................................    [ 45%]
+tests/test_code_evolution.py ..............                              [ 45%]
+tests/test_collaboration.py .................                            [ 45%]
+tests/test_command_fabric_adapters.py FFFFF                              [ 46%]
+tests/test_command_fabric_agent_cli_package.py FF..........FF            [ 46%]
+tests/test_command_fabric_catalog.py FFFFFFFFFF                          [ 46%]
+tests/test_command_fabric_contracts.py FFFF                              [ 46%]
+tests/test_command_fabric_distribution.py F.FF.F                         [ 46%]
+tests/test_command_fabric_eclipse_package.py FFFF                        [ 46%]
+tests/test_command_fabric_emacs_package.py .FF                           [ 46%]
+tests/test_command_fabric_helix_package.py .FFF                          [ 46%]
+tests/test_command_fabric_ide_extensions.py FFF.FFFF                     [ 46%]
+tests/test_command_fabric_lightweight_editor_packages.py FFF..FF         [ 46%]
+tests/test_command_fabric_mcp_package.py .FF                             [ 46%]
+tests/test_command_fabric_native_install.py .F.F.                        [ 46%]
+tests/test_command_fabric_native_install_editors.py ....                 [ 46%]
+tests/test_command_fabric_neovim_package.py .FF                          [ 46%]
+tests/test_command_fabric_npm_package.py .FF.                            [ 46%]
+tests/test_command_fabric_package_build.py FF                            [ 47%]
+tests/test_command_fabric_package_managers.py FF                         [ 47%]
+tests/test_command_fabric_readiness.py F.F                               [ 47%]
+tests/test_command_fabric_release_bundle.py FF                           [ 47%]
+tests/test_command_fabric_runtime.py FF.FFFF                             [ 47%]
+tests/test_command_fabric_shell_package.py F.F                           [ 47%]
+tests/test_command_fabric_sublime_package.py .FF                         [ 47%]
+tests/test_command_fabric_vim_package.py .FF                             [ 47%]
+tests/test_command_fabric_visual_studio_package.py .FFF                  [ 47%]
+tests/test_command_fabric_workspace_templates.py F                       [ 47%]
+tests/test_command_fabric_zed_package.py ..FF                            [ 47%]
+tests/test_command_sanitizer_security.py ...FF......FFFFF............... [ 47%]
+............................................                             [ 48%]
+tests/test_command_surface.py F.                                         [ 48%]
+tests/test_company_init_cli.py FFFFFFF.........                          [ 48%]
+tests/test_core_boundary.py .....                                        [ 48%]
+tests/test_core_dna.py .........F.                                       [ 48%]
+tests/test_core_dna_workflow.py FF                                       [ 48%]
+tests/test_core_lifecycle_contract.py .............                      [ 48%]
+tests/test_correlation_id.py ...................................         [ 49%]
+tests/test_cost_estimator.py ................                            [ 49%]
+tests/test_crash_detector.py ........................................... [ 50%]
+................                                                         [ 50%]
+tests/test_credit_account.py ........................................... [ 50%]
+...............                                                          [ 51%]
+tests/test_credit_metering_middleware.py .............                   [ 51%]
+tests/test_credit_rate_limiter.py .........                              [ 51%]
+tests/test_daemon_dispatch.py ...........F.F..F...............F......... [ 51%]
+.........                                                                [ 51%]
+tests/test_daemon_health.py ............................................ [ 52%]
+...                                                                      [ 52%]
+tests/test_daemon_scheduler.py ......................................... [ 53%]
+.......                                                                  [ 53%]
+tests/test_dashboard_service.py ................                         [ 53%]
+tests/test_docs_agent.py ...                                             [ 53%]
+tests/test_e2e_mission.py .                                              [ 53%]
+tests/test_e2e_pev.py FFF..                                              [ 53%]
+tests/test_economic_bus.py ........                                      [ 53%]
+tests/test_engagement_store.py .............                             [ 53%]
+tests/test_engine_license_enforcer.py ......                             [ 53%]
+tests/test_event_bus.py ................................................ [ 54%]
+.......                                                                  [ 54%]
+tests/test_event_streaming.py .................                          [ 54%]
+tests/test_execution_context.py ......................                   [ 54%]
+tests/test_executor.py .....................                             [ 55%]
+tests/test_fallback_chain.py ........................                    [ 55%]
+tests/test_file_lock.py .                                                [ 55%]
+tests/test_founder.py ............................................       [ 56%]
+tests/test_gateway_api.py .............                                  [ 56%]
+tests/test_gateway_endpoints.py ........................................ [ 56%]
+......                                                                   [ 56%]
+tests/test_gateway_mcu_deduct.py ..........                              [ 56%]
+tests/test_git_agent.py FFFF.............                                [ 57%]
+tests/test_governance.py ........................                        [ 57%]
+tests/test_governance_cli.py ...................                         [ 57%]
+tests/test_harness_eval.py F.                                            [ 57%]
+tests/test_hermes_learning_loop.py F.                                    [ 57%]
+tests/test_hook_activation.py .....                                      [ 57%]
+tests/test_hookpoint_routing.py .........                                [ 57%]
+tests/test_hooks.py .......................                              [ 58%]
+tests/test_hybrid_router.py ............                                 [ 58%]
+tests/test_i18n.py ..................................................... [ 59%]
+........                                                                 [ 59%]
+tests/test_image_generator.py ...................                        [ 59%]
+tests/test_jwt_license.py ...................                            [ 59%]
+tests/test_langfuse.py .................                                 [ 59%]
+tests/test_lead_hunter.py ...                                            [ 59%]
+tests/test_learning_loop.py ....................................         [ 60%]
+tests/test_lib_license_email.py .....                                    [ 60%]
+tests/test_lib_license_store.py .......                                  [ 60%]
+tests/test_license_enforcement.py ...................................... [ 60%]
+...                                                                      [ 60%]
+tests/test_license_gate_integration.py .....................             [ 61%]
+tests/test_license_renewal.py ......................                     [ 61%]
+tests/test_llm_cache.py ....................                             [ 61%]
+tests/test_llm_prompts.py ...FFFF......................                  [ 62%]
+tests/test_llm_router_adapter_real.py ....                               [ 62%]
+tests/test_llm_router_expanded.py ..........                             [ 62%]
+tests/test_llm_router_stream.py ...........                              [ 62%]
+tests/test_local_adapter.py .................                            [ 62%]
+tests/test_local_execution_runtime.py ...........................        [ 63%]
+tests/test_login_client.py .............                                 [ 63%]
+tests/test_mcp_capability_adapter.py ....................                [ 63%]
+tests/test_mcp_plan_store.py ...................                         [ 63%]
+tests/test_mcp_server.py ............................................... [ 64%]
+................                                                         [ 64%]
+tests/test_mcp_server_integration.py FFFF                                [ 64%]
+tests/test_mcu_billing.py .......................................        [ 64%]
+tests/test_mcu_gate.py ......................................            [ 65%]
+tests/test_memory.py ................                                    [ 65%]
+tests/test_memory_commands.py .....                                      [ 65%]
+tests/test_memory_qdrant.py ................                             [ 65%]
+tests/test_memory_separation.py ................                         [ 66%]
+tests/test_middleware_license_gate.py ..........                         [ 66%]
+tests/test_mission_tracer.py .............                               [ 66%]
+tests/test_model_selector.py ..F..FFFFFF...F..F..                        [ 66%]
+tests/test_nl_routing.py F.....FF.F....F.....FFFFFFFFFFFFFFFFFFFFFFFFFFF [ 67%]
+FFFFFFFFFFFF.F.F....F..                                                  [ 67%]
+tests/test_nlu.py .........................                              [ 67%]
+tests/test_notifier.py ............                                      [ 67%]
+tests/test_oauth2_providers.py ......................................    [ 68%]
+tests/test_ocop_commands.py ...........                                  [ 68%]
+tests/test_offline_grace_period.py ...........                           [ 68%]
+tests/test_onboarding_analytics.py ............                          [ 68%]
+tests/test_onboarding_funnel_store.py ...........                        [ 69%]
+tests/test_orchestrator_integration.py .FF.F                             [ 69%]
+tests/test_orchestrator_unit.py ........................................ [ 69%]
+                                                                         [ 69%]
+tests/test_payment_providers.py ............................             [ 69%]
+tests/test_pev_checkpoint.py ................                            [ 70%]
+tests/test_pev_commands.py .......................                       [ 70%]
+tests/test_pev_planner_converged.py ....                                 [ 70%]
+tests/test_pev_self_healing.py ..................................        [ 70%]
+tests/test_pev_telemetry.py ............................................ [ 71%]
+..                                                                       [ 71%]
+tests/test_phase3_repository.py ................                         [ 71%]
+tests/test_phase6_license_validation.py ......................           [ 71%]
+tests/test_phase7_compliance.py ....................s.ss......           [ 72%]
+tests/test_phase_completion.py ........................                  [ 72%]
+tests/test_pipeline_manager.py .............................             [ 72%]
+tests/test_plan_cli.py ................                                  [ 73%]
+tests/test_plan_constraints.py ......................................... [ 73%]
+                                                                         [ 73%]
+tests/test_planner.py .................................................. [ 74%]
+................                                                         [ 74%]
+tests/test_plugin_api.py ....................................            [ 74%]
+tests/test_plugin_binding.py .......                                     [ 75%]
+tests/test_plugin_context_credentials.py ..............                  [ 75%]
+tests/test_plugin_install.py .............                               [ 75%]
+tests/test_plugin_integration.py ........                                [ 75%]
+tests/test_plugin_loading.py ....                                        [ 75%]
+tests/test_plugin_publish.py ................                            [ 75%]
+tests/test_plugin_runtime.py .........................s                  [ 76%]
+tests/test_policy_decision_path.py ..........................            [ 76%]
+tests/test_pricing.py .....                                              [ 76%]
+tests/test_progress_tracker.py ......................                    [ 76%]
+tests/test_protocol_compliance.py ........                               [ 76%]
+tests/test_quota_cache.py ...............................                [ 77%]
+tests/test_quota_error_messages.py ..............................        [ 77%]
+tests/test_quota_warnings.py .......................                     [ 77%]
+tests/test_raas_gate.py ................................................ [ 78%]
+.......                                                                  [ 78%]
+tests/test_raas_gate_enforcement.py ...............................      [ 78%]
+tests/test_raas_integration.py .....                                     [ 79%]
+tests/test_raas_load.py ..                                               [ 79%]
+tests/test_raas_sdk.py ..........................                        [ 79%]
+tests/test_rate_limit_observability.py ................................. [ 79%]
+..........................                                               [ 80%]
+tests/test_rbac.py ..................................................... [ 80%]
+.................F.FFFF.FF............F...........                       [ 81%]
+tests/test_recipe_crawler.py ...                                         [ 81%]
+tests/test_recipe_gen.py ..................                              [ 81%]
+tests/test_reflection.py ..................                              [ 81%]
+tests/test_repo_hygiene.py ..                                            [ 81%]
+tests/test_retention_services.py ..................                      [ 82%]
+tests/test_retry.py ...............                                      [ 82%]
+tests/test_review_agent.py ...                                           [ 82%]
+tests/test_roi_dashboard.py ...........................                  [ 82%]
+tests/test_run_command_wiring.py ..................                      [ 82%]
+tests/test_runtime_expansion.py ..........                               [ 83%]
+tests/test_runtime_safety.py ..............                              [ 83%]
+tests/test_scoped_credential_vault.py ..................                 [ 83%]
+tests/test_self_healing.py F.F                                           [ 83%]
+tests/test_self_healing_recovery.py ...........sssssssss.......ss.       [ 83%]
+tests/test_session_manager.py .......................................... [ 84%]
+.......                                                                  [ 84%]
+tests/test_shell_agent.py ............                                   [ 84%]
+tests/test_smart_router.py .............FF.....                          [ 84%]
+tests/test_stripe_integration.py ..................................      [ 85%]
+tests/test_studio_commands.py .................................          [ 85%]
+tests/test_studio_models.py ...........................                  [ 86%]
+tests/test_subagent_reviewer.py .................                        [ 86%]
+tests/test_subsystem_health.py .............                             [ 86%]
+tests/test_task_classifier.py .......................................... [ 86%]
+......                                                                   [ 87%]
+tests/test_task_queue.py .......................                         [ 87%]
+tests/test_telegram_bot.py ...............                               [ 87%]
+tests/test_tiered_telemetry.py ..........                                [ 87%]
+tests/test_timeout_manager.py ...........................                [ 87%]
+tests/test_tool_capability_adapter.py ....................               [ 88%]
+tests/test_tool_permission_registry.py .........                         [ 88%]
+tests/test_tool_registry.py ...............                              [ 88%]
+tests/test_tui_streaming.py ...........................................  [ 89%]
+tests/test_usage_analytics.py ...........                                [ 89%]
+tests/test_usage_decorators.py ..........                                [ 89%]
+tests/test_usage_meter.py .....                                          [ 89%]
+tests/test_usage_metering_service.py .............................       [ 89%]
+tests/test_usage_queue.py FFF.F.........FF                               [ 89%]
+tests/test_usage_tracker.py ...............                              [ 90%]
+tests/test_validation_logging.py .........................               [ 90%]
+tests/test_verifier.py ................................................. [ 91%]
+.........                                                                [ 91%]
+tests/test_violation_tracker.py ..................s                      [ 91%]
+tests/test_viral_queue.py .....                                          [ 91%]
+tests/test_water_protocol.py ..............................              [ 91%]
+tests/test_wave2_import_fixes.py .......                                 [ 91%]
+tests/test_wave3_surface.py ...                                          [ 91%]
+tests/test_webhook_schema.py ...............                             [ 92%]
+tests/test_zx_executor.py ...................................            [ 92%]
+tests/unit/test_plugin_agent.py ........................................ [ 93%]
+...................                                                      [ 93%]
+tests/unit/test_plugin_loader.py ........................                [ 93%]
+tests/vn/test_admin_scopes.py ................                           [ 93%]
+tests/vn/test_audit_log.py ............                                  [ 93%]
+tests/vn/test_default_org_seed.py ........                               [ 94%]
+tests/vn/test_ke_toan_flow.py ....................                       [ 94%]
+tests/vn/test_magic_link.py ...............                              [ 94%]
+tests/vn/test_misa_export.py ................                            [ 94%]
+tests/vn/test_org_crud.py ...............                                [ 94%]
+tests/vn/test_org_id_full_surface.py .................                   [ 95%]
+tests/vn/test_org_id_isolation.py ........................               [ 95%]
+tests/vn/test_org_invite.py .............                                [ 95%]
+tests/vn/test_polar_org_subscription.py ..........                       [ 95%]
+tests/vn/test_sqlite_backend.py ...............                          [ 95%]
+tests/vn/test_storage_parity.py ................                         [ 96%]
+tests/vn/test_vietqr_webhook.py ................................         [ 96%]
+tests/vn/test_vn_pilot_capacity.py ...                                   [ 96%]
+tests/vn/test_vn_pilot_concurrency.py ..                                 [ 96%]
+tests/vn/test_vn_pilot_outreach.py .........                             [ 96%]
+tests/vn/test_vn_pilot_payment.py ..............................         [ 97%]
+tests/vn/test_vn_pilot_routes.py ....................................... [ 97%]
+......................                                                   [ 97%]
+tests/vn/test_zalo_oa_flow.py ................                           [ 98%]
+tests/zenos/test_constitutional_review.py .............................. [ 98%]
+..........................................                               [ 98%]
+tests/zenos/test_migrate_tenants_to_particles.py ..........              [ 99%]
+tests/zenos/test_particle_lifecycle.py ................................. [ 99%]
+..                                                                       [ 99%]
+tests/zenos/test_vietnam_feature_regression.py ......................... [ 99%]
+..................                                                       [100%]
+
+=============================== warnings summary ===============================
+../../../../../../opt/homebrew/lib/python3.14/site-packages/starlette/formparsers.py:12
+  /opt/homebrew/lib/python3.14/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+../../../../../../opt/homebrew/lib/python3.14/site-packages/fastapi/routing.py:211: 273 warnings
+tests/auth/test_middleware.py: 15 warnings
+tests/core/gateway/test_gateway_main.py: 26 warnings
+tests/core/test_health_crash.py: 9 warnings
+tests/polymarket/test_api_server.py: 153 warnings
+tests/polymarket/test_billing.py: 6 warnings
+tests/polymarket/test_public_signals.py: 18 warnings
+tests/raas/test_marketplace_router.py: 209 warnings
+tests/raas/test_polar_webhook_e2e.py: 5 warnings
+tests/test_api_auth_routes.py: 6 warnings
+tests/test_auth_routes.py: 375 warnings
+tests/test_middleware_license_gate.py: 8 warnings
+tests/test_phase_completion.py: 3 warnings
+tests/test_raas_integration.py: 15 warnings
+tests/vn/test_admin_scopes.py: 272 warnings
+tests/vn/test_audit_log.py: 68 warnings
+tests/vn/test_magic_link.py: 14 warnings
+tests/vn/test_misa_export.py: 85 warnings
+tests/vn/test_org_crud.py: 21 warnings
+tests/vn/test_org_id_full_surface.py: 289 warnings
+tests/vn/test_org_id_isolation.py: 408 warnings
+tests/vn/test_org_invite.py: 63 warnings
+tests/vn/test_polar_org_subscription.py: 20 warnings
+tests/vn/test_storage_parity.py: 272 warnings
+tests/vn/test_vietqr_webhook.py: 288 warnings
+tests/vn/test_vn_pilot_capacity.py: 51 warnings
+tests/vn/test_vn_pilot_outreach.py: 153 warnings
+tests/vn/test_vn_pilot_payment.py: 340 warnings
+tests/vn/test_vn_pilot_routes.py: 986 warnings
+  /opt/homebrew/lib/python3.14/site-packages/fastapi/routing.py:211: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    is_coroutine = asyncio.iscoroutinefunction(dependant.call)
+
+../../../../../../opt/homebrew/lib/python3.14/site-packages/starlette/_utils.py:42: 2 warnings
+tests/api/test_dashboard_app.py: 90 warnings
+tests/auth/test_middleware.py: 27 warnings
+tests/core/gateway/test_gateway_main.py: 90 warnings
+tests/core/test_health_crash.py: 4 warnings
+tests/e2e/test_1m_sop_flow.py: 19 warnings
+tests/e2e/test_critical_flows.py: 2 warnings
+tests/polymarket/test_api_server.py: 153 warnings
+tests/polymarket/test_billing.py: 15 warnings
+tests/polymarket/test_public_signals.py: 54 warnings
+tests/raas/test_marketplace_router.py: 45 warnings
+tests/raas/test_polar_webhook_e2e.py: 14 warnings
+tests/test_api_auth_routes.py: 18 warnings
+tests/test_auth_routes.py: 78 warnings
+tests/test_gateway_endpoints.py: 131 warnings
+tests/test_gateway_mcu_deduct.py: 16 warnings
+tests/test_middleware_license_gate.py: 23 warnings
+tests/test_raas_integration.py: 9 warnings
+tests/vn/test_admin_scopes.py: 61 warnings
+tests/vn/test_audit_log.py: 18 warnings
+tests/vn/test_magic_link.py: 42 warnings
+tests/vn/test_misa_export.py: 12 warnings
+tests/vn/test_org_crud.py: 10 warnings
+tests/vn/test_org_id_full_surface.py: 89 warnings
+tests/vn/test_org_id_isolation.py: 131 warnings
+tests/vn/test_org_invite.py: 26 warnings
+tests/vn/test_polar_org_subscription.py: 26 warnings
+tests/vn/test_storage_parity.py: 72 warnings
+tests/vn/test_vietqr_webhook.py: 63 warnings
+tests/vn/test_vn_pilot_capacity.py: 121 warnings
+tests/vn/test_vn_pilot_outreach.py: 38 warnings
+tests/vn/test_vn_pilot_payment.py: 46 warnings
+tests/vn/test_vn_pilot_routes.py: 262 warnings
+  /opt/homebrew/lib/python3.14/site-packages/starlette/_utils.py:42: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    return asyncio.iscoroutinefunction(obj) or (
+
+../../../../../../opt/homebrew/lib/python3.14/site-packages/starlette/_utils.py:43: 2 warnings
+tests/api/test_dashboard_app.py: 37 warnings
+tests/auth/test_middleware.py: 15 warnings
+tests/core/gateway/test_gateway_main.py: 37 warnings
+tests/core/test_health_crash.py: 1 warning
+tests/e2e/test_critical_flows.py: 1 warning
+tests/polymarket/test_api_server.py: 17 warnings
+tests/polymarket/test_billing.py: 6 warnings
+tests/polymarket/test_public_signals.py: 6 warnings
+tests/raas/test_marketplace_router.py: 19 warnings
+tests/raas/test_polar_webhook_e2e.py: 5 warnings
+tests/test_api_auth_routes.py: 6 warnings
+tests/test_auth_routes.py: 34 warnings
+tests/test_gateway_endpoints.py: 46 warnings
+tests/test_middleware_license_gate.py: 8 warnings
+tests/test_raas_integration.py: 3 warnings
+tests/vn/test_admin_scopes.py: 16 warnings
+tests/vn/test_audit_log.py: 4 warnings
+tests/vn/test_magic_link.py: 20 warnings
+tests/vn/test_misa_export.py: 5 warnings
+tests/vn/test_org_crud.py: 3 warnings
+tests/vn/test_org_id_full_surface.py: 17 warnings
+tests/vn/test_org_id_isolation.py: 24 warnings
+tests/vn/test_org_invite.py: 9 warnings
+tests/vn/test_polar_org_subscription.py: 10 warnings
+tests/vn/test_storage_parity.py: 16 warnings
+tests/vn/test_vietqr_webhook.py: 16 warnings
+tests/vn/test_vn_pilot_capacity.py: 3 warnings
+tests/vn/test_vn_pilot_outreach.py: 9 warnings
+tests/vn/test_vn_pilot_payment.py: 20 warnings
+tests/vn/test_vn_pilot_routes.py: 58 warnings
+  /opt/homebrew/lib/python3.14/site-packages/starlette/_utils.py:43: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    callable(obj) and asyncio.iscoroutinefunction(obj.__call__)
+
+src/api/graph_router.py:323
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/api/graph_router.py:323: DeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+    direction: str = Query("both", regex="^(incoming|outgoing|both)$"),
+
+src/api/graph_router.py:371
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/api/graph_router.py:371: DeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+    status: str = Query(..., regex="^(active|satisfied|abandoned|expired)$"),
+
+src/api/graph_router.py:476
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/api/graph_router.py:476: DeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+    status: str = Query(..., regex="^(pending|approved|executed|rejected|cancelled)$"),
+
+src/seed/agents/tester.py:12
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/seed/agents/tester.py:12: PytestCollectionWarning: cannot collect test class 'TesterAgent' because it has a __init__ constructor (from: tests/seed/test_seed_agents_dev_tester.py)
+    class TesterAgent(BaseAgent):
+
+tests/cli/test_update_checker.py::TestUpdateCheckerWithMockGateway::test_check_version_handles_gateway_timeout
+  /opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py:2042: RuntimeWarning: coroutine 'TestUpdateCheckerWithMockGateway.test_check_version_handles_gateway_timeout.<locals>.timeout_side_effect' was never awaited
+    handle = self._ready.popleft()
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/cli/test_usage_commands.py::TestShowUsage::test_show_usage_success
+tests/cli/test_usage_commands.py::TestShowUsage::test_show_usage_verbose
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/cli/usage_tracker.py:181: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/cli/test_usage_commands.py::TestCalculateOverage::test_overage_from_gateway
+tests/cli/test_usage_commands.py::TestCalculateOverage::test_overage_estimate
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/cli/usage_commands.py:304: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/graph/test_graph_service.py: 24 warnings
+  /opt/homebrew/lib/python3.14/site-packages/pydantic/main.py:263: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+tests/integration/test_refactored.py::test_ai_wingman
+  /opt/homebrew/lib/python3.14/site-packages/_pytest/python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but tests/integration/test_refactored.py::test_ai_wingman returned <class 'bool'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/integration/test_refactored.py::test_client_portal
+  /opt/homebrew/lib/python3.14/site-packages/_pytest/python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but tests/integration/test_refactored.py::test_client_portal returned <class 'bool'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/integration/test_refactored.py::test_analytics
+  /opt/homebrew/lib/python3.14/site-packages/_pytest/python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but tests/integration/test_refactored.py::test_analytics returned <class 'bool'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/integration/test_services.py::test_service_imports
+  /opt/homebrew/lib/python3.14/site-packages/_pytest/python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but tests/integration/test_services.py::test_service_imports returned <class 'bool'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/integration/test_services.py::test_repository_imports
+  /opt/homebrew/lib/python3.14/site-packages/_pytest/python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but tests/integration/test_services.py::test_repository_imports returned <class 'bool'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/integration/test_services.py::test_presenter_imports
+  /opt/homebrew/lib/python3.14/site-packages/_pytest/python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but tests/integration/test_services.py::test_presenter_imports returned <class 'bool'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/integration/test_services.py::test_basic_functionality
+  /opt/homebrew/lib/python3.14/site-packages/_pytest/python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but tests/integration/test_services.py::test_basic_functionality returned <class 'bool'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+tests/polymarket/test_api_server.py::TestHealthCheck::test_health_no_auth
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/api_server.py:186: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    timestamp=datetime.utcnow().isoformat(),
+
+tests/polymarket/test_api_server.py: 1 warning
+tests/polymarket/test_prediction_executor.py: 9 warnings
+tests/polymarket/test_risk_manager.py: 17 warnings
+tests/polymarket/test_trading_pipeline.py: 7 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/risk_manager.py:46: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    date: str = field(default_factory=lambda: datetime.utcnow().strftime("%Y-%m-%d"))
+
+tests/polymarket/test_api_server.py: 1 warning
+tests/polymarket/test_position_tracker.py: 18 warnings
+tests/polymarket/test_prediction_executor.py: 9 warnings
+tests/polymarket/test_trading_pipeline.py: 7 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/position_tracker.py:50: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    self._daily_date: str = datetime.utcnow().strftime("%Y-%m-%d")
+
+tests/polymarket/test_billing.py: 10 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/billing.py:121: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    created_at=datetime.utcnow().isoformat(),
+
+tests/polymarket/test_billing.py::TestBillingDB::test_cancel_subscription
+tests/polymarket/test_billing.py::TestWebhookEndpoint::test_subscription_cancelled
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/billing.py:150: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    grace_until = (datetime.utcnow() + timedelta(days=grace_days)).isoformat()
+
+tests/polymarket/test_clob_client.py: 6 warnings
+tests/polymarket/test_order_manager.py: 11 warnings
+tests/polymarket/test_prediction_executor.py: 7 warnings
+tests/polymarket/test_trading_pipeline.py: 2 warnings
+  <string>:10: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/polymarket/test_clob_client.py: 1 warning
+tests/polymarket/test_position_tracker.py: 20 warnings
+tests/polymarket/test_prediction_executor.py: 7 warnings
+tests/polymarket/test_trading_pipeline.py: 2 warnings
+  <string>:9: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/polymarket/test_copy_trading.py: 12 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/copy_trading.py:248: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow().isoformat()
+
+tests/polymarket/test_copy_trading.py::TestCopySubscriptions::test_pause_resume
+tests/polymarket/test_copy_trading.py::TestTradeReplication::test_paused_blocks_replication
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/copy_trading.py:279: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow().isoformat()
+
+tests/polymarket/test_copy_trading.py::TestTradeReplication::test_replicate_trade
+tests/polymarket/test_copy_trading.py::TestTradeReplication::test_capital_limit_respected
+tests/polymarket/test_copy_trading.py::TestTradeReplication::test_capital_limit_respected
+tests/polymarket/test_copy_trading.py::TestTradeReplication::test_no_capital_returns_none
+tests/polymarket/test_copy_trading.py::TestTradeReplication::test_resolve_trade
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/copy_trading.py:384: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow().isoformat()
+
+tests/polymarket/test_funding_rate_arb.py: 10 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/tests/polymarket/test_funding_rate_arb.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    next_funding_time=datetime.utcnow() + timedelta(hours=8),
+
+tests/polymarket/test_funding_rate_arb.py: 10 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/tests/polymarket/test_funding_rate_arb.py:26: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    timestamp=datetime.utcnow(),
+
+tests/polymarket/test_kalshi_client.py::TestKalshiClient::test_to_unified_markets
+tests/polymarket/test_kalshi_client.py::TestKalshiMarketConversion::test_to_market
+tests/polymarket/test_kalshi_client.py::TestCrossMarketArbitrage::test_finds_opportunity
+tests/polymarket/test_kalshi_client.py::TestCrossMarketArbitrage::test_no_opportunity_small_spread
+tests/polymarket/test_kalshi_client.py::TestCrossMarketArbitrage::test_no_match_different_questions
+tests/polymarket/test_kalshi_client.py::TestCrossMarketArbitrage::test_reverse_direction
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/tests/polymarket/test_kalshi_client.py:28: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    end_date=datetime.utcnow() + timedelta(days=14),
+
+tests/polymarket/test_kalshi_client.py::TestCrossMarketArbitrage::test_finds_opportunity
+tests/polymarket/test_kalshi_client.py::TestCrossMarketArbitrage::test_no_opportunity_small_spread
+tests/polymarket/test_kalshi_client.py::TestCrossMarketArbitrage::test_no_match_different_questions
+tests/polymarket/test_kalshi_client.py::TestCrossMarketArbitrage::test_reverse_direction
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/tests/polymarket/test_kalshi_client.py:41: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    end_date=datetime.utcnow() + timedelta(days=14),
+
+tests/polymarket/test_kelly_sizing.py: 14 warnings
+tests/polymarket/test_prediction_calibration.py: 7 warnings
+tests/polymarket/test_prediction_executor.py: 10 warnings
+tests/polymarket/test_risk_manager.py: 16 warnings
+tests/polymarket/test_trading_pipeline.py: 2 warnings
+  <string>:12: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/polymarket/test_market_scanner.py: 25 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/tests/polymarket/test_market_scanner.py:28: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    end_date=datetime.utcnow() + timedelta(days=days_ahead),
+
+tests/polymarket/test_market_scanner.py: 20 warnings
+tests/polymarket/test_prediction_calibration.py: 2 warnings
+tests/polymarket/test_trading_pipeline.py: 2 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/types.py:57: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    delta = self.end_date - datetime.utcnow()
+
+tests/polymarket/test_order_manager.py: 6 warnings
+tests/polymarket/test_prediction_executor.py: 7 warnings
+tests/polymarket/test_trading_pipeline.py: 2 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/order_manager.py:80: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    order.filled_at = datetime.utcnow()
+
+tests/polymarket/test_order_manager.py::TestMarkFilled::test_mark_filled_moves_to_filled
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/order_manager.py:101: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    order.filled_at = datetime.utcnow()
+
+tests/polymarket/test_order_manager.py::TestMarkCancelled::test_cancel_open_order
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/order_manager.py:114: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    order.cancelled_at = datetime.utcnow()
+
+tests/polymarket/test_position_tracker.py: 15 warnings
+tests/polymarket/test_prediction_executor.py: 2 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/position_tracker.py:92: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+
+tests/polymarket/test_position_tracker.py::TestPortfolioState::test_snapshot
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/position_tracker.py:146: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+
+tests/polymarket/test_prediction_calibration.py::TestEnsembleEstimator::test_returns_prediction
+tests/polymarket/test_prediction_calibration.py::TestEnsembleEstimator::test_ensemble_agreement_calculated
+tests/polymarket/test_prediction_calibration.py::TestEnsembleEstimator::test_edge_calculated
+tests/polymarket/test_prediction_calibration.py::TestEnsembleEstimator::test_custom_vote_count
+tests/polymarket/test_prediction_calibration.py::TestPredictionLoop::test_run_cycle_with_markets
+tests/polymarket/test_prediction_calibration.py::TestPredictionLoop::test_on_signal_callback
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/tests/polymarket/test_prediction_calibration.py:26: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    end_date=datetime.utcnow() + timedelta(days=14),
+
+tests/polymarket/test_prediction_executor.py: 9 warnings
+tests/polymarket/test_risk_manager.py: 16 warnings
+tests/polymarket/test_trading_pipeline.py: 2 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/risk_manager.py:50: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+
+tests/polymarket/test_public_signals.py: 11 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/public_signals.py:67: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "timestamp": datetime.utcnow().isoformat(),
+
+tests/polymarket/test_public_signals.py: 31 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/public_signals.py:84: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "updated_at": datetime.utcnow().isoformat(),
+
+tests/polymarket/test_public_signals.py::TestPublicCalibration::test_returns_calibration
+tests/polymarket/test_public_signals.py::TestPublicCalibration::test_empty_calibration
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/public_signals.py:100: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "updated_at": datetime.utcnow().isoformat(),
+
+tests/polymarket/test_referral_tracker.py: 18 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/referral_tracker.py:106: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow().isoformat()
+
+tests/polymarket/test_referral_tracker.py: 12 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/referral_tracker.py:186: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow().isoformat()
+
+tests/polymarket/test_strategy_marketplace.py: 12 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/strategy_marketplace.py:156: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow().isoformat()
+
+tests/polymarket/test_strategy_marketplace.py::TestReviews::test_add_review
+tests/polymarket/test_strategy_marketplace.py::TestReviews::test_average_rating_updated
+tests/polymarket/test_strategy_marketplace.py::TestReviews::test_average_rating_updated
+tests/polymarket/test_strategy_marketplace.py::TestReviews::test_get_reviews
+tests/polymarket/test_strategy_marketplace.py::TestReviews::test_get_reviews
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/polymarket/strategy_marketplace.py:289: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow().isoformat()
+
+tests/polymarket/test_trading_pipeline.py::TestPipelineCycle::test_cycle_with_markets
+tests/polymarket/test_trading_pipeline.py::TestPipelineStatus::test_status_after_cycle
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/tests/polymarket/test_trading_pipeline.py:19: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    end_date=datetime.utcnow() + timedelta(days=14),
+
+tests/test_auth_routes.py::TestStripeWebhookEndpoint::test_webhook_valid_signature
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/auth/routes.py:452: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    if result.get("success"):
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/test_auth_routes.py::TestStripeWebhookEndpoint::test_webhook_valid_signature
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/auth/routes.py:472: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    return JSONResponse(
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/test_autonomous.py::TestProcessGoalForbidden::test_forbidden_goal_blocked
+  /opt/homebrew/lib/python3.14/site-packages/google/genai/types.py:42: DeprecationWarning: '_UnionGenericAlias' is deprecated and slated for removal in Python 3.17
+    VersionedUnionType = Union[builtin_types.UnionType, _UnionGenericAlias]
+
+tests/test_governance_cli.py::TestPropose::test_submit_moves_to_submitted
+tests/test_governance_cli.py::TestCLI::test_governance_propose_json
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_passes_simple_majority
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_fails_all_no
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_json_output
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/governance/amendment.py:337: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    amendment.submitted_at = datetime.utcnow()
+
+tests/test_governance_cli.py::TestPropose::test_submit_moves_to_submitted
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/governance/proposals.py:262: RuntimeWarning: coroutine 'GraphRepository.create_edge' was never awaited
+    _graph_repo.create_edge(
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_passes_simple_majority
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_fails_all_no
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/governance/amendment.py:363: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    amendment.review_started_at = datetime.utcnow()
+
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_passes_simple_majority
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_fails_all_no
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/governance/amendment.py:400: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    amendment.review_completed_at = datetime.utcnow()
+
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_passes_simple_majority
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_fails_all_no
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/governance/amendment.py:404: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    amendment.deliberation_started_at = datetime.utcnow()
+
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_passes_simple_majority
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_fails_all_no
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/governance/amendment.py:493: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    amendment.monitoring_started_at = datetime.utcnow()
+
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_passes_simple_majority
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_fails_all_no
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/governance/amendment.py:528: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    monitoring_duration = datetime.utcnow() - amendment.monitoring_started_at
+
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_passes_simple_majority
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_fails_all_no
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/governance/amendment.py:545: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    amendment.voting_started_at = datetime.utcnow()
+
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_passes_simple_majority
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_passes_simple_majority
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_passes_simple_majority
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_fails_all_no
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_fails_all_no
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/governance/voting.py:285: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    timestamp=timestamp or datetime.utcnow(),
+
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_passes_simple_majority
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_fails_all_no
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/governance/voting.py:368: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    timestamp=datetime.utcnow(),
+
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_passes_simple_majority
+tests/test_governance_cli.py::TestVoteTally::test_vote_tally_fails_all_no
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/governance/amendment.py:578: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    amendment.voting_ended_at = datetime.utcnow()
+
+tests/test_mcu_billing.py::TestMCUCosts::test_complex_cost
+  /opt/homebrew/lib/python3.14/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored while finalizing file <_io.TextIOWrapper name=17 encoding='UTF-8'>: None
+  
+  BrokenPipeError: [Errno 32] Broken pipe
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "/Users/macbook/mekong-cli/.claude/worktrees/super-command-2/tests/conftest.py", line 131, in _truncate_credit_tables
+      conn.execute("DELETE FROM credit_accounts")
+      ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  BrokenPipeError: [Errno 32] Broken pipe
+  
+  
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/test_middleware_license_gate.py::TestMissingOrInvalidToken::test_invalid_token_signature_401
+  /opt/homebrew/lib/python3.14/site-packages/jwt/api_jwt.py:147: InsecureKeyLengthWarning: The HMAC key is 12 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+    return self._jws.encode(
+
+tests/test_middleware_license_gate.py::TestMissingOrInvalidToken::test_invalid_token_signature_401
+tests/test_middleware_license_gate.py::TestMissingOrInvalidToken::test_expired_token_401
+tests/test_middleware_license_gate.py::TestMissingOrInvalidToken::test_malformed_claims_401
+tests/test_middleware_license_gate.py::TestLicenseStateChecks::test_inactive_license_402
+tests/test_middleware_license_gate.py::TestLicenseStateChecks::test_unknown_license_402
+tests/test_middleware_license_gate.py::TestLicenseStateChecks::test_zero_credits_402
+tests/test_middleware_license_gate.py::TestLicenseStateChecks::test_success_path_returns_tenant
+  /opt/homebrew/lib/python3.14/site-packages/jwt/api_jwt.py:365: InsecureKeyLengthWarning: The HMAC key is 16 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+    decoded = self.decode_complete(
+
+tests/test_middleware_license_gate.py::TestMissingOrInvalidToken::test_expired_token_401
+tests/test_middleware_license_gate.py::TestMissingOrInvalidToken::test_malformed_claims_401
+tests/test_middleware_license_gate.py::TestLicenseStateChecks::test_inactive_license_402
+tests/test_middleware_license_gate.py::TestLicenseStateChecks::test_unknown_license_402
+tests/test_middleware_license_gate.py::TestLicenseStateChecks::test_zero_credits_402
+tests/test_middleware_license_gate.py::TestLicenseStateChecks::test_success_path_returns_tenant
+  /opt/homebrew/lib/python3.14/site-packages/jwt/api_jwt.py:147: InsecureKeyLengthWarning: The HMAC key is 16 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+    return self._jws.encode(
+
+tests/test_phase3_repository.py::TestLicenseKeyGenerator::test_generate_key_trial_with_days
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/engine/license/license_generator.py:66: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    expiry = (datetime.utcnow() + timedelta(days=days)).isoformat()
+
+tests/test_rate_limit_observability.py: 20 warnings
+  /Users/macbook/mekong-cli/.claude/worktrees/super-command-2/src/telemetry/rate_limit_metrics.py:48: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+
+tests/test_session_manager.py: 21 warnings
+  /opt/homebrew/lib/python3.14/site-packages/jwt/api_jwt.py:147: InsecureKeyLengthWarning: The HMAC key is 11 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+    return self._jws.encode(
+
+tests/test_session_manager.py: 15 warnings
+  /opt/homebrew/lib/python3.14/site-packages/jwt/api_jwt.py:365: InsecureKeyLengthWarning: The HMAC key is 11 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+    decoded = self.decode_complete(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/e2e/antigravity_e2e/test_f1_routing.py::test_f1_t1_01_heuristic_local_routing
+FAILED tests/e2e/antigravity_e2e/test_f1_routing.py::test_f1_t1_02_heuristic_cloud_routing
+FAILED tests/e2e/antigravity_e2e/test_f1_routing.py::test_f1_t1_03_token_budget_routing
+FAILED tests/e2e/antigravity_e2e/test_f1_routing.py::test_f1_t1_04_context_compaction_basic
+FAILED tests/e2e/antigravity_e2e/test_f1_routing.py::test_f1_t1_05_compact_with_comments_retained
+FAILED tests/e2e/antigravity_e2e/test_f1_routing.py::test_f1_t2_01_empty_task_routing
+FAILED tests/e2e/antigravity_e2e/test_f1_routing.py::test_f1_t2_02_conflicting_keywords_routing
+FAILED tests/e2e/antigravity_e2e/test_f1_routing.py::test_f1_t2_03_malformed_source_compaction
+FAILED tests/e2e/antigravity_e2e/test_f1_routing.py::test_f1_t2_04_extreme_large_file_compaction
+FAILED tests/e2e/antigravity_e2e/test_f1_routing.py::test_f1_t2_05_api_key_absence_fallback
+FAILED tests/e2e/antigravity_e2e/test_f1_routing.py::test_f1_f5_routing_to_failed_local_inference_escalation
+FAILED tests/e2e/antigravity_e2e/test_f1_routing.py::test_r1_full_hybrid_routing_compaction_pipeline
+FAILED tests/e2e/antigravity_e2e/test_f2_indexing.py::test_f2_t1_01_sqlite_schema_initialization
+FAILED tests/e2e/antigravity_e2e/test_f2_indexing.py::test_f2_t1_02_ast_indexing_python_file
+FAILED tests/e2e/antigravity_e2e/test_f2_indexing.py::test_f2_t1_03_symbol_query_by_name
+FAILED tests/e2e/antigravity_e2e/test_f2_indexing.py::test_f2_t1_04_session_history_logging
+FAILED tests/e2e/antigravity_e2e/test_f2_indexing.py::test_f2_t1_05_kv_cache_registry_update
+FAILED tests/e2e/antigravity_e2e/test_f2_indexing.py::test_f2_t2_01_missing_db_directory_auto_create
+FAILED tests/e2e/antigravity_e2e/test_f2_indexing.py::test_f2_t2_02_symbol_indexing_syntax_error_file
+FAILED tests/e2e/antigravity_e2e/test_f2_indexing.py::test_f2_t2_03_query_non_existent_symbol
+FAILED tests/e2e/antigravity_e2e/test_f2_indexing.py::test_f2_t2_04_db_lock_concurrency_handling
+FAILED tests/e2e/antigravity_e2e/test_f2_indexing.py::test_f2_t2_05_database_purge_and_vacuum
+FAILED tests/e2e/antigravity_e2e/test_f2_indexing.py::test_f2_f3_indexer_update_on_patch_execution
+FAILED tests/e2e/antigravity_e2e/test_f2_indexing.py::test_r2_incremental_repo_indexing_perf
+FAILED tests/e2e/antigravity_e2e/test_f3_agent_loop.py::test_f3_t1_01_observe_state_change
+FAILED tests/e2e/antigravity_e2e/test_f3_agent_loop.py::test_f3_t1_02_retrieve_relevant_symbols
+FAILED tests/e2e/antigravity_e2e/test_f3_agent_loop.py::test_f3_t1_03_patch_generation_application
+FAILED tests/e2e/antigravity_e2e/test_f3_agent_loop.py::test_f3_t1_04_interactive_approval_confirm
+FAILED tests/e2e/antigravity_e2e/test_f3_agent_loop.py::test_f3_t1_05_validation_success_terminates_loop
+FAILED tests/e2e/antigravity_e2e/test_f3_agent_loop.py::test_f3_t2_01_interactive_approval_reject
+FAILED tests/e2e/antigravity_e2e/test_f3_agent_loop.py::test_f3_t2_02_validation_failed_initiates_rollback
+FAILED tests/e2e/antigravity_e2e/test_f3_agent_loop.py::test_f3_t2_03_maximum_iteration_limit_exhausted
+FAILED tests/e2e/antigravity_e2e/test_f3_agent_loop.py::test_f3_t2_04_malformed_patch_syntax_handling
+FAILED tests/e2e/antigravity_e2e/test_f3_agent_loop.py::test_f3_t2_05_non_interactive_approval_bypass
+FAILED tests/e2e/antigravity_e2e/test_f3_agent_loop.py::test_f1_f3_loop_context_compactor_integration
+FAILED tests/e2e/antigravity_e2e/test_f3_agent_loop.py::test_r3_end_to_end_bug_fix_cycle
+FAILED tests/e2e/antigravity_e2e/test_f4_tools.py::test_f4_t1_01_shell_command_execution
+FAILED tests/e2e/antigravity_e2e/test_f4_tools.py::test_f4_t1_02_stdout_real_time_streaming
+FAILED tests/e2e/antigravity_e2e/test_f4_tools.py::test_f4_t1_03_tool_timeout_enforcement
+FAILED tests/e2e/antigravity_e2e/test_f4_tools.py::test_f4_t1_04_process_cancellation_sigint
+FAILED tests/e2e/antigravity_e2e/test_f4_tools.py::test_f4_t1_05_ripgrep_tool_search
+FAILED tests/e2e/antigravity_e2e/test_f4_tools.py::test_f4_t2_01_command_not_found_handling
+FAILED tests/e2e/antigravity_e2e/test_f4_tools.py::test_f4_t2_02_extremely_long_stdout_buffer_handling
+FAILED tests/e2e/antigravity_e2e/test_f4_tools.py::test_f4_t2_03_command_with_non_utf8_binary_output
+FAILED tests/e2e/antigravity_e2e/test_f4_tools.py::test_f4_t2_04_sandbox_permissions_violation
+FAILED tests/e2e/antigravity_e2e/test_f4_tools.py::test_f4_t2_05_environment_variables_isolation
+FAILED tests/e2e/antigravity_e2e/test_f4_tools.py::test_f2_f4_db_query_during_file_indexing
+FAILED tests/e2e/antigravity_e2e/test_f4_tools.py::test_r4_multi_process_concurrency_stress
+FAILED tests/e2e/antigravity_e2e/test_f5_inference.py::test_f5_t1_03_llama_server_status_health
+FAILED tests/e2e/antigravity_e2e/test_f5_inference.py::test_f5_t2_03_insufficient_vram_warning
+FAILED tests/e2e/antigravity_e2e/test_f5_inference.py::test_f5_t2_04_claude_api_rate_limit_retry
+FAILED tests/e2e/antigravity_e2e/test_f5_inference.py::test_f5_t2_05_llama_server_crash_recovery
+FAILED tests/e2e/antigravity_e2e/test_f5_inference.py::test_f3_f4_tool_timeout_during_agent_validation
+FAILED tests/e2e/antigravity_e2e/test_f5_inference.py::test_r5_agent_loop_recovery_from_compilation_error
+FAILED tests/smoke/test_deployed_services.py::test_api_health - urllib.error....
+FAILED tests/smoke/test_deployed_services.py::test_api_health_json_response
+FAILED tests/smoke/test_deployed_services.py::test_dashboard_homepage - urlli...
+FAILED tests/smoke/test_deployed_services.py::test_dashboard_assets - urllib....
+FAILED tests/test_agent_base.py::TestPublicExports::test_all_contains_expected_names
+FAILED tests/test_agent_registry.py::TestAgentRegistry::test_register_invalid_agent_raises_error
+FAILED tests/test_api_auth_routes.py::TestLoginEndpoint::test_inactive_license_returns_402
+FAILED tests/test_api_auth_routes.py::TestLoginEndpoint::test_success_returns_jwt
+FAILED tests/test_api_auth_routes.py::TestLoginEndpoint::test_missing_tenant_id_returns_500
+FAILED tests/test_api_auth_routes.py::TestLoginEndpoint::test_token_iat_recent
+FAILED tests/test_auth_routes.py::TestProtectedRoutes::test_protected_route_enforces_permission
+FAILED tests/test_autonomous_loop.py::TestAutonomousLoop::test_full_loop_returns_result
+FAILED tests/test_binh_phap_dag_integration.py::TestFullDagEndToEnd::test_all_nodes_executed
+FAILED tests/test_binh_phap_dag_integration.py::TestFullDagEndToEnd::test_execution_order_matches_dependencies
+FAILED tests/test_binh_phap_dag_integration.py::TestFullDagEndToEnd::test_node_1_is_first
+FAILED tests/test_binh_phap_dag_integration.py::TestRecoveryFlowAtNode2::test_retry_on_transient_timeout
+FAILED tests/test_binh_phap_dag_integration.py::TestRecoveryFlowAtNode2::test_fallback_after_retry_exhausted
+FAILED tests/test_binh_phap_dag_integration.py::TestRecoveryFlowAtNode2::test_escalate_halts_retry_loop
+FAILED tests/test_binh_phap_dag_integration.py::TestRecoveryFlowAtNode2::test_abort_stops_pipeline
+FAILED tests/test_binh_phap_dispatcher.py::TestEscalationRouting::test_resolve_local_mlx
+FAILED tests/test_binh_phap_dispatcher.py::TestEscalationRouting::test_resolve_cloud_sonnet
+FAILED tests/test_binh_phap_dispatcher.py::TestEscalationRouting::test_resolve_cloud_opus
+FAILED tests/test_binh_phap_dispatcher.py::TestEscalationRouting::test_resolve_unknown_defaults_to_local
+FAILED tests/test_binh_phap_dispatcher.py::TestEscalationRouting::test_get_llm_for_command
+FAILED tests/test_binh_phap_dispatcher.py::TestEscalationRouting::test_escalation_provider_configs_complete
+FAILED tests/test_command_fabric_adapters.py::test_command_fabric_exports_agent_cli_adapters
+FAILED tests/test_command_fabric_adapters.py::test_command_fabric_exports_ide_command_palette_adapters
+FAILED tests/test_command_fabric_adapters.py::test_command_fabric_exports_mcp_and_shell_adapters
+FAILED tests/test_command_fabric_adapters.py::test_command_fabric_cli_exports_adapter_json
+FAILED tests/test_command_fabric_adapters.py::test_command_fabric_cli_lists_supported_adapters
+FAILED tests/test_command_fabric_agent_cli_package.py::test_agent_cli_command_markdown_uses_catalog_metadata
+FAILED tests/test_command_fabric_agent_cli_package.py::test_agent_cli_package_materializes_markdown_commands
+FAILED tests/test_command_fabric_agent_cli_package.py::test_command_fabric_cli_materializes_agent_cli_package
+FAILED tests/test_command_fabric_agent_cli_package.py::test_command_fabric_cli_materializes_all_default_agent_cli_packages
+FAILED tests/test_command_fabric_catalog.py::test_command_fabric_catalog_reads_command_markdown
+FAILED tests/test_command_fabric_catalog.py::test_command_fabric_joins_optional_factory_contract
+FAILED tests/test_command_fabric_catalog.py::test_command_fabric_export_shape_is_stable
+FAILED tests/test_command_fabric_catalog.py::test_global_command_fabric_merges_mekong_and_claudekit_commands
+FAILED tests/test_command_fabric_catalog.py::test_command_fabric_cli_exports_json
+FAILED tests/test_command_fabric_catalog.py::test_command_fabric_cli_can_export_project_only_scope
+FAILED tests/test_command_fabric_catalog.py::test_command_fabric_does_not_overwrite_native_commands
+FAILED tests/test_command_fabric_catalog.py::test_catalog_only_command_does_not_self_recurse
+FAILED tests/test_command_fabric_catalog.py::test_command_pack_manifest_covers_root_surface
+FAILED tests/test_command_fabric_catalog.py::test_command_fabric_cli_exports_command_packs_json
+FAILED tests/test_command_fabric_contracts.py::test_generated_contract_has_deep_command_metadata
+FAILED tests/test_command_fabric_contracts.py::test_contract_coverage_is_complete_with_generated_contracts
+FAILED tests/test_command_fabric_contracts.py::test_materialize_command_contracts_writes_one_contract_per_command
+FAILED tests/test_command_fabric_contracts.py::test_command_fabric_cli_materializes_contracts
+FAILED tests/test_command_fabric_distribution.py::test_marketplace_manifest_covers_global_distribution_targets
+FAILED tests/test_command_fabric_distribution.py::test_command_fabric_cli_prints_target_matrix
+FAILED tests/test_command_fabric_distribution.py::test_command_fabric_target_matrix_stdout_is_json_for_scripts
+FAILED tests/test_command_fabric_distribution.py::test_command_fabric_cli_materializes_marketplace_metadata
+FAILED tests/test_command_fabric_eclipse_package.py::test_eclipse_plugin_xml_declares_commands_and_handlers
+FAILED tests/test_command_fabric_eclipse_package.py::test_eclipse_handler_runs_local_command
+FAILED tests/test_command_fabric_eclipse_package.py::test_eclipse_package_materializes_plugin_scaffold
+FAILED tests/test_command_fabric_eclipse_package.py::test_command_fabric_cli_materializes_eclipse_package
+FAILED tests/test_command_fabric_emacs_package.py::test_emacs_package_materializes_elisp_and_adapter_data
+FAILED tests/test_command_fabric_emacs_package.py::test_command_fabric_cli_materializes_emacs_package
+FAILED tests/test_command_fabric_helix_package.py::test_helix_config_contains_shell_bindings
+FAILED tests/test_command_fabric_helix_package.py::test_helix_package_materializes_runner_and_config
+FAILED tests/test_command_fabric_helix_package.py::test_command_fabric_cli_materializes_helix_package
+FAILED tests/test_command_fabric_ide_extensions.py::test_ide_extension_package_json_contributes_commands
+FAILED tests/test_command_fabric_ide_extensions.py::test_command_fabric_materializes_vscode_extension
+FAILED tests/test_command_fabric_ide_extensions.py::test_command_fabric_cli_materializes_cursor_extension
+FAILED tests/test_command_fabric_ide_extensions.py::test_command_fabric_cli_materializes_theia_extension
+FAILED tests/test_command_fabric_ide_extensions.py::test_jetbrains_plugin_xml_contributes_actions
+FAILED tests/test_command_fabric_ide_extensions.py::test_jetbrains_action_runs_command_in_ide_console
+FAILED tests/test_command_fabric_ide_extensions.py::test_command_fabric_cli_materializes_jetbrains_extension
+FAILED tests/test_command_fabric_lightweight_editor_packages.py::test_fleet_plugin_declares_commands
+FAILED tests/test_command_fabric_lightweight_editor_packages.py::test_nova_extension_registers_commands
+FAILED tests/test_command_fabric_lightweight_editor_packages.py::test_kakoune_rc_defines_commands
+FAILED tests/test_command_fabric_lightweight_editor_packages.py::test_lightweight_editor_packages_materialize_all_hosts
+FAILED tests/test_command_fabric_lightweight_editor_packages.py::test_command_fabric_cli_materializes_lightweight_editor_package
+FAILED tests/test_command_fabric_mcp_package.py::test_mcp_package_materializes_stdio_server
+FAILED tests/test_command_fabric_mcp_package.py::test_command_fabric_cli_materializes_mcp_package
+FAILED tests/test_command_fabric_native_install.py::test_native_install_write_copies_selected_host_packages
+FAILED tests/test_command_fabric_native_install.py::test_native_install_cli_defaults_to_dry_run
+FAILED tests/test_command_fabric_neovim_package.py::test_neovim_package_materializes_lua_plugin
+FAILED tests/test_command_fabric_neovim_package.py::test_command_fabric_cli_materializes_neovim_package
+FAILED tests/test_command_fabric_npm_package.py::test_npm_package_materializes_consumer_package
+FAILED tests/test_command_fabric_npm_package.py::test_command_fabric_cli_materializes_npm_package
+FAILED tests/test_command_fabric_package_build.py::test_package_build_verifier_checks_generated_ide_scaffolds
+FAILED tests/test_command_fabric_package_build.py::test_package_build_cli_verifies_bundle
+FAILED tests/test_command_fabric_package_managers.py::test_package_manager_metadata_materializes_global_cli_targets
+FAILED tests/test_command_fabric_package_managers.py::test_command_fabric_cli_materializes_package_manager_metadata
+FAILED tests/test_command_fabric_readiness.py::test_universal_readiness_audit_passes_for_project_scope
+FAILED tests/test_command_fabric_readiness.py::test_command_fabric_cli_runs_readiness_audit
+FAILED tests/test_command_fabric_release_bundle.py::test_release_bundle_materializes_all_portability_surfaces
+FAILED tests/test_command_fabric_release_bundle.py::test_release_bundle_cli_supports_host_selection
+FAILED tests/test_command_fabric_runtime.py::test_command_fabric_materializes_adapter_artifacts
+FAILED tests/test_command_fabric_runtime.py::test_command_fabric_cli_materializes_artifacts
+FAILED tests/test_command_fabric_runtime.py::test_command_fabric_runtime_lists_project_mcp_tools
+FAILED tests/test_command_fabric_runtime.py::test_command_fabric_runtime_catalog_only_command_does_not_recurse
+FAILED tests/test_command_fabric_runtime.py::test_command_fabric_runtime_can_invoke_native_command
+FAILED tests/test_command_fabric_runtime.py::test_mcp_server_exposes_command_fabric_handlers
+FAILED tests/test_command_fabric_shell_package.py::test_shell_completion_scripts_include_known_commands
+FAILED tests/test_command_fabric_shell_package.py::test_command_fabric_cli_materializes_shell_completion
+FAILED tests/test_command_fabric_sublime_package.py::test_sublime_package_materializes_plugin_and_adapter_data
+FAILED tests/test_command_fabric_sublime_package.py::test_command_fabric_cli_materializes_sublime_package
+FAILED tests/test_command_fabric_vim_package.py::test_vim_package_materializes_plugin
+FAILED tests/test_command_fabric_vim_package.py::test_command_fabric_cli_materializes_vim_package
+FAILED tests/test_command_fabric_visual_studio_package.py::test_visual_studio_package_entrypoint_contains_runner
+FAILED tests/test_command_fabric_visual_studio_package.py::test_visual_studio_package_materializes_vsix_scaffold
+FAILED tests/test_command_fabric_visual_studio_package.py::test_command_fabric_cli_materializes_visual_studio_package
+FAILED tests/test_command_fabric_workspace_templates.py::test_workspace_templates_materialize_cloud_ide_bootstrap
+FAILED tests/test_command_fabric_zed_package.py::test_zed_package_materializes_extension_scaffold
+FAILED tests/test_command_fabric_zed_package.py::test_command_fabric_cli_materializes_zed_package
+FAILED tests/test_command_sanitizer_security.py::TestCoreSanitizerDangerousCommands::test_curl_pipe_bash
+FAILED tests/test_command_sanitizer_security.py::TestCoreSanitizerDangerousCommands::test_wget_pipe_sh
+FAILED tests/test_command_sanitizer_security.py::TestCoreSanitizerDangerousCommands::test_nohup_backgrounding
+FAILED tests/test_command_sanitizer_security.py::TestCoreSanitizerInjectionAttempts::test_semicolon_injection
+FAILED tests/test_command_sanitizer_security.py::TestCoreSanitizerInjectionAttempts::test_pipe_or_injection
+FAILED tests/test_command_sanitizer_security.py::TestCoreSanitizerInjectionAttempts::test_pipe_to_command
+FAILED tests/test_command_sanitizer_security.py::TestCoreSanitizerInjectionAttempts::test_and_chain_injection
+FAILED tests/test_command_surface.py::test_default_command_surface_matches_root_cli
+FAILED tests/test_company_init_cli.py::TestInitCommand::test_creates_mekong_dir
+FAILED tests/test_company_init_cli.py::TestInitCommand::test_creates_12_files
+FAILED tests/test_company_init_cli.py::TestInitCommand::test_success_panel_contains_company_name
+FAILED tests/test_company_init_cli.py::TestInitCommand::test_creates_agent_md_files
+FAILED tests/test_company_init_cli.py::TestInitCommand::test_passes_with_base_dir_option
+FAILED tests/test_company_init_cli.py::TestInitConfirmAbort::test_confirm_no_aborts_init
+FAILED tests/test_company_init_cli.py::TestInitAlreadySetup::test_double_init_exits_nonzero
+FAILED tests/test_core_dna.py::test_core_dna_attestation_complete_for_default_manifest
+FAILED tests/test_core_dna_workflow.py::test_core_dna_workflow_runs_harness_eval
+FAILED tests/test_core_dna_workflow.py::test_core_dna_workflow_watches_doctrine_manifest
+FAILED tests/test_daemon_dispatch.py::TestTaskRouterLifecycle::test_complete_task_marks_completed
+FAILED tests/test_daemon_dispatch.py::TestTaskRouterLifecycle::test_fail_task_moves_to_dlq_after_max_retries
+FAILED tests/test_daemon_dispatch.py::TestTaskRouterLifecycle::test_get_stats_counts_correctly
+FAILED tests/test_daemon_dispatch.py::TestDispatcher::test_complete_task_frees_worker
+FAILED tests/test_e2e_pev.py::TestPEVE2E::test_orchestrator_records_memory - ...
+FAILED tests/test_e2e_pev.py::TestPEVE2E::test_orchestrator_records_metrics
+FAILED tests/test_e2e_pev.py::TestPEVE2E::test_orchestrator_runs_recipe_file
+FAILED tests/test_git_agent.py::TestGitAgent::test_execute_branch_list - Asse...
+FAILED tests/test_git_agent.py::TestGitAgent::test_execute_diff - AssertionEr...
+FAILED tests/test_git_agent.py::TestGitAgent::test_execute_log - AssertionErr...
+FAILED tests/test_git_agent.py::TestGitAgent::test_execute_status - Assertion...
+FAILED tests/test_harness_eval.py::test_solo_ceo_harness_evals_pass - assert ...
+FAILED tests/test_hermes_learning_loop.py::test_default_learning_loop_validates
+FAILED tests/test_llm_prompts.py::TestLLMRendering::test_llm_render_injects_company_name
+FAILED tests/test_llm_prompts.py::TestLLMRendering::test_llm_render_via_generate_config_files
+FAILED tests/test_llm_prompts.py::TestLLMRendering::test_llm_env_var_triggers_rendering
+FAILED tests/test_llm_prompts.py::TestLLMRendering::test_env_key_detection - ...
+FAILED tests/test_mcp_server_integration.py::test_initialize_handshake - asse...
+FAILED tests/test_mcp_server_integration.py::test_tools_list_returns_25_tools
+FAILED tests/test_mcp_server_integration.py::test_cc_ssj_diagnostics - Broken...
+FAILED tests/test_mcp_server_integration.py::test_cc_tasks_create_list_done
+FAILED tests/test_model_selector.py::TestDetectProvider::test_google - Assert...
+FAILED tests/test_model_selector.py::TestLookupMatrix::test_exact_match - Ass...
+FAILED tests/test_model_selector.py::TestLookupMatrix::test_sensitive_cto - A...
+FAILED tests/test_model_selector.py::TestLookupMatrix::test_wildcard_sensitivity
+FAILED tests/test_model_selector.py::TestLookupMatrix::test_complex_cto_public
+FAILED tests/test_model_selector.py::TestLookupMatrix::test_cs_simple - Asser...
+FAILED tests/test_model_selector.py::TestSelectModel::test_basic_selection - ...
+FAILED tests/test_model_selector.py::TestSelectModel::test_starter_prefers_local_non_critical
+FAILED tests/test_model_selector.py::TestSelectModel::test_missing_api_key_falls_back_to_local
+FAILED tests/test_nl_routing.py::TestMatches::test_trailing_star_substring_hit
+FAILED tests/test_nl_routing.py::TestMatches::test_empty_pattern_returns_false
+FAILED tests/test_nl_routing.py::TestMatches::test_empty_text_returns_false
+FAILED tests/test_nl_routing.py::TestMatches::test_whitespace_normalization
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_none_returns_empty - A...
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_devops_ci_deploy
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_devops_ci_run - As...
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_devops_ci_debugger
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_devops_cicd_deploy_vi
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_devops_cicd_deploy_en
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_devops_infra_provision_vi
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_devops_infra_provision_en
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_database_backend_db_task
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_database_db_migrate_en
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_database_db_seed_vi
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_database_db_query_vi
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_api_backend_api_build
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_api_api_design - A...
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_api_api_test - Ass...
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_monitoring - Asser...
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_metrics - Assertio...
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_logs_check_en - As...
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_metrics_dashboard_vi
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_testing_e2e_en - A...
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_testing_load_test_vi
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_security_vuln_scan_en
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_security_secret_rotate_en
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_research - Asserti...
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_scout - AssertionE...
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_new_analyze - Assertio...
+FAILED tests/test_nl_routing.py::TestMatchRoutes::test_duplicate_command_skipped_second_pass
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_empty_returns_empty - T...
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_exact_phrase_scores_one
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_prefix_scores_point_eight
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_substring_scores_point_five
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_max_results_default_five
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_max_results_respected
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_sorted_descending - Typ...
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_returns_command_match_objects
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_mixed_vi_en_input - Typ...
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_special_chars_input - T...
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_very_long_input_clamped
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_very_long_input_no_match
+FAILED tests/test_nl_routing.py::TestFuzzyMatch::test_empty_long_input_returns_empty
+FAILED tests/test_nl_routing.py::TestPublicApi::test_get_all_commands_returns_tuple
+FAILED tests/test_nl_routing.py::TestPublicApi::test_minimum_command_count - ...
+FAILED tests/test_nl_routing.py::TestRouteAskBackwardCompat::test_empty_returns_none
+FAILED tests/test_orchestrator_integration.py::test_run_from_recipe_success
+FAILED tests/test_orchestrator_integration.py::test_run_from_recipe_empty - O...
+FAILED tests/test_orchestrator_integration.py::test_step_result_structure - O...
+FAILED tests/test_rbac.py::TestRequirePermissionDecorator::test_require_permission_denies_missing_permission
+FAILED tests/test_rbac.py::TestRequirePermissionDecorator::test_require_permission_denies_forbidden_permission
+FAILED tests/test_rbac.py::TestRequirePermissionDecorator::test_require_permission_denies_when_not_authenticated
+FAILED tests/test_rbac.py::TestRequirePermissionDecorator::test_require_permission_denies_when_no_role
+FAILED tests/test_rbac.py::TestGetCurrentUser::test_get_current_user_returns_info_when_authenticated
+FAILED tests/test_rbac.py::TestGetCurrentUser::test_get_current_user_returns_none_when_no_id
+FAILED tests/test_rbac.py::TestGetCurrentUser::test_get_current_user_includes_all_fields
+FAILED tests/test_rbac.py::TestDecoratorsRequireRequest::test_require_permission_raises_without_request
+FAILED tests/test_self_healing.py::TestSelfHealing::test_self_heal_skipped_when_no_llm
+FAILED tests/test_self_healing.py::TestSelfHealing::test_suggest_correction_called_on_failure
+FAILED tests/test_smart_router.py::TestSwarmDispatcher::test_orchestrator_use_swarm_false_no_dispatcher
+FAILED tests/test_smart_router.py::TestSwarmDispatcher::test_orchestrator_use_swarm_true_has_dispatcher
+FAILED tests/test_usage_queue.py::TestUsageQueue::test_enqueue_adds_event_to_queue
+FAILED tests/test_usage_queue.py::TestUsageQueue::test_start_creates_background_task
+FAILED tests/test_usage_queue.py::TestUsageQueue::test_stop_flushes_and_cancels
+FAILED tests/test_usage_queue.py::TestUsageQueue::test_metadata_included_in_event
+FAILED tests/test_usage_queue.py::TestGetQueue::test_get_queue_returns_singleton
+FAILED tests/test_usage_queue.py::TestGetQueue::test_init_queue_starts_queue
+=== 277 failed, 7650 passed, 75 skipped, 7320 warnings in 350.54s (0:05:50) ====
+
+⚠ Process exiting without graceful shutdown...
+
+⚠ Process exiting without graceful shutdown...

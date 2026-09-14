@@ -21,8 +21,15 @@ from src.command_fabric.records import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_COMMANDS_DIR = PROJECT_ROOT / ".claude" / "commands"
+INTEGRATION_COMMANDS_DIR = PROJECT_ROOT / ".claude" / "_integration" / "commands"
 DEFAULT_USER_COMMANDS_DIR = Path.home() / ".claude" / "commands"
 DEFAULT_CONTRACTS_DIR = PROJECT_ROOT / "factory" / "contracts" / "commands"
+
+
+def _resolve_commands_dir(commands_dir: Path) -> Path:
+    if commands_dir == DEFAULT_COMMANDS_DIR and not commands_dir.exists() and INTEGRATION_COMMANDS_DIR.exists():
+        return INTEGRATION_COMMANDS_DIR
+    return commands_dir
 
 
 def command_record_from_markdown(path: Path, root: Path = PROJECT_ROOT) -> CommandRecord:
@@ -35,9 +42,10 @@ def build_command_catalog(
     root: Path = PROJECT_ROOT,
 ) -> list[CommandRecord]:
     """Build the sorted command fabric catalog from source command files."""
+    actual_dir = _resolve_commands_dir(commands_dir)
     records = [
         command_record_from_markdown(path, root=root)
-        for path in sorted(commands_dir.glob("*.md"))
+        for path in sorted(actual_dir.glob("*.md"))
         if path.is_file()
     ]
     return sorted(records, key=lambda record: record.name)
@@ -45,7 +53,8 @@ def build_command_catalog(
 
 def _readable_command_records(commands_dir: Path, root: Path) -> list[CommandRecord]:
     """Return readable command records from one command directory."""
-    if not commands_dir.exists():
+    actual_dir = _resolve_commands_dir(commands_dir)
+    if not actual_dir.exists():
         return []
 
     records: list[CommandRecord] = []

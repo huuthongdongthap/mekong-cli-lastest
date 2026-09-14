@@ -1,122 +1,130 @@
 # Duplication Map
 
-## Critical Duplications
+Refreshed: 2026-08-23 · HEAD: 0878f966f
 
-### 1. Agent Registration — 4 Parallel Systems
+## Active Duplications
 
-| System | Location | Purpose |
-|--------|----------|---------|
-| `AgentRegistry` | `src/core/agent_registry.py` | Type-safe registry of `AgentBase` subclasses |
-| `AgentDispatcher` | Protocol in `protocols.py` | Dispatch + message chain + prompt loading |
-| `DEFAULT_PROMPTS` | `src/cli/commands_registry.py` | Dict of role → prompt string |
-| `.mekong/agents/*.md` | Filesystem | Markdown prompt files |
-| `ROLE_HUB_MAP` | `src/core/agent_registry.py` | Role → hub mapping |
+### 1. Duplicated AgentBase / AgentRegistry Abstractions
 
-**Impact:** Agent discovery has 5 entry points. `AgentRegistry.list()` returns names, `DEFAULT_PROMPTS` has prompts, `.mekong/agents/*.md` has markdown versions. None are automatically synchronized.
+**Status:** RESOLVED (2026-09-10) — converged onto canonical core implementations
 
-**Consolidation target:** `AgentRegistry` + `AgentDispatcher` already merged. `DEFAULT_PROMPTS` should be auto-generated from `.mekong/agents/*.md`. `ROLE_HUB_MAP` should be a field on `AgentMeta`.
+**Resolution:**
+- `src/harness/agents/base.py` converted into a backward-compatible re-export façade forwarding directly to canonical `src.core.agent_base:AgentBase`, `Task`, `Result`, `TaskStatus`.
+- `src/harness/agents/registry.py` converted into a backward-compatible re-export façade forwarding directly to canonical `src.core.agent_registry:AgentRegistry`, `AgentMeta`, `get_registry`.
+- Single authoritative agent contract enforced across core runtime and harness layers while preserving complete compatibility for existing callers.
 
-### 2. Billing — 8+ Modules
+---
 
-| Module | Purpose |
-|--------|---------|
-| `src/core/mcu_billing.py` | MCU billing singleton |
-| `src/raas/billing_engine.py` | RaaS billing core |
-| `src/raas/billing_core.py` | Core billing logic |
-| `src/raas/billing_proration.py` | Proration logic |
-| `src/raas/billing_idempotency.py` | Idempotency |
-| `src/api/billing_routes.py` | Billing REST routes |
-| `src/api/raas_billing_service.py` | RaaS billing service |
-| `src/api/vn_pilot_billing.py` | VN pilot billing |
-| `src/api/vn_payments_routes.py` | VN payment routes |
+### 2. Billing / Payment Duplication
 
-**Impact:** Billing logic scattered across `src/core/`, `src/raas/`, `src/api/`. No single owner. MCU billing and RaaS billing are separate systems with overlapping concerns (usage tracking, quota, payment).
+**Status:** RESOLVED (2026-09-10) — storage unified, NOWPayments routed through PaymentProvider protocol, CLI commands registered
 
-**Consolidation target:** `MCUBilling` should be the canonical billing core. `raas/billing_engine.py` should wrap `MCUBilling` + add RaaS-specific logic. Payment routes should delegate to one billing service.
+**Resolution:**
+- Storage converged: `MCUBilling` backed by `CreditStore` (`src/raas/credits.py`) via SQLite WAL.
+- `src/raas/nowpayments_router.py` updated to route IPN callbacks through `NowPaymentsProvider` (`PaymentProvider` Protocol adapter).
+- `src/cli/billing_commands.py` verified mounted and active in `src/cli/app_setup.py:build_app()`.
+- PaymentProvider protocol compliance verified with golden tests and end-to-end delegation tests.
 
-### 3. Memory — 5 Modules
+---
 
-| Module | Purpose |
-|--------|---------|
-| `src/core/memory.py` | `MemoryEntry` + `MemoryStore` (basic dict store) |
-| `src/core/memory_client.py` | `NeuralMemoryClient` (vector-like client) |
-| `src/core/memory_bridge.py` | `MemoryBridge` Protocol |
-| `src/core/memory_store_adapter.py` | Adapter bridging MemoryBridge → MemoryStore |
-| `src/core/memory_scope.py` | `ScopedMemoryStore` (org-scoped entries) |
+### 3. Memory Store — Three-Way Split
 
-**Impact:** Memory has 5 layers for what should be one system. `MemoryStore` is a basic dict. `MemoryBridge` is a Protocol. `ScopedMemoryStore` adds org isolation. `MemoryStoreAdapter` bridges them. `NeuralMemoryClient` is separate.
+**Status:** RESOLVED (2026-09-10) — canonical store & JSONL adapter both satisfy protocols.MemoryStore
 
-**Consolidation target:** `ScopedMemoryStore` should be the canonical implementation. `MemoryBridge` Protocol should be the interface. `MemoryStoreAdapter` should be the bridge. `MemoryStore` (basic) should be deprecated.
+**Resolution:**
+- `src/core/memory_canonical.py:MemoryStore` retrofitted with `store()`, `retrieve()`, `delete()`, and `search()`, satisfying `protocols.MemoryStore` runtime checkable protocol natively.
+- Byte-exact base64 encoding guarantees arbitrary binary preservation across storage/retrieval.
+- TTL expiry support integrated via `expires_at` metadata in entry context.
+- Point deletion from `VectorMemoryStore` synchronized on `delete(key)`.
+- `src/core/adapters/jsonl_memory_adapter.py:JsonlMemoryAdapter` formalizes JSONL as a second conformant backend.
+- `MemoryStoreAdapter` and `MemoryStoreConformant` unified to delegate directly to canonical methods.
+- Runtime conformance tests in `tests/test_memory.py` and `tests/ports/test_memory_store_conformance.py` pass 100%.
 
-### 4. NOWPayments Integration — 2 Versions
+---
 
-| Module | Purpose |
-|--------|---------|
-| `src/raas/nowpayments_checkout.py` | NOWPayments checkout |
-| `src/raas/nowpayments-checkout.py` | Duplicate with hyphen naming |
+### 4. Observability Assets (Grafana Dashboards / Provisioning)
 
-**Impact:** Two files with hyphen vs underscore naming. Likely one is stale.
+**Status:** IMPROVED (2026-09-10) — nested duplicate directories pruned
 
-**Consolidation target:** Delete `nowpayments-checkout.py` (hyphen version), keep `nowpayments_checkout.py`.
+**Current:** Previously, three copies of the same dashboard JSON and provisioning YAML existed.
+The accidental nested duplicate directories (`src/harness/observability/dashboards/dashboards/`
+and `src/harness/observability/provisioning/provisioning/`) have been removed.
 
-### 5. LLM Routing — 3 Systems
+Root `observability/dashboards/` and `src/harness/observability/dashboards/` remain as
+canonical and harness-adjacent copies. Compose and collector configs:
+root `observability/docker-compose.observability.yml` + `prometheus.yml` + `otel-collector-config.yaml`
+vs `src/harness/observability/docker-compose.yml` + `prometheus.yml` + `otel-collector.yaml`.
 
-| Module | Purpose |
-|--------|---------|
-| `src/core/llm_router.py` | Router with classify/select_model/estimate_cost |
-| `src/core/llm_client.py` | Direct LLM API calls |
-| `src/core/provider_registry.py` | Provider registry |
+**Recommendation:** Maintain root `observability/` as canonical; keep harness copies aligned.
 
-**Impact:** Three systems for the same job. `llm_router.py` routes to providers. `llm_client.py` makes direct calls. `provider_registry.py` registers providers.
+**Risk:** LOW — Static assets; verified zero references to nested directories.
 
-**Consolidation target:** `LLMRouterAdapter` (Phase 2) should be the canonical entry. `llm_client.py` should become an adapter. `provider_registry.py` should be a backend for the adapter.
+---
 
-### 6. CLI Commands — 2 Registries
+### 5. LLM Routing & PEV Engine Convergence
 
-| Registry | Location | Count |
-|----------|----------|-------|
-| `src/cli/commands_registry.py` | 43 commands | Click-based |
-| `src/commands/` | deploy + others | Mixed |
+**Status:** RESOLVED (2026-09-10) — harness PEV duplicates merged into core
 
-**Impact:** Two command systems. `commands_registry.py` uses Click decorators. `src/commands/deploy.py` is standalone.
+**Resolution:**
+- `src/harness/pev/planner.py` deleted; consumers import canonical `src/core/planner.py`.
+- `src/harness/pev/verifier.py` merged into `src/core/verifier.py:RecipeVerifier` and deleted.
+- `src/harness/pev/dag_scheduler.py` unified to delegate directly to `src/core/dag_scheduler.py:DAGScheduler`.
 
-**Consolidation target:** All commands should go through `commands_registry.py`. `src/commands/` should be migrated.
+---
 
-### 7. Billing Routes — 4 Overlapping
+### 6. CLI Command Surfaces
 
-| Module | Purpose |
-|--------|---------|
-| `src/api/billing_routes.py` | General billing routes |
-| `src/api/raas_billing_service.py` | RaaS billing service |
-| `src/api/vn_pilot_billing.py` | VN pilot billing |
-| `src/api/vn_payments_routes.py` | VN payment routes |
+**Status:** RESOLVED (2026-09-10) — unified on `src/cli/app_setup.py` & `workflow_commands.py`
 
-**Impact:** Four API modules for billing. No clear ownership boundary.
+**Resolution:**
+- Canonical single aggregator is `src/cli/app_setup.py` (Typer-based, 39 registered groups, 128 commands).
+- Natural language bilingual (VI/EN) router ported directly into canonical `src/cli/workflow_commands.py:ask_cmd`, dispatching leaf subcommands (`cook`, `debug`) and gracefully falling through for command groups (`plan`, `deploy`).
+- `src/commands/core_commands.py` converted to backward-compatible deprecation shim forwarding to `src.cli.app_setup.build_app()`.
+- `tests/integration/test_ask_routing.py` repointed directly to canonical `src.cli.app_setup.build_app()`.
+- `src/commands/COMMAND_REGISTRY.md` updated to match `build_app()` command tree (39 groups, 128 commands).
+- `billing_commands`, `pev_commands`, and `usage_commands` verified registered in `src/cli/app_setup.py`.
 
-**Consolidation target:** `billing_routes.py` should be canonical. Others should delegate or be merged.
+---
 
-## Minor Duplications
+### 7. Verification Layers
 
-### 8. Prompt Storage — Dict + Filesystem + Code
+**Status:** RESOLVED (2026-09-10) — RecipeVerifier unified into core and integrated into autonomous runtime execution loop
 
-- `DEFAULT_PROMPTS` dict in `commands_registry.py`
-- `.mekong/agents/*.md` markdown files
-- `AgentMeta.prompt` field in `AgentRegistry`
+**Resolution:**
+- `RecipeVerifier` merged into canonical `src/core/verifier.py` (PR #14, Super Command #8).
+- Merged into `MekongCoreRuntimeImpl.verify()` via `_criteria_to_verifier_dict` and `_ExecResultLike` adapter, validating exit codes, pattern regexes, and file presence.
+- Autonomous loop implements full `execute -> verify -> repair` cycle with four strategies (`RETRY`, `FALLBACK`, `ESCALATE`, `ROLLBACK`).
+- Downstream task cancellation wired through `DAGScheduler.mark_failed` to prevent cascading runs on upstream verification failures.
+Remaining verification layers:
 
-**Fix:** Single source = `.mekong/agents/*.md`. Auto-generate `DEFAULT_PROMPTS` at build time.
+| Layer | Location | Role |
+|---|---|---|
+| `RecipeVerifier` | `src/core/verifier.py` | Canonical verifier for orchestrator and runtime |
+| `VerificationPipeline` | `src/mekongcli/core/verification/` | Goal-engine verification gates |
+| `PostGate` | `src/daemon/gate.py` | Daemon post-execution gate |
 
-### 9. Tier Config — Multiple Sources
+---
 
-- `src/seed/config/tiers.py` — canonical
-- `src/db/tier_config_repository.py` — DB-backed
-- `src/api/vn_pricing.py` — VN-specific pricing
+### 8. Orphan Command Modules in src/commands/
 
-**Fix:** `tiers.py` is source of truth. Others should import from it.
+**Status:** RESOLVED (2026-09-10) — dead stubs deleted, funnels reconnected, core shimmed
 
-### 10. Error Handling Patterns
+**Resolution:**
+- Reconnected Vietnam business funnels (`zalo_oa.py`, `thue_dnvn.py`, `ke_toan.py`) to the CLI binary via `src/cli/funnel_commands.py` (`zalo-oa`, `thue`, `ke-toan`).
+- Pruned zero-reference empty dead stubs `src/commands/ci.py` and `src/commands/env.py`.
+- Deprecated `src/commands/core_commands.py` to forward to canonical `src.cli.app_setup:build_app()`.
 
-- `try/except` + `return {"error": ...}` in `runtime_adapter.py`
-- `try/except` + `Result(error=...)` in `orchestrator.py`
-- `try/except` + `{"status": "error"}` in `llm_router_adapter.py`
+---
 
-**Fix:** Standardize on `Result` Protocol for all error returns.
+### 9. Tier Configuration & Rate Limiting Duality
+
+**Status:** RESOLVED (2026-09-10) — unified into canonical `src/seed/config/tiers.py` with backward-compatible re-export façade
+
+**Resolution:**
+- Reconciled duality between legacy `engine/billing/tier_config.py` and canonical `src/seed/config/tiers.py`.
+- Canonicalized `TierKey` with `Tier = TierKey` alias, case-insensitive and legacy alias lookup via `_missing_`.
+- Consolidated `RateLimitConfig`, `TierRateLimitConfig`, `DEFAULT_TIER_CONFIGS`, `get_tier_config()`, and `get_preset_config()` directly into `src/seed/config/tiers.py`.
+- Converted `engine/billing/tier_config.py` into a thin re-export façade exporting all symbols with zero regression to external consumers.
+- Upgraded `LicenseEnforcer` to enforce monotonic 6-tier hierarchy (`FREE: 0, TRIAL: 1, STARTER: 2, GROWTH: 3, PRO: 4, ENTERPRISE: 5`).
+- Conformance verified with dedicated test suite `tests/test_tier_config_conformance.py` (28/28 tests passing).
+

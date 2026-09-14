@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from .event_bus import EventType, get_event_bus
-from .memory import MemoryEntry
+from .memory_canonical import MemoryEntry
 
 logger = logging.getLogger(__name__)
 

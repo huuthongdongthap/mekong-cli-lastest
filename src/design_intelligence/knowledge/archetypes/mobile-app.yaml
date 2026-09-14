@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: mobile-app
+product_type: mobile-app
+label: Mobile app
+summary: A thumb-first surface. One task per screen, one action per moment.
+information_density: sparse
+navigation_patterns:
+  - bottom tab bar, 3-5 tabs
+  - back is a gesture, not a button
+  - no hamburger menu
+hierarchy:
+  - one primary action per screen
+  - content fills the viewport, chrome recedes
+  - empty states teach the first action
+interaction_expectations:
+  - pull-to-refresh, not a button
+  - swipe actions on list rows
+  - haptic feedback on destructive actions
+common_failure_modes:
+  - 6+ tabs in the bottom bar
+  - modal on top of modal
+  - no offline state
+accessibility_concerns:
+  - touch targets at least 44px
+  - dynamic type respected
+responsive_requirements:
+  - safe-area insets on notched devices
+  - landscape is a supported state, not a bug
+appropriate_macrostructures:
+  - single-focus-hero
+  - card-grid
+  - split-detail

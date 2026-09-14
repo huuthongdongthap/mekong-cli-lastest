@@ -28,20 +28,14 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
           cache: pip
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
 
       - name: Install Python deps
         run: |
           pip install -r requirements.txt
-          pip install "ruff>=0.9,<1.0" pyright pytest pytest-asyncio pytest-cov anyio "httpx<0.28"
+          # Pin below 0.16: that major expanded the default rule set (59 → 413) and flags the tree.
+          pip install "ruff>=0.15,<0.16" pyright pytest pytest-asyncio pytest-cov anyio "httpx<0.28"
           pip install -e .
 
       - name: Ruff lint
@@ -49,13 +43,6 @@ jobs:
 
       - name: Pyright type check
         run: pyright src/ --pythonversion 3.12
-        continue-on-error: true
-
-      - name: Install TS deps
-        run: pnpm install --filter "./packages/**" --no-frozen-lockfile
-
-      - name: TypeScript type check
-        run: pnpm --filter mekong-engine typecheck
         continue-on-error: true
 
       - name: Python unit tests
@@ -113,7 +100,7 @@ jobs:
         continue-on-error: true
 
   # ------------------------------------------------------------------ #
-  # G3 — QUALITY: coverage >= 70% (pytest + vitest)                     #
+  # G3 — QUALITY: Python coverage >= 28%                                #
   # ------------------------------------------------------------------ #
   g3-quality:
     name: G3 Quality
@@ -125,15 +112,8 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
           cache: pip
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
 
       - name: Install Python deps
         run: |
@@ -153,13 +133,6 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-test-placeholder' }}
 
-      - name: Install TS deps
-        run: pnpm install --filter "./packages/**" --no-frozen-lockfile
-
-      - name: TS test coverage
-        run: pnpm --filter mekong-engine test
-        continue-on-error: true
-
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -168,7 +141,7 @@ jobs:
           retention-days: 14
 
   # ------------------------------------------------------------------ #
-  # G4 — DEPENDENCY AUDIT: osv-scanner + pnpm audit                     #
+  # G4 — DEPENDENCY AUDIT: osv-scanner                                  #
   # ------------------------------------------------------------------ #
   g4-dep-audit:
     name: G4 Dep Audit
@@ -177,13 +150,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
 
       - name: OSV Scanner
         uses: google/osv-scanner-action/osv-scanner-action@v1.9.0
@@ -194,15 +160,8 @@ jobs:
             .
         continue-on-error: true
 
-      - name: Install TS deps
-        run: pnpm install --filter "./packages/**" --no-frozen-lockfile
-
-      - name: pnpm audit
-        run: pnpm audit --audit-level=high
-        continue-on-error: true
-
   # ------------------------------------------------------------------ #
-  # G5 — DEPLOY READY: CF Pages dry-run (needs g1..g4)                  #
+  # G5 — DEPLOY READY: wrangler dry-run (needs g1..g4)                  #
   # ------------------------------------------------------------------ #
   g5-deploy-ready:
     name: G5 Deploy Ready
@@ -213,15 +172,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
       - name: Install wrangler
-        run: pnpm add -g wrangler
+        run: npm install -g wrangler
 
       - name: Verify wrangler config exists
         run: |

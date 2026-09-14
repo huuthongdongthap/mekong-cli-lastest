@@ -1,0 +1,80 @@
+# Agent declarative definitions — single source of truth.
+#
+# Every entry here is consumed by:
+#   - src/core/agent_registry.py   (_DEFAULT_DESCRIPTIONS derives from this file)
+#   - src/core/agent_dispatcher.py (DEFAULT_PROMPTS derives from this file)
+#
+# The description and prompt strings are kept VERBATIM from the historical
+# Python literals so the derive is a pure move, not a copy edit.
+#
+# Fields:
+#   description     — one-line agent description (rendered by `mekong agent list`)
+#   prompt          — default system prompt fallback for the role
+#   risk_level      — LOW | MEDIUM | HIGH | CRITICAL (AgentMeta validation)
+#   approval_policy — AUTO | MANUAL | DENY (CRITICAL+AUTO is rejected)
+#
+# Prompt-only roles (cs, sales, editor, data, analyst, devops, pm, support)
+# intentionally omit `description`; they were never part of the C-suite
+# registry and only exist as prompt fallbacks.
+#
+# cso and planner are description-only: the historical C-suite literals had
+# no prompt for either, so the runtime falls back to
+# ``f"You are the {name} agent."`` (see agent_dispatcher._discover_markdown_agents).
+
+cto:
+  description: "Chief Technology Officer — code quality, architecture, and engineering execution."
+  prompt: "You are a senior CTO. Write clean, production-ready code with best practices."
+  risk_level: LOW
+  approval_policy: AUTO
+
+cmo:
+  description: "Chief Marketing Officer — positioning, messaging, campaigns, and growth."
+  prompt: "You are a CMO. Create compelling marketing strategies and content."
+  risk_level: LOW
+  approval_policy: AUTO
+
+coo:
+  description: "Chief Operating Officer — operations, logistics, and day-to-day execution."
+  prompt: "You are a COO. Monitor systems, execute ops tasks, manage infrastructure."
+  risk_level: LOW
+  approval_policy: AUTO
+
+cfo:
+  description: "Chief Financial Officer — financial models, runway, and purity of capital."
+  prompt: "You are a CFO. Focus on financial analysis, revenue optimization, and cost control."
+  risk_level: LOW
+  approval_policy: AUTO
+
+cso:
+  description: "Chief Strategy Officer — market intel, competitive analysis, and strategic bets."
+  risk_level: LOW
+  approval_policy: AUTO
+
+planner:
+  description: "Tech Lead — architecture review, dependency graph, failure-mode analysis."
+  risk_level: LOW
+  approval_policy: AUTO
+
+cs:
+  prompt: "You are a support specialist. Resolve issues efficiently with empathy."
+
+sales:
+  prompt: "You are a sales specialist. Write persuasive copy and conversion flows."
+
+editor:
+  prompt: "You are a technical editor. Review and improve content for clarity and accuracy."
+
+data:
+  prompt: "You are a data analyst. Provide clear, actionable insights from data."
+
+analyst:
+  prompt: "You are a business analyst. Analyze requirements and provide structured recommendations."
+
+devops:
+  prompt: "You are a DevOps engineer. Manage infrastructure, CI/CD, and deployment pipelines."
+
+pm:
+  prompt: "You are a Product Manager. Define requirements and prioritize features based on user value."
+
+support:
+  prompt: "You are a customer support specialist. Help users resolve issues quickly and accurately."

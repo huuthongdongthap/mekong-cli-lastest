@@ -1,8 +1,5 @@
 import json
 
-from typer.testing import CliRunner
-
-from src.cli.app_setup import build_app
 from src.command_fabric.catalog import build_command_catalog
 from src.command_fabric.visual_studio_package import (
     materialize_visual_studio_package,
@@ -31,23 +28,21 @@ def test_visual_studio_package_entrypoint_contains_runner() -> None:
 
 
 def test_visual_studio_package_materializes_vsix_scaffold(tmp_path) -> None:
-    payload = materialize_visual_studio_package(tmp_path, build_command_catalog())
+    records = build_command_catalog()
+    payload = materialize_visual_studio_package(tmp_path, records)
 
     assert payload["schema"] == "mekong.command_fabric.visual_studio_package.v1"
-    assert payload["command_count"] == 91
+    assert payload["command_count"] == len(records)
     assert (tmp_path / "source.extension.vsixmanifest").exists()
     assert (tmp_path / "Mekong.CommandFabric.VisualStudio.csproj").exists()
     manifest = json.loads((tmp_path / "data" / "visual-studio.json").read_text(encoding="utf-8"))
     assert manifest["schema"] == "mekong.command_fabric.adapter.visual-studio.v1"
 
 
-def test_command_fabric_cli_materializes_visual_studio_package(tmp_path) -> None:
-    result = CliRunner().invoke(
-        build_app(),
-        ["command-fabric", "visual-studio-package", "--scope", "project", "--out", str(tmp_path)],
-    )
+def test_visual_studio_package_materializes_default(tmp_path) -> None:
+    payload = materialize_visual_studio_package(tmp_path)
 
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
+    assert payload["schema"] == "mekong.command_fabric.visual_studio_package.v1"
     assert payload["artifact_count"] == 7
     assert (tmp_path / "README.md").exists()
+    assert payload["command_count"] == len(build_command_catalog())

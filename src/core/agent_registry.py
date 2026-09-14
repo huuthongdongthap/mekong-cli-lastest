@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from .agent_base import AgentBase
+from .registry.loader import load_descriptions
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,23 @@ class AgentMeta:
     cls: type[AgentBase]
     allowed_tools: list[str] = field(default_factory=list)
     spawnable_agents: list[str] = field(default_factory=list)
+    # E3 — Declarative policy fields (backward-compatible defaults)
+    risk_level: str = "LOW"
+    max_budget: float | None = None
+    max_iterations: int | None = None
+    approval_policy: str = "AUTO"  # AUTO | MANUAL | DENY
+    model_preference: str | None = None
+
+    def __post_init__(self) -> None:
+        """Validate policy fields."""
+        valid_risk = {"LOW", "MEDIUM", "HIGH", "CRITICAL"}
+        if self.risk_level not in valid_risk:
+            raise ValueError(f"Invalid risk_level: {self.risk_level}. Must be one of {valid_risk}")
+        valid_approval = {"AUTO", "MANUAL", "DENY"}
+        if self.approval_policy not in valid_approval:
+            raise ValueError(f"Invalid approval_policy: {self.approval_policy}. Must be one of {valid_approval}")
+        if self.risk_level == "CRITICAL" and self.approval_policy == "AUTO":
+            raise ValueError("CRITICAL risk agents cannot have approval_policy=AUTO")
 
 
 class AgentRegistry:
@@ -65,6 +83,12 @@ class AgentRegistry:
         description: str = "",
         allowed_tools: list[str] | None = None,
         spawnable_agents: list[str] | None = None,
+        # E3 — Declarative policy fields
+        risk_level: str = "LOW",
+        max_budget: float | None = None,
+        max_iterations: int | None = None,
+        approval_policy: str = "AUTO",
+        model_preference: str | None = None,
     ) -> None:
         """Register an agent class under a short name.
 
@@ -77,6 +101,11 @@ class AgentRegistry:
                 then the name itself when omitted.
             allowed_tools: Optional tool allowlist for this agent.
             spawnable_agents: Optional list of delegatable agent IDs.
+            risk_level: Risk classification (LOW, MEDIUM, HIGH, CRITICAL). Default LOW.
+            max_budget: Optional max budget (MCU/USD) for this agent. Default None.
+            max_iterations: Optional max iterations for this agent. Default None.
+            approval_policy: Approval policy (AUTO, MANUAL, DENY). Default AUTO.
+            model_preference: Optional preferred model ID. Default None.
         """
         if not isinstance(cls, type) or not issubclass(cls, AgentBase):
             # Softened: warn instead of hard error for plugin compatibility.
@@ -113,6 +142,11 @@ class AgentRegistry:
             cls=cls,
             allowed_tools=list(allowed_tools or []),
             spawnable_agents=list(spawnable_agents or []),
+            risk_level=risk_level,
+            max_budget=max_budget,
+            max_iterations=max_iterations,
+            approval_policy=approval_policy,
+            model_preference=model_preference,
         )
 
     # ------------------------------------------------------------------
@@ -221,7 +255,27 @@ def _register_known_agents(registry: AgentRegistry) -> None:
     Markdown discovery only fires when ``.claude/agents/*.md`` exists. The
     canonical agents (cto, cmo, coo, cfo, cso, planner) must be discoverable
     regardless of filesystem state, so they are registered here first.
+
+    The ``cli`` agent is the default runtime agent for unmatched intents
+    (e.g. ``"echo hello"``). It is registered FIRST so the registry's
+    ``_RegistryDispatcher`` can resolve it — without it every goal routed to
+    the runtime's ``self._agent_id`` (``"cli"``) fails with
+    ``NotImplementedError`` and never executes (Lane E8 regression).
     """
+    if "cli" not in registry._agents:
+        try:
+            registry.register(
+                "cli",
+                _CliShellAgent,
+                description="Default CLI runtime agent — runs local shell goals through CommandSanitizer",
+                allowed_tools=["shell:run"],
+                spawnable_agents=[],
+                risk_level="MEDIUM",
+                approval_policy="AUTO",
+            )
+        except Exception as exc:  # pragma: no cover - discovery guard
+            logger.debug("Failed to register 'cli' agent: %s", exc)
+
     for name, description in _DEFAULT_DESCRIPTIONS.items():
         if name in registry._agents:
             continue
@@ -243,14 +297,16 @@ def _register_known_agents(registry: AgentRegistry) -> None:
 
 AGENTS_DIR = Path(__file__).resolve().parents[2] / ".claude" / "agents"
 
-_DEFAULT_DESCRIPTIONS: dict[str, str] = {
-    "cto": "Chief Technology Officer — code quality, architecture, and engineering execution.",
-    "cmo": "Chief Marketing Officer — positioning, messaging, campaigns, and growth.",
-    "coo": "Chief Operating Officer — operations, logistics, and day-to-day execution.",
-    "cfo": "Chief Financial Officer — financial models, runway, and purity of capital.",
-    "cso": "Chief Strategy Officer — market intel, competitive analysis, and strategic bets.",
-    "planner": "Tech Lead — architecture review, dependency graph, failure-mode analysis.",
-}
+# ---------------------------------------------------------------------------
+# C-suite descriptions — single source of truth is agents.yaml
+# ---------------------------------------------------------------------------
+# Historically these were inline Python literals here. They now derive from
+# ``src/core/registry/agents.yaml`` so the YAML is the single source of truth
+# and there is no duplicate copy to drift. The variable name and shape
+# (``dict[str, str]``) are preserved verbatim so every caller is unaffected.
+# A YAML load failure (missing file, malformed YAML, invalid entry) raises
+# RegistryLoadError at import time — fail-loud by design.
+_DEFAULT_DESCRIPTIONS: dict[str, str] = load_descriptions()
 
 _AGENT_ROLE_HINTS: dict[str, str] = {
     "cto": "code",
@@ -278,6 +334,88 @@ def _description_from_frontmatter(text: str, fallback: str) -> str:
                 return value.strip("\"'")
             return value
     return fallback
+
+
+class _CliShellAgent(AgentBase):
+    """Default runtime agent for goals that map to a local shell command.
+
+    Lane E8: the canonical runtime's ``execute()`` dispatches through the
+    registry (``_RegistryDispatcher``) and calls ``agent_instance.run()``.
+    Previously every unmatched intent (e.g. ``"echo hello"``) resolved to the
+    unregistered ``"cli"`` agent and failed with ``NotImplementedError`` — the
+    graceful failure path, but never an actual execution.
+
+    This agent closes the loop: it treats the goal text as a shell command,
+    runs it through ``CommandSanitizer`` (fail-closed, same gate as the
+    ``shell:run`` capability) and returns the captured output. It is the
+    single canonical bridge between ``mekong cook`` and the local runtime,
+    so the Binh Phap ``RecipeOrchestrator`` engine can stay as a legacy
+    consumer (escrow) while the CLI moves to the runtime path.
+    """
+
+    def __init__(self, name: str = "cli", **kwargs: object) -> None:
+        super().__init__(name=name)
+
+    def plan(self, input_data: str) -> list[Any]:  # noqa: ANN001
+        from .agent_base import Task, TaskStatus  # local import avoids circular
+
+        return [
+            Task(
+                id=f"{self.name}-1",
+                description=input_data,
+                input={"command": input_data},
+                status=TaskStatus.PENDING,
+            )
+        ]
+
+    def execute(self, task: Any) -> Any:  # noqa: ANN001
+        from .agent_base import Result, TaskStatus  # local import avoids circular
+
+        command = str(task.input.get("command") or task.description or "")
+        task.status = TaskStatus.RUNNING
+        try:
+            from .command_sanitizer import CommandSanitizer
+
+            san = CommandSanitizer(strict_mode=True).sanitize(command)
+            if not san.is_safe:
+                blocked = "; ".join(san.blocked_patterns) or san.blocked_reason or "unknown"
+                return Result(
+                    task_id=task.id,
+                    success=False,
+                    error=f"shell:run blocked by CommandSanitizer: {blocked}",
+                )
+            command = san.sanitized_command or command
+        except ImportError:
+            return Result(
+                task_id=task.id,
+                success=False,
+                error="CommandSanitizer module missing — shell:run blocked (fail-closed)",
+            )
+
+        import shlex
+        import subprocess
+
+        try:
+            proc = subprocess.run(
+                shlex.split(command),
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            output = proc.stdout or proc.stderr
+            if proc.returncode != 0:
+                task.status = TaskStatus.FAILED
+                return Result(
+                    task_id=task.id,
+                    success=False,
+                    output=output.strip(),
+                    error=f"Exit code {proc.returncode}: {output}",
+                )
+            task.status = TaskStatus.SUCCESS
+            return Result(task_id=task.id, success=True, output=output.strip())
+        except Exception as exc:  # noqa: BLE001 - surface as terminal error
+            task.status = TaskStatus.FAILED
+            return Result(task_id=task.id, success=False, error=str(exc))
 
 
 def _make_markdown_agent_class(role: str, prompt: str) -> type[AgentBase]:

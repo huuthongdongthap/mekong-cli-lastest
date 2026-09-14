@@ -1,8 +1,17 @@
 """Phase 2A: LLMRouter Protocol expansion — generate/health methods."""
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock
 
+from src.providers.llm.client import LLMClient
 from src.core.llm_router_adapter import LLMRouterAdapter
 from src.core.protocols import LLMRouter
+
+
+def _adapter_with_mock_client() -> tuple[LLMRouterAdapter, MagicMock]:
+    """Build an adapter backed by a mocked LLMClient (no real API calls)."""
+    adapter = LLMRouterAdapter()
+    mock_client = MagicMock(spec=LLMClient)
+    adapter._llm_client = mock_client
+    return adapter, mock_client
 
 
 class TestLLMRouterExpanded:
@@ -14,60 +23,62 @@ class TestLLMRouterExpanded:
         assert isinstance(adapter, LLMRouter)
 
     def test_generate_returns_string(self):
-        """generate() must return a string."""
-        adapter = LLMRouterAdapter()
-        # Mock _get_router so route() is not called with string
-        mock_router = MagicMock()
-        mock_router.route.return_value = MagicMock(name="test-model")
-        adapter._router = mock_router
+        """generate() must return a string delegated from LLMClient.generate()."""
+        adapter, mock_client = _adapter_with_mock_client()
+        mock_client.generate.return_value = "real llm output"
         result = adapter.generate("Hello world")
         assert isinstance(result, str)
-        assert len(result) > 0
+        assert result == "real llm output"
+        mock_client.generate.assert_called_once()
 
     def test_generate_with_model(self):
-        """generate(model=...) returns stub without calling router."""
-        adapter = LLMRouterAdapter()
-        result = adapter.generate("Test prompt here", model="claude-3")
-        assert "claude-3" in result
-        assert "Test prompt here" in result
+        """generate(model=...) must forward model to LLMClient.generate()."""
+        adapter, mock_client = _adapter_with_mock_client()
+        mock_client.generate.return_value = "ok"
+        adapter.generate("Test prompt here", model="claude-3")
+        mock_client.generate.assert_called_once_with("Test prompt here", model="claude-3")
 
     def test_generate_passes_kwargs(self):
-        """generate() must accept **kwargs without error."""
-        adapter = LLMRouterAdapter()
-        mock_router = MagicMock()
-        mock_router.route.return_value = MagicMock(name="test-model")
-        adapter._router = mock_router
-        result = adapter.generate("Test", temperature=0.7, max_tokens=100)
-        assert isinstance(result, str)
+        """generate() must forward **kwargs to LLMClient.generate()."""
+        adapter, mock_client = _adapter_with_mock_client()
+        mock_client.generate.return_value = "ok"
+        adapter.generate("Test", temperature=0.7, max_tokens=100)
+        mock_client.generate.assert_called_once_with(
+            "Test", temperature=0.7, max_tokens=100,
+        )
 
     def test_generate_uses_model_when_provided(self):
-        """generate(model=...) returns stub without calling router.route()."""
-        adapter = LLMRouterAdapter()
-        # When model is provided, router.route() is NOT called
-        result = adapter.generate("Any prompt", model="custom-model")
-        assert "custom-model" in result
+        """generate(model=...) forwards the model to LLMClient (no bypass)."""
+        adapter, mock_client = _adapter_with_mock_client()
+        mock_client.generate.return_value = "ok"
+        adapter.generate("Any prompt", model="custom-model")
+        mock_client.generate.assert_called_once_with("Any prompt", model="custom-model")
 
     def test_health_returns_status_dict(self):
         """health() must return dict with status key."""
-        adapter = LLMRouterAdapter()
+        adapter, mock_client = _adapter_with_mock_client()
+        mock_client.providers = [MagicMock(name="qwen")]
         result = adapter.health()
         assert isinstance(result, dict)
         assert "status" in result
 
-    def test_health_ok_when_router_available(self):
-        """health() returns ok when router loads."""
-        adapter = LLMRouterAdapter()
+    def test_health_ok_when_client_available(self):
+        """health() returns ok when underlying client loads."""
+        adapter, mock_client = _adapter_with_mock_client()
+        mock_client.providers = [MagicMock(name="qwen")]
         result = adapter.health()
         assert result["status"] == "ok"
-        assert "router" in result
+        assert "providers" in result
 
-    def test_health_error_on_router_failure(self):
-        """health() returns error status when router fails."""
-        adapter = LLMRouterAdapter()
-        with patch.object(adapter, "_get_router", side_effect=RuntimeError("router down")):
-            result = adapter.health()
-            assert result["status"] == "error"
-            assert "error" in result
+    def test_health_error_on_client_failure(self):
+        """health() returns error status when underlying client fails."""
+        adapter, mock_client = _adapter_with_mock_client()
+        type(mock_client).providers = PropertyMock(
+            side_effect=RuntimeError("client down"),
+        )
+        result = adapter.health()
+        assert result["status"] == "error"
+        assert "error" in result
 
     def test_classify_still_works(self):
         """Original classify() must still work after expansion."""

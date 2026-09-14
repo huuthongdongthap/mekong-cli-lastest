@@ -12,18 +12,32 @@ supports memory compression.
 Vector backend (VectorMemoryStore) provides semantic search alongside YAML.
 """
 
+import base64
 import hashlib
 import logging
 import time
 import yaml  # type: ignore[import-untyped]
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from .event_bus import EventType, get_event_bus
 from .vector_memory_store import MemoryType, VectorMemoryStore
 
 logger = logging.getLogger(__name__)
+
+_VALUE_KEY = "value_b64"
+_EXPIRES_KEY = "expires_at"
+
+
+@dataclass
+class MemoryHitResult:
+    """Concrete MemoryHit-shaped result (conforming to protocols.MemoryHit)."""
+
+    key: str
+    score: float
+    data: bytes
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 try:
     from packages.memory.memory_facade import get_memory_facade as _get_facade
@@ -307,6 +321,132 @@ class MemoryStore:
         except (KeyError, Exception):
             pass
 
+    # ─── protocols.MemoryStore conformance ─────────────────────────────────
+
+    def store(self, key: str, value: bytes, ttl: int | None = None) -> None:
+        """Store bytes value under key conforming to protocols.MemoryStore.
+
+        Bytes are base64-encoded into the entry context so arbitrary binary
+        (non-UTF8) round-trips bit-exact. When ``ttl`` is given, an
+        ``expires_at`` timestamp (seconds) is stored alongside; ``retrieve()``
+        treats entries past that instant as absent.
+        """
+        context: Dict[str, Any] = {
+            _VALUE_KEY: base64.b64encode(value).decode("ascii"),
+        }
+        if ttl is not None:
+            context[_EXPIRES_KEY] = time.time() + ttl
+        self.record(MemoryEntry(goal=key, status="success", context=context))
+
+    def retrieve(self, key: str) -> bytes | None:
+        """Return the most recent non-expired value for key, or None.
+
+        Iterates query() results newest-first, skipping entries whose goal does
+        not exactly match or whose TTL has elapsed, then decodes the base64
+        value.
+        """
+        for entry in reversed(self.query(key)):
+            if entry.goal != key or self._is_entry_expired(entry):
+                continue
+            decoded = self._decode_entry_value(entry)
+            if decoded is not None:
+                return decoded
+        return None
+
+    def delete(self, key: str) -> bool:
+        """Remove all entries matching key. Returns True if anything was removed."""
+        kept = []
+        removed_entries = []
+        for e in self._entries:
+            if e.goal == key:
+                removed_entries.append(e)
+            else:
+                kept.append(e)
+
+        if not removed_entries:
+            return False
+
+        self._entries = kept
+        self._save()
+
+        # Clean up points from vector store
+        for e in removed_entries:
+            try:
+                entry_id = hashlib.md5(
+                    f"{e.goal}:{e.timestamp}".encode(),
+                ).hexdigest()
+                self._vector_store.delete_point(self.VECTOR_COLLECTION, entry_id)
+            except Exception:
+                pass
+
+        return True
+
+    def search(self, query: str, limit: int = 10) -> Sequence[MemoryHitResult]:
+        """Semantic search with substring fallback, mapped to MemoryHit shapes.
+
+        Conforms to protocols.MemoryStore. Results are de-duplicated by goal and
+        capped at ``limit``.
+        """
+        hits: List[MemoryHitResult] = []
+        seen: set[str] = set()
+
+        # 1) Vector semantic search (canonical path).
+        for entry in self.semantic_search(query, top_k=limit):
+            self._accept_hit(entry, query, seen, score=1.0, out=hits)
+
+        # 2) Substring fallback against stored goals.
+        needle = query.lower()
+        for entry in self._entries:
+            if len(hits) >= limit:
+                break
+            if needle and needle not in entry.goal.lower():
+                continue
+            self._accept_hit(entry, query, seen, score=0.5, out=hits)
+
+        return hits[:limit]
+
+    def _is_entry_expired(self, entry: MemoryEntry) -> bool:
+        """True if the entry has an expires_at timestamp that has elapsed."""
+        expires_at = (entry.context or {}).get(_EXPIRES_KEY)
+        return expires_at is not None and time.time() >= float(expires_at)
+
+    def _decode_entry_value(self, entry: MemoryEntry) -> bytes | None:
+        """Decode the base64-stored value from an entry's context, or None."""
+        encoded = (entry.context or {}).get(_VALUE_KEY)
+        if not encoded:
+            return None
+        try:
+            return base64.b64decode(encoded.encode("ascii"))
+        except (ValueError, UnicodeEncodeError):
+            return None
+
+    def _accept_hit(
+        self,
+        entry: MemoryEntry,
+        query: str,
+        seen: set[str],
+        score: float,
+        out: List[MemoryHitResult],
+    ) -> bool:
+        """Append entry as a hit if it matches and is fresh; True if added."""
+        if entry.goal in seen or self._is_entry_expired(entry):
+            return False
+        if query and query.lower() not in entry.goal.lower():
+            return False
+        seen.add(entry.goal)
+        out.append(
+            MemoryHitResult(
+                key=entry.goal,
+                score=score,
+                data=self._decode_entry_value(entry) or b"",
+                metadata={
+                    "status": entry.status,
+                    "timestamp": entry.timestamp,
+                },
+            )
+        )
+        return True
+
     # --- Internal methods ---
 
     def _index_entry(self, entry: MemoryEntry) -> None:
@@ -392,5 +532,6 @@ class MemoryStore:
 
 __all__ = [
     "MemoryEntry",
+    "MemoryHitResult",
     "MemoryStore",
 ]

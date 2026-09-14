@@ -1,0 +1,34 @@
+# Mekong CLI — MIT License. Copyright (c) 2026 MekongMind.
+# Adapted from Hallmark's archetype system (github.com/nutlope/hallmark, MIT).
+
+id: landing-page
+product_type: landing-page
+label: Landing page
+summary: A conversion page for one offer. Every section answers an objection.
+information_density: comfortable
+navigation_patterns:
+  - sticky top nav, 3-5 items max
+  - anchor links into the same page
+  - no footer menu duplication
+hierarchy:
+  - H1 states the outcome, not the feature
+  - social proof before the form
+  - one form, one field if possible
+interaction_expectations:
+  - form validation inline, not on submit
+  - no spinners longer than 2s — show progress
+  - buttons are the only interactive surface
+common_failure_modes:
+  - form above the fold with no context
+  - 5+ trust logos with no names
+  - exit-intent popups on first visit
+accessibility_concerns:
+  - form labels must be real <label>, not placeholder
+  - error messages announced to screen readers
+responsive_requirements:
+  - form stacks single-column on mobile
+  - sticky nav compresses to hamburger
+appropriate_macrostructures:
+  - single-focus-hero
+  - objection-stack
+  - social-proof-wall

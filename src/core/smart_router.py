@@ -15,7 +15,7 @@ from typing import Any, Dict, Optional
 import logging
 
 from .nlu import Intent, IntentResult
-from .memory import MemoryStore
+from .memory_canonical import MemoryStore
 
 logger = logging.getLogger(__name__)
 
