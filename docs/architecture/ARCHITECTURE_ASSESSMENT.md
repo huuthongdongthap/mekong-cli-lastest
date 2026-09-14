@@ -1,8 +1,8 @@
 # Architecture Assessment
 
-Refreshed: 2026-09-13 · HEAD: f0e48774e
+Refreshed: 2026-09-14 · HEAD: 33ca66c18
 Wave 3 dead-code deletions (items 10–18) marked DONE: 2026-08-25 · commits `a7d364209`, `3408f8905`, `1446242e6`, `e8dc78908`
-Super Command #8, DUPLICATION_MAP Items 1–9, and PRs #14, #16, #17, #18, #19, #20, #21, #22, #24, #26, #27, #28, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #41, #42 merged into `origin/main`.
+Super Command #8, DUPLICATION_MAP Items 1–9, and PRs #14, #16, #17, #18, #19, #20, #21, #22, #24, #26, #27, #28, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #41, #42, #43 merged into `origin/main`.
 All 7 Roadmap Phases (100%) and all 10 Architecture Gaps CLOSED.
 Autonomy Gap #2 (native token streaming across transport, client, and router adapter) closed in PR #30 (`a681afce6`).
 Autonomy Gap #3 (MemorySeparation protocol, TTL pruning, and ScopedMemoryStore session flushing) closed in PR #33 (`e3859ec78`).
@@ -15,6 +15,7 @@ PR #39 (`0f620840f`): Synchronize architecture documentation and scorecard to HE
 PR #40 (`63af38300`): Synchronize v6.9.0 release changelog and architecture documentation to HEAD 0f620840f with all 23 CI gates green.
 PR #41 (`fb369617b`): Expand protocol compliance suite to 25/25 tests across all 10 core protocols and 13 concrete adapters (canonical memory conformer, payment aliases, mock payment, X402 and MPP settlement), and sync architecture docs to HEAD 63af38300.
 PR #42 (`f0e48774e`): Synchronize v6.9.0 release changelog and architecture documentation to HEAD fb369617b with all 23 CI gates green.
+PR #43 (`33ca66c18`): Synchronize architecture documentation and scorecard to HEAD f0e48774e with PR #42 closure.
 Phase 5 (AI Video - Sophia) and Phase 6 (Cloud Deploy) fully closed at 100% completion in PR #26 and PR #28 (`3781a63b4`).
 Billing consolidation conformance suite created: `tests/test_billing_consolidation.py` (11/11 passing), DRIFT_REPORT gap closed.
 Core protocol compliance suite expanded: `tests/test_protocol_compliance.py` (25/25 passing) covering all 10 protocols and compliant adapters (canonical memory, JSONL adapter, conformant adapter, payment providers, mock payment, X402 and MPP settlement).
