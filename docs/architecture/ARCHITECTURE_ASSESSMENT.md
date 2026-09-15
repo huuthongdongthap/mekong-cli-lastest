@@ -1,8 +1,8 @@
 # Architecture Assessment
 
-Refreshed: 2026-09-15 · HEAD: 836782324
+Refreshed: 2026-09-15 · HEAD: 2bb5db871
 Wave 3 dead-code deletions (items 10–18) marked DONE: 2026-08-25 · commits `a7d364209`, `3408f8905`, `1446242e6`, `e8dc78908`
-Super Command #8, DUPLICATION_MAP Items 1–9, and PRs #14, #16, #17, #18, #19, #20, #21, #22, #24, #26, #27, #28, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #41, #42, #43, #44, #45, #46, #47, #48, #49, #50, #51, #52, #53, #54, #55, #56, #57, #58, #59, #60, #61, #62, #63, #64, #65, #66, #67, #68, #69, #70, #71, #72, #73, #74, #75 merged into `origin/main`.
+Super Command #8, DUPLICATION_MAP Items 1–9, and PRs #14, #16, #17, #18, #19, #20, #21, #22, #24, #26, #27, #28, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #41, #42, #43, #44, #45, #46, #47, #48, #49, #50, #51, #52, #53, #54, #55, #56, #57, #58, #59, #60, #61, #62, #63, #64, #65, #66, #67, #68, #69, #70, #71, #72, #73, #74, #75, #76 merged into `origin/main`.
 All 7 Roadmap Phases (100%) and all 10 Architecture Gaps CLOSED.
 Autonomy Gap #2 (native token streaming across transport, client, and router adapter) closed in PR #30 (`a681afce6`).
 Autonomy Gap #3 (MemorySeparation protocol, TTL pruning, and ScopedMemoryStore session flushing) closed in PR #33 (`e3859ec78`).
@@ -48,6 +48,7 @@ PR #72 (`37d980981`): Synchronize architecture documentation and scorecard to HE
 PR #73 (`8a69c818e`): Synchronize architecture documentation and scorecard to HEAD 37d980981 with PR #72 closure.
 PR #74 (`82df19834`): Synchronize architecture documentation and scorecard to HEAD 8a69c818e with PR #73 closure.
 PR #75 (`836782324`): Synchronize architecture documentation and scorecard to HEAD 82df19834 with PR #74 closure.
+PR #76 (`2bb5db871`): Synchronize architecture documentation and scorecard to HEAD 836782324 with PR #75 closure.
 Phase 5 (AI Video - Sophia) and Phase 6 (Cloud Deploy) fully closed at 100% completion in PR #26 and PR #28 (`3781a63b4`).
 Billing consolidation conformance suite created: `tests/test_billing_consolidation.py` (11/11 passing), DRIFT_REPORT gap closed.
 Core protocol compliance suite expanded: `tests/test_protocol_compliance.py` (25/25 passing) covering all 10 protocols and compliant adapters (canonical memory, JSONL adapter, conformant adapter, payment providers, mock payment, X402 and MPP settlement).
