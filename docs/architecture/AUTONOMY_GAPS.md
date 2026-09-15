@@ -1,8 +1,8 @@
 # Autonomy Gaps
 
-> Re-verified: 2026-09-15 · HEAD: 3ef335f2f
+> Re-verified: 2026-09-15 · HEAD: 2d9bac89f
 
-All 11 gaps below were re-assessed against the tree at HEAD `3ef335f2f`.
+All 11 gaps below were re-assessed against the tree at HEAD `2d9bac89f`.
 **All 11 remain CLOSED.** Production wiring defects previously weakening Gaps #4, #5, #6, #10, and #11 in `src/commands/run.py` have been resolved via real telemetry sinks, active governance gates, cost ceiling enforcement, and mission tracing (PR #4, 20/20 tests in `tests/test_run_command_wiring.py`).
 
 **Test evidence:** 60/60 targeted gap-closure and wiring tests pass at HEAD
@@ -336,5 +336,5 @@ which is wired into `src/api/gateway_mission_routes.py:31,60`, and is backed by
 | Trace correlation IDs | MEDIUM | Missing observability | CLOSED (mission_id propagated in run.py) |
 | Cost tracking | LOW | Missing observability | CLOSED (emitted via TelemetrySinkAdapter) |
 
-**All 11 gaps remain CLOSED at HEAD `3ef335f2f`.** Production wiring defects in `src/commands/run.py`
+**All 11 gaps remain CLOSED at HEAD `2d9bac89f`.** Production wiring defects in `src/commands/run.py`
 have been addressed and verified with comprehensive test coverage.
