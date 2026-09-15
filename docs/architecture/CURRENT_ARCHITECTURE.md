@@ -1,6 +1,6 @@
 # Current Architecture (Post-Phase 5 & Phase 6)
 
-Refreshed: 2026-09-15 · HEAD: 5b99c8ae2
+Refreshed: 2026-09-15 · HEAD: 3ef335f2f
 
 ## Overview
 
