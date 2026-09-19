@@ -3,9 +3,13 @@
 
 """Build CLI — ``mekong build from-plan``.
 
-Reads ``.mekong/SPEC_OUTPUT.md`` (produced by `plan from-init`), extracts
-feature keywords via regex, and writes a scaffolded ``.mekong/TASKS.todo``
-with standard ITL phases (research, implement, test, review) per feature domain.
+Reads ``.mekong/SPEC_OUTPUT.md`` (produced by ``mekong plan from-init``),
+extracts feature keywords via regex, and writes a scaffolded
+``.mekong/TASKS.todo`` with standard ITL phases (research, implement, test,
+review) per feature domain.
+
+This is the SDLC build phase (plan -> code). It is NOT an AgentKit command.
+Use ``--dry-run`` to preview the task list without writing anything.
 """
 
 from __future__ import annotations

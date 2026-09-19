@@ -3,10 +3,14 @@
 
 """Plan CLI — ``mekong plan from-init``.
 
-Reads ``.mekong/company.json`` and generates:
+Reads ``.mekong/company.json`` (produced by ``mekong company init``) and
+generates:
 - ``.mekong/SPEC_OUTPUT.md`` — product spec outline /domain logic
 - ``./plans/<company>-<date>-<slug>/plan.md`` — actionable plan with phases,
   dependencies, acceptance criteria, and per-phase file links
+
+This command depends on the Mekong company-config wizard output — it is NOT
+an AgentKit command and does NOT interact with ``.agentkit/``.
 """
 
 from __future__ import annotations
@@ -394,12 +398,20 @@ def from_init_cmd(
         "--force",
         help="Overwrite existing SPEC_OUTPUT.md and plans/.",
     ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Preview spec path and planned plan directory without writing files.",
+    ),
 ) -> None:
     """Generate spec and plan from .mekong/company.json.
 
     Writes:
     - .mekong/SPEC_OUTPUT.md (product spec outline)
     - ./plans/<company>-<date>/plan.md (+ phase stub files)
+
+    Use ``--dry-run`` to preview the planned spec path and plan directory
+    without mutating disk.
     """
     path = output_dir.resolve()
     company = _load_company(path)
@@ -424,6 +436,21 @@ def from_init_cmd(
     # Check pre-existing files
     spec_path = path / ".mekong" / "SPEC_OUTPUT.md"
     plans_root = path / "plans"
+
+    # --dry-run preview: print planned spec path + plan dir, exit 0
+    if dry_run:
+        slug = _slug(company.get("company_name", "project"))
+        now = datetime.now(timezone.utc)
+        date_str = now.strftime("%Y-%m-%d")
+        plan_dir_preview = plans_root / f"{slug}-{date_str}"
+        console.print("[bold yellow][DRY RUN][/] Preview only — nothing written.\n")
+        console.print(f"  company:    [cyan]{company.get('company_name', '?')}[/]")
+        console.print(f"  product:    [cyan]{product_type}[/]")
+        console.print(f"  spec_path:  [cyan]{spec_path}[/]")
+        console.print(f"  plan_dir:   [cyan]{plan_dir_preview}[/]")
+        console.print(f"  domains:    [cyan]{len(outlines)}[/]")
+        console.print("\n[dim]Run without --dry-run to generate spec + plan.[/]")
+        raise typer.Exit(code=0)
 
     if not force and spec_path.exists():
         _msg3 = f"SPEC_OUTPUT.md already exists at {spec_path}. Use --force to overwrite."

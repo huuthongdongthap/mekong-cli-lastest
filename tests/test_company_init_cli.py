@@ -202,6 +202,51 @@ class TestStatusCommand:
 # Contract: reset --status and reset --force
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Contract: --dry-run (no files written, exits 0)
+# ---------------------------------------------------------------------------
+
+class TestDryRun:
+    def test_company_init_dry_run_exits_zero(self, clean: Path) -> None:
+        """`mekong company init --dry-run` exits 0 and writes nothing."""
+        result = _invoke(["init", "--dry-run", "--dir", str(clean)], clean)
+        assert result.exit_code == 0, result.stdout + (result.stderr or "")
+        assert not (clean / ".mekong").exists()
+
+    def test_company_init_dry_run_no_files_written(self, clean: Path) -> None:
+        """Dry run creates no files anywhere under the target dir."""
+        result = _invoke(["init", "--dry-run", "--dir", str(clean)], clean)
+        assert result.exit_code == 0, result.stdout + (result.stderr or "")
+        written_files = [p for p in clean.rglob("*") if p.is_file()]
+        assert written_files == [], f"expected no files, got: {written_files}"
+
+    def test_company_init_dry_run_json_output(self, clean: Path) -> None:
+        """`mekong company init --dry-run --json` emits valid JSON schema."""
+        result = _invoke(["init", "--dry-run", "--json", "--dir", str(clean)], clean)
+        assert result.exit_code == 0, result.stdout + (result.stderr or "")
+        # Strip rich-markup lines emitted to stdout before JSON block
+        json_blob = result.stdout.split("{", 1)
+        assert len(json_blob) == 2, f"no JSON found in stdout: {result.stdout!r}"
+        body = json.loads("{" + json_blob[1])
+        assert "questions" in body
+        assert len(body["questions"]) == 5
+        fields = [q["field"] for q in body["questions"]]
+        assert fields == [
+            "company_name",
+            "product_type",
+            "scenario",
+            "budget_tier",
+            "primary_language",
+        ]
+
+    def test_company_init_dry_run_json_no_files_written(self, clean: Path) -> None:
+        """Combined --dry-run --json must still write nothing."""
+        result = _invoke(["init", "--dry-run", "--json", "--dir", str(clean)], clean)
+        assert result.exit_code == 0
+        written_files = [p for p in clean.rglob("*") if p.is_file()]
+        assert written_files == [], f"expected no files, got: {written_files}"
+
+
 class TestResetCommand:
     def test_reset_status_mode(self, initialized: Path, tmp_path: Path) -> None:
         """Reset without --force shows current state and exits 0."""

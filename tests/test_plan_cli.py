@@ -153,6 +153,26 @@ class TestForceFlag:
 
 
 # ---------------------------------------------------------------------------
+# Contract: --dry-run preview
+# ---------------------------------------------------------------------------
+
+
+class TestDryRunFlag:
+    def test_dry_run_exits_zero(self, tmp_path: Path) -> None:
+        _init_company(tmp_path)
+        result = _invoke(["--dry-run"], tmp_path)
+        assert result.exit_code == 0, result.stdout + (result.stderr or "")
+        assert "[DRY RUN]" in result.stdout
+
+    def test_dry_run_no_files_written(self, tmp_path: Path) -> None:
+        _init_company(tmp_path)
+        result = _invoke(["--dry-run"], tmp_path)
+        assert result.exit_code == 0
+        assert not (tmp_path / ".mekong" / "SPEC_OUTPUT.md").exists()
+        assert not (tmp_path / "plans").exists()
+
+
+# ---------------------------------------------------------------------------
 # Contract: all product types
 # ---------------------------------------------------------------------------
 
