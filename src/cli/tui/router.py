@@ -42,17 +42,55 @@ ROUTE_TABLE: List[RouteEntry] = [
 
 
 def _matches(pattern: str, text: str) -> bool:
-    p = pattern.lower()
-    t = text.lower()
+    if not text:
+        return False
+    p = pattern.lower().strip()
+    t = text.lower().strip()
+    if not p:
+        return False
     if p.endswith("*"):
-        return t.startswith(p[:-1])
+        needle = p[:-1].strip()
+        if not needle:
+            return False
+        return t.startswith(needle)
     return p in t
 
 
-def fuzzy_match(pattern: str, text: str) -> Optional[CommandMatch]:
-    if _matches(pattern, text):
-        return CommandMatch(command=pattern, score=0.5, matched_keyword=pattern)
-    return None
+def fuzzy_match(text: str, max_results: int = 5) -> List[CommandMatch]:
+    """Score *text* against every keyword in ROUTE_TABLE.
+
+    Scoring tiers:
+      1.0 — exact match (text == needle)
+      0.8 — phrase prefix (text starts with needle + " ")
+      0.5 — substring (needle in text)
+
+    Returns up to max_results matches, sorted descending by score.
+    """
+    if not text or not text.strip():
+        return []
+    q = text.lower().strip()
+    seen: set = set()
+    results: List[CommandMatch] = []
+    for entry in ROUTE_TABLE:
+        if entry.command in seen:
+            continue
+        for kw in entry.vi_keywords + entry.en_keywords:
+            needle = kw.lower().strip().rstrip("*").strip()
+            if not needle:
+                continue
+            if q == needle:
+                score = 1.0
+            elif q.startswith(needle + " "):
+                score = 0.8
+            elif needle in q:
+                score = 0.5
+            else:
+                continue
+            results.append(CommandMatch(entry.command, score, kw))
+            seen.add(entry.command)
+            break
+    results.sort(key=lambda m: m.score, reverse=True)
+    return results[:max_results]
 
 
 def get_route_table() -> List[RouteEntry]:

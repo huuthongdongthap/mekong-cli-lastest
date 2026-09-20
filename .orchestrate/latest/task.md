@@ -1,44 +1,41 @@
-# MEKONG CLI — SUPER COMMAND #8
+# Orchestration Task
 
-## Mission
+> Generated: 2026-09-19
+> Origin: `/orchestrate go next`
 
-Close architecture gap #4: **Harness Verifier Merge + DAG Scheduler Swap**.
+## Task (Vietnamese, original)
 
-The runtime now has:
-- SC6: `plan()` produces 7 role-aware steps with dependency graph via GoalEngineAdapter
-- SC7: `remember()` writes through conformant MemoryStore adapter
+go next
 
-But the harness verifier (`src/harness/`) is still a separate PEV engine that isn't wired into the core execution loop. The scheduler doesn't consume the DAG structure from GoalEngine. This gap closes by:
+## English interpretation
 
-1. Merging the harness verifier into the core runtime's execution loop
-2. Swapping the scheduler to consume the DAG from GoalEngineAdapter
-3. Making `execute()` → `verify()` → `repair()` a real cycle
+Continue the next improvement for Mekong CLI. All 7 development roadmap phases and 10 architecture gaps are marked complete. One known blocker remains: `tests/test_nl_routing.py` has multiple failures (38+ tests) caused by (1) `fuzzy_match()` signature mismatch — tests call `fuzzy_match(pattern, text)` but the implementation is `fuzzy_match(text, pattern)`, and (2) stale route expectations — tests reference route names like `ci-debugger`, `cicd-deploy`, `infra-provision`, `db-migrate`, `api-build`, `monitoring`, `metrics`, `logs-check`, `e2e-test`, `load-test`, `vuln-scan`, `secret-rotate`, `research`, `scout`, `analyze` that no longer exist in the routing table.
 
 ## Context
 
-- `src/harness/` — PEV engine (plan-execute-verify), agents, observability
-- `src/core/runtime_adapter.py` — `MekongCoreRuntimeImpl` with `plan()`/`delegate()`/`execute()`/`remember()`
-- `src/core/ports/llm.py` — LLMProviderPort protocol
-- `src/core/adapters/` — LLM, MCP, payment, buzz, tool adapters
-- `src/mekongcli/core/goal_engine/` — GoalEngine service (multi-step planner)
+- Repo root: `/Users/macbook/mekong-cli` (Mekong CLI v6.0, Python + Typer, MIT).
+- Current branch: `main` at `ba0f087ba` (1 commit ahead of origin/main — unpushed due to sandbox network restriction).
+- Recent fix: `MEKONG_RAAS_DB` env var added to `src/raas/{tenant,credits,mission_store}.py` for test isolation.
+- Known failures in `tests/test_nl_routing.py` (70 tests collected, ~38 fail):
+  - `TestFuzzyMatch` — all fail with `TypeError: fuzzy_match() missing 1 required positional argument: 'text'` (signature mismatch).
+  - `TestMatchRoutes::test_new_*` — 22 tests assert stale route names (`ci-debugger`, `cicd-deploy`, etc.) that don't exist in the current routing table.
+  - `TestMatches` — 4 tests fail on edge cases (`test_empty_text_returns_false`, `test_empty_pattern_returns_false`, `test_whitespace_normalization`, `test_trailing_star_substring_hit`).
+  - `TestMatchRoutes::test_none_returns_empty` — fails.
+  - `TestMatchRoutes::test_duplicate_command_skipped_second_pass` — fails.
+- Other known pre-existing failures (from prior orchestration): `tests/test_self_healing.py`, `tests/test_smart_router.py`.
 
-## Absolute Rules
+## Non-goals
 
-1. Preserve working functionality — `mekong run`, `cook`, `goal`, `implement` must keep working
-2. Do not rewrite the entire repository
-3. Do not create a second orchestration framework
-4. Do not remove existing business workflows unless proven obsolete
-5. Prefer adapters/interfaces over provider-specific logic
-6. Keep the core small
-7. Every architectural change must have tests
-8. No speculative marketplace, tokenomics, custody, or autonomous financial transactions
-9. Must not break protected flows (NOWPayments IPN, license gate, payment)
-10. Must not touch `.github/workflows/*` (owned by concurrent PR #7)
+- Do NOT add new features — this is a test-debt cleanup task.
+- Do NOT change routing behavior — update tests to match current implementation.
+- Do NOT touch `.github/workflows/*`.
+- Do NOT commit secrets / `.env*`.
+- Do NOT break the 39-group invariant.
 
-## Success Criteria
+## Definition of Done
 
-- Harness verifier merged into core runtime execution loop
-- Scheduler consumes DAG from GoalEngineAdapter
-- `execute()` → `verify()` → `repair()` is a real cycle
-- All existing tests pass (parity gate EMPTY for new failures)
-- Quality gates green: ruff clean, pyright 0 new errors
+1. `tests/test_nl_routing.py` — all 70 tests pass.
+2. `fuzzy_match` signature mismatch resolved (either fix implementation or update tests — whichever is correct based on how callers use it).
+3. Stale route expectations updated to match current routing table.
+4. Edge-case tests fixed (`test_empty_text_returns_false`, `test_empty_pattern_returns_false`, `test_whitespace_normalization`, `test_trailing_star_substring_hit`, `test_none_returns_empty`, `test_duplicate_command_skipped_second_pass`).
+5. No regression: 39 groups, 0 ruff errors, targeted test suites green.
