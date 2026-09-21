@@ -10,6 +10,7 @@ Provides:
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 # Ensure repo root `src/` is importable for all test files
@@ -17,6 +18,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "src"))  # noqa: E402
+
+# Ensure tests never hit ~/.mekong/raas/tenants.db during import or runtime
+if "MEKONG_RAAS_DB" not in os.environ:
+    _temp_raas_dir = Path(tempfile.gettempdir()) / "mekong_test_raas"
+    _temp_raas_dir.mkdir(parents=True, exist_ok=True)
+    os.environ["MEKONG_RAAS_DB"] = str(_temp_raas_dir / "tenants.db")
 import sqlite3  # noqa: E402
 from typing import Any, Generator  # noqa: E402
 

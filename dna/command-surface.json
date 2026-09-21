@@ -1,6 +1,6 @@
 {
   "schema": "mekong.command_surface.v1",
-  "version": "2026.08.26",
+  "version": "2026.09.19",
   "description": "Grandfathered official root CLI command surface. New commands must update this manifest through PR review.",
   "commands": [
     "agent",

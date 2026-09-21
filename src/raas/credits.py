@@ -7,13 +7,14 @@ Manages credit balances and transactions using SQLite with
 atomic operations to prevent race conditions.
 """
 
+import os
 import sqlite3
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-DB_PATH = Path.home() / ".mekong" / "raas" / "tenants.db"
+DB_PATH = Path(os.environ.get("MEKONG_RAAS_DB") or Path.home() / ".mekong" / "raas" / "tenants.db")
 
 MISSION_COSTS: dict[str, int] = {
     "simple": 1,

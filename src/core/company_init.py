@@ -3,6 +3,10 @@
 
 """Company Init Wizard — /company init backend.
 
+Mekong company-config init — NOT AgentKit ``ak init``. Generates 12 config
+files for a new solo agentic company into ``.mekong/``.
+For AgentKit ownership initialization, use ``ak init`` (or ``/ak:init``).
+
 5-question wizard that generates 12 config files for a new solo agentic company.
 Supports both CLI (interactive) and API (dict input) modes.
 """

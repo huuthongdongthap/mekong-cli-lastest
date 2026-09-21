@@ -4,10 +4,13 @@
 """Particle init Typer sub-app — ZenOS particle scaffolding.
 
 Registers the ``mekong particle init`` command that creates a new ZenOS particle
-directory from the skeleton template in ``mekong/skel/``.
+directory from the skeleton template in ``mekong/skel/``. This is a ZenOS
+particle scaffold, **not** AgentKit ``ak new``. For AgentKit ownership
+tracking use ``/ak:init`` or ``$HOME/bin/ak``.
 
 Commands:
     init    Create a new particle directory with constitution and AI cell configs.
+            ``--dry-run`` previews skeleton files without creating them.
 
 Import path used by ``src/cli/app_setup.py``::
 
@@ -118,12 +121,21 @@ def init_cmd(
         "-d",
         help="Parent directory to create the particle in (default: CWD).",
     ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Preview ZenOS particle files without creating them.",
+    ),
 ) -> None:
     """Create a new ZenOS particle from the skeleton template.
 
     Copies ``mekong/skel/`` to *output_dir*/*name*/, replaces ``{{PARTICLE_NAME}}``,
     ``{{MISSION_STATEMENT}}``, ``{{PARTICLE_ID}}``, and other placeholders, and
     prints the newly generated particle ID.
+
+    Use ``--dry-run`` to preview the skeleton files that would be created
+    without writing anything to disk. This is distinct from AgentKit
+    ``ak new`` (fresh scaffold) — ZenOS particles are a MekOS construct.
     """
     if review:
         from src.mekong.constitution.review import review_constitution
@@ -138,17 +150,34 @@ def init_cmd(
 
     target = Path(output_dir).resolve() / name
 
-    if target.exists():
-        console.print(
-            f"[bold red]Error:[/] {target} already exists. "
-            "Choose a different name or remove it first."
-        )
-        raise typer.Exit(code=1)
-
     if not SKEL_DIR.exists():
         console.print(
             f"[bold red]Error:[/] Skeleton template not found at {SKEL_DIR}. "
             "Is mekong-cli installed correctly?"
+        )
+        raise typer.Exit(code=1)
+
+    # --dry-run: list files that *would* be created from mekong/skel/
+    if dry_run:
+        rel_name = name
+        console.print("[bold yellow][DRY RUN][/] Preview only — nothing will be created.\n")
+        console.print(f"  Particle:  [cyan]{rel_name}[/]")
+        console.print(f"  Target:    [cyan]{target}[/]")
+        console.print(f"  Template:  [cyan]{SKEL_DIR}[/]\n")
+        console.print("[bold]Files that would be created:[/]")
+        preview_count = 0
+        for root, _dirs, files in os.walk(SKEL_DIR):
+            for fname in files:
+                rel = Path(root).relative_to(SKEL_DIR) / fname
+                console.print(f"    - {rel_name}/{rel}")
+                preview_count += 1
+        console.print(f"\n[dim]Total: {preview_count} files. Run without --dry-run to scaffold.[/]")
+        raise typer.Exit(code=0)
+
+    if target.exists():
+        console.print(
+            f"[bold red]Error:[/] {target} already exists. "
+            "Choose a different name or remove it first."
         )
         raise typer.Exit(code=1)
 

@@ -3,9 +3,14 @@
 
 """Company init Typer sub-app — thin app factory.
 
+Mekong company-config init. Scaffolds business configuration into ``.mekong/``
+(company.json, 8 agent prompts, mcu_balance.json, claude_company_section.md).
+This is NOT AgentKit ``ak init`` — for AgentKit ownership tracking see
+``/ak:init`` (or ``ak init``).
+
 Registers three commands under ``mekong company``:
 
-* ``init``   — 5-question wizard / ``--json`` schema (init_command.py)
+* ``init``   — 5-question wizard / ``--json`` schema / ``--dry-run`` preview (init_command.py)
 * ``status`` — read ``.mekong/company.json`` Rich panel   (status_command.py)
 * ``reset``  — idempotent preview / ``--force`` wipe    (reset_command.py)
 

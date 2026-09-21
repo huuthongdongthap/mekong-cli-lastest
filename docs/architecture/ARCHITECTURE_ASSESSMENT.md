@@ -1,8 +1,8 @@
 # Architecture Assessment
 
-Refreshed: 2026-09-14 · HEAD: f7a807eb9
+Refreshed: 2026-09-17 · HEAD: 5c063b799
 Wave 3 dead-code deletions (items 10–18) marked DONE: 2026-08-25 · commits `a7d364209`, `3408f8905`, `1446242e6`, `e8dc78908`
-Super Command #8, DUPLICATION_MAP Items 1–9, and PRs #14, #16, #17, #18, #19, #20, #21, #22, #24, #26, #27, #28, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #41, #42, #43, #44, #45 merged into `origin/main`.
+Super Command #8, DUPLICATION_MAP Items 1–9, and PRs #14, #16, #17, #18, #19, #20, #21, #22, #24, #26, #27, #28, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #41, #42, #43, #44, #45, #46, #47, #48, #49, #50, #51, #52, #53, #54, #55, #56, #57, #58, #59, #60, #61, #62, #63, #64, #65, #66, #67, #68, #69, #70, #71, #72, #73, #74, #75, #76, #77, #78, #79, #80, #81, #82, #83, #84, #85, #86, #87 merged into `origin/main`.
 All 7 Roadmap Phases (100%) and all 10 Architecture Gaps CLOSED.
 Autonomy Gap #2 (native token streaming across transport, client, and router adapter) closed in PR #30 (`a681afce6`).
 Autonomy Gap #3 (MemorySeparation protocol, TTL pruning, and ScopedMemoryStore session flushing) closed in PR #33 (`e3859ec78`).
@@ -18,6 +18,48 @@ PR #42 (`f0e48774e`): Synchronize v6.9.0 release changelog and architecture docu
 PR #43 (`33ca66c18`): Synchronize architecture documentation and scorecard to HEAD f0e48774e with PR #42 closure.
 PR #44 (`b0c6958cf`): Synchronize architecture documentation and scorecard to HEAD 33ca66c18 with PR #43 closure.
 PR #45 (`f7a807eb9`): Synchronize architecture documentation and scorecard to HEAD b0c6958cf with PR #44 closure.
+PR #46 (`89bec8d89`): Synchronize architecture documentation and scorecard to HEAD f7a807eb9 with PR #45 closure.
+PR #47 (`3308441c2`): Synchronize architecture documentation and scorecard to HEAD 89bec8d89 with PR #46 closure.
+PR #48 (`0e979e592`): Synchronize architecture documentation and scorecard to HEAD 3308441c2 with PR #47 closure.
+PR #49 (`97e8eb1c5`): Synchronize architecture documentation and scorecard to HEAD 0e979e592 with PR #48 closure.
+PR #50 (`c6568c496`): Synchronize architecture documentation and scorecard to HEAD 97e8eb1c5 with PR #49 closure.
+PR #51 (`451a48367`): Synchronize architecture documentation and scorecard to HEAD c6568c496 with PR #50 closure.
+PR #52 (`4d18ba255`): Synchronize architecture documentation and scorecard to HEAD 451a48367 with PR #51 closure.
+PR #53 (`a488d8f0f`): Synchronize architecture documentation and scorecard to HEAD 4d18ba255 with PR #52 closure.
+PR #54 (`0f49b6348`): Synchronize architecture documentation and scorecard to HEAD a488d8f0f with PR #53 closure.
+PR #55 (`251b6305f`): Synchronize architecture documentation and scorecard to HEAD 0f49b6348 with PR #54 closure.
+PR #56 (`4e890544b`): Synchronize architecture documentation and scorecard to HEAD 251b6305f with PR #55 closure.
+PR #57 (`cf8b84770`): Synchronize architecture documentation and scorecard to HEAD 4e890544b with PR #56 closure.
+PR #58 (`ea91eac58`): Synchronize architecture documentation and scorecard to HEAD cf8b84770 with PR #57 closure.
+PR #59 (`81825c8bd`): Synchronize architecture documentation and scorecard to HEAD ea91eac58 with PR #58 closure.
+PR #60 (`dcc34bd6e`): Synchronize architecture documentation and scorecard to HEAD 81825c8bd with PR #59 closure.
+PR #61 (`6a3b36716`): Synchronize architecture documentation and scorecard to HEAD dcc34bd6e with PR #60 closure.
+PR #62 (`e699efec8`): Synchronize architecture documentation and scorecard to HEAD 6a3b36716 with PR #61 closure.
+PR #63 (`6494f29f5`): Synchronize architecture documentation and scorecard to HEAD e699efec8 with PR #62 closure.
+PR #64 (`d85e0b88b`): Synchronize architecture documentation and scorecard to HEAD 6494f29f5 with PR #63 closure.
+PR #65 (`184ae7996`): Synchronize architecture documentation and scorecard to HEAD d85e0b88b with PR #64 closure.
+PR #66 (`dd5e19a15`): Synchronize architecture documentation and scorecard to HEAD 184ae7996 with PR #65 closure.
+PR #67 (`113c38942`): Synchronize architecture documentation and scorecard to HEAD dd5e19a15 with PR #66 closure.
+PR #68 (`e62f68709`): Synchronize architecture documentation and scorecard to HEAD 113c38942 with PR #67 closure.
+PR #69 (`5b99c8ae2`): Synchronize architecture documentation and scorecard to HEAD e62f68709 with PR #68 closure.
+PR #70 (`3ef335f2f`): Synchronize architecture documentation and scorecard to HEAD 5b99c8ae2 with PR #69 closure.
+PR #71 (`2d9bac89f`): Synchronize architecture documentation and scorecard to HEAD 3ef335f2f with PR #70 closure.
+PR #72 (`37d980981`): Synchronize architecture documentation and scorecard to HEAD 2d9bac89f with PR #71 closure.
+PR #73 (`8a69c818e`): Synchronize architecture documentation and scorecard to HEAD 37d980981 with PR #72 closure.
+PR #74 (`82df19834`): Synchronize architecture documentation and scorecard to HEAD 8a69c818e with PR #73 closure.
+PR #75 (`836782324`): Synchronize architecture documentation and scorecard to HEAD 82df19834 with PR #74 closure.
+PR #76 (`2bb5db871`): Synchronize architecture documentation and scorecard to HEAD 836782324 with PR #75 closure.
+PR #77 (`651b60521`): Synchronize architecture documentation and scorecard to HEAD 2bb5db871 with PR #76 closure.
+PR #78 (`d00b9f7a7`): Synchronize architecture documentation and scorecard to HEAD 651b60521 with PR #77 closure.
+PR #79 (`becd36d58`): Synchronize architecture documentation and scorecard to HEAD d00b9f7a7 with PR #78 closure.
+PR #80 (`9c8b3b522`): Synchronize architecture documentation and scorecard to HEAD becd36d58 with PR #79 closure.
+PR #81 (`ac2bacfbb`): Synchronize architecture documentation and scorecard to HEAD 9c8b3b522 with PR #80 closure.
+PR #82 (`0a57a654e`): Synchronize architecture documentation and scorecard to HEAD ac2bacfbb with PR #81 closure.
+PR #83 (`d7501ff9b`): Synchronize architecture documentation and scorecard to HEAD 0a57a654e with PR #82 closure.
+PR #84 (`8ae0dbd45`): Synchronize architecture documentation and scorecard to HEAD d7501ff9b with PR #83 closure.
+PR #85 (`1d20135db`): Synchronize architecture documentation and scorecard to HEAD 8ae0dbd45 with PR #84 closure.
+PR #86 (`9924d7be9`): Synchronize architecture documentation and scorecard to HEAD 1d20135db with PR #85 closure.
+PR #87 (`5c063b799`): Synchronize architecture documentation and scorecard to HEAD 9924d7be9 with PR #86 closure.
 Phase 5 (AI Video - Sophia) and Phase 6 (Cloud Deploy) fully closed at 100% completion in PR #26 and PR #28 (`3781a63b4`).
 Billing consolidation conformance suite created: `tests/test_billing_consolidation.py` (11/11 passing), DRIFT_REPORT gap closed.
 Core protocol compliance suite expanded: `tests/test_protocol_compliance.py` (25/25 passing) covering all 10 protocols and compliant adapters (canonical memory, JSONL adapter, conformant adapter, payment providers, mock payment, X402 and MPP settlement).

@@ -4,6 +4,7 @@
 """SQLite persistence layer for RaaS mission records."""
 from __future__ import annotations
 
+import os
 import sqlite3
 import uuid
 from datetime import datetime, timezone
@@ -12,7 +13,7 @@ from typing import List, Optional
 
 from src.raas.mission_models import MissionComplexity, MissionRecord, MissionStatus
 
-_DB_PATH = Path.home() / ".mekong" / "raas" / "tenants.db"
+_DB_PATH = Path(os.environ.get("MEKONG_RAAS_DB") or Path.home() / ".mekong" / "raas" / "tenants.db")
 
 _MISSIONS_DDL = """
 CREATE TABLE IF NOT EXISTS missions (

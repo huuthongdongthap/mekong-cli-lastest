@@ -63,6 +63,17 @@ PROMPT_EN: dict[str, str] = {
                        "(reset without --force is read-only):",
     "reset_force_hint": "Re-run with --force to wipe and re-init.",
     "error":       "Init failed",             # alias kept for compat
+
+    # ── dry-run preview ──────────────────────────────────────────────────
+    "dry_run_preview":  "[DRY RUN] Preview only — no files will be written.",
+    "dry_run_target":   "Target directory",
+    "dry_run_files":    "Files that would be created",
+    "dry_run_company_json": "company.json",
+    "dry_run_agents":   "agents/ (8 role prompts)",
+    "dry_run_manifests": "manifests/",
+    "dry_run_metrics":  "metrics/",
+    "dry_run_notice":   "Run without --dry-run to scaffold.",
+    "dry_run_hint":     "Tip: use `ak init` (or `/ak:init`) for AgentKit ownership tracking.",
 }
 
 # ---------------------------------------------------------------------------
@@ -114,6 +125,17 @@ PROMPT_VI: dict[str, str] = {
                        "(reset không --force chỉ hiện thị, không ghi đè):",
     "reset_force_hint": "Chạy lại với --force để xóa và khởi tạo lại.",
     "error":            "Khởi tạo thất bại",   # compat alias
+
+    # ── dry-run preview ──────────────────────────────────────────────────
+    "dry_run_preview":  "[CHẠY THỬ] Chỉ xem trước — không ghi tập tin.",
+    "dry_run_target":   "Thư mục đích",
+    "dry_run_files":    "Tập tin sẽ tạo",
+    "dry_run_company_json": "company.json",
+    "dry_run_agents":   "agents/ (8 hồ sơ vai trò)",
+    "dry_run_manifests": "manifests/",
+    "dry_run_metrics":  "metrics/",
+    "dry_run_notice":   "Chạy không --dry-run để tạo cấu hình.",
+    "dry_run_hint":     "Mẹo: dùng `ak init` (hoặc `/ak:init`) cho theo dõi quyền sở hữu AgentKit.",
 }
 
 # ---------------------------------------------------------------------------

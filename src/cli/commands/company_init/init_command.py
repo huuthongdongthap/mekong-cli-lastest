@@ -3,11 +3,15 @@
 
 """Register the ``mekong company init`` command.
 
+Mekong Company Initialization wizard. Scaffolds business configuration into
+``.mekong/`` (NOT AgentKit ``.agentkit/`` — for AgentKit ownership
+initialization, use ``ak init`` / ``/ak:init``).
+
 Responsibility: interactive wizard, ``--json`` schema output, ``--no-confirm``
-shortcut, and the success Rich panel. Common helpers (``_get_locale``,
-``_get_messages``, ``_mekong_dir``, ``_company_json_path``, ``_load_company``)
-live in the parent package's ``__init__`` and are borrowed via the
-``company_init`` sub-module import so that :func:`reset_cmd` (in
+shortcut, ``--dry-run`` preview, and the success Rich panel. Common helpers
+(``_get_locale``, ``_get_messages``, ``_mekong_dir``, ``_company_json_path``,
+``_load_company``) live in the parent package's ``__init__`` and are borrowed
+via the ``company_init`` sub-module import so that :func:`reset_cmd` (in
 ``reset_command.py``) and :func:`status_cmd` (in ``status_command.py``) can
 share them without duplication.
 """
@@ -160,6 +164,11 @@ def register(app: typer.Typer) -> None:
             "--force",
             help="Re-init even if .mekong/company.json already exists.",
         ),
+        dry_run: bool = typer.Option(
+            False,
+            "--dry-run",
+            help="Preview company configuration schema and target directory without writing files.",
+        ),
         json_schema: bool = typer.Option(
             False,
             "--json",
@@ -178,8 +187,62 @@ def register(app: typer.Typer) -> None:
             help="Bilingual prompt language: en | vi.",
         ),
     ) -> None:
-        """Set up the current workspace (.mekong/ + 12 config files)."""
+        """Set up the current workspace (.mekong/ + 12 config files).
+
+        Mekong company-config init — NOT AgentKit ``ak init``. For AgentKit
+        ownership initialization, use ``ak init`` (or ``/ak:init``).
+        """
         path = Path(output_dir).resolve()
+        messages = _get_messages(locale)
+
+        # --dry-run preview (no I/O, no files written)
+        if dry_run:
+            console.print(f"[bold yellow]{messages['dry_run_preview']}[/]")
+            console.print(
+                f"  {messages['dry_run_target']}: [cyan]{path}[/]"
+            )
+            console.print(f"  {messages['dry_run_files']}:")
+            for label_key in (
+                "dry_run_company_json",
+                "dry_run_agents",
+                "dry_run_manifests",
+                "dry_run_metrics",
+            ):
+                console.print(f"    - {messages[label_key]}")
+            console.print(f"[dim]{messages['dry_run_notice']}[/]")
+            console.print(f"[dim]{messages['dry_run_hint']}[/]")
+            if json_schema:
+                # Reuse the JSON schema block below by falling through — but we
+                # still must not write files, so handle explicitly here.
+                schema = [
+                    {
+                        "field": "company_name",
+                        "question": i18n_mod.get_messages("en")["q1_name"],
+                        "mapper": PRODUCT_MAP,
+                    },
+                    {
+                        "field": "product_type",
+                        "question": i18n_mod.get_messages("en")["q2_prompt"],
+                        "mapper": PRODUCT_MAP,
+                    },
+                    {
+                        "field": "scenario",
+                        "question": i18n_mod.get_messages("en")["q3_prompt"],
+                        "mapper": SCENARIO_MAP,
+                    },
+                    {
+                        "field": "budget_tier",
+                        "question": i18n_mod.get_messages("en")["q4_prompt"],
+                        "mapper": BUDGET_MAP,
+                    },
+                    {
+                        "field": "primary_language",
+                        "question": i18n_mod.get_messages("en")["q5_prompt"],
+                        "mapper": LANGUAGE_MAP,
+                    },
+                ]
+                typer.echo(json.dumps({"questions": schema}, indent=2))
+            raise typer.Exit(code=0)
 
         # --json schema mode (no I/O, no files written)
         if json_schema:
@@ -215,7 +278,6 @@ def register(app: typer.Typer) -> None:
 
         company_json = _company_json_path(path)
         if company_json.exists() and not force:
-            messages = _get_messages(locale)
             console.print(
                 f"[bold red]Already initialized[/] — "
                 f"{messages['already_setup']}"

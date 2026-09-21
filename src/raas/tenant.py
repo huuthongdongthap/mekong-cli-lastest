@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 import sqlite3
 import uuid
 from dataclasses import dataclass
@@ -38,7 +39,7 @@ from src.models.particle import Tenant  # noqa: F401  (re-export)
 
 logger = logging.getLogger(__name__)
 
-_DB_PATH = Path.home() / ".mekong" / "raas" / "tenants.db"
+_DB_PATH = Path(os.environ.get("MEKONG_RAAS_DB") or Path.home() / ".mekong" / "raas" / "tenants.db")
 
 _DDL = """
 CREATE TABLE IF NOT EXISTS tenants (
